@@ -126,9 +126,7 @@ class KnowledgeIngestor:
         current: _SectionBuilder | None = None
         heading_stack: list[str] = []
 
-        for child in body.find_all(recursive=False):
-            if not isinstance(child, Tag):
-                continue
+        for child in self._content_elements(body):
             name = child.name.lower()
             if name in {"h1", "h2", "h3", "h4", "h5", "h6"}:
                 level = int(name[1])
@@ -216,6 +214,29 @@ class KnowledgeIngestor:
             if alt:
                 builder.fragments.append(f"Image reference: {alt}")
 
+    def _content_elements(self, root: Tag) -> list[Tag]:
+        """Flatten structural wrappers while preserving block order."""
+
+        result: list[Tag] = []
+        for child in root.find_all(recursive=False):
+            if isinstance(child, Tag):
+                result.extend(self._flatten_element(child))
+        return result
+
+    def _flatten_element(self, element: Tag) -> list[Tag]:
+        """Return meaningful blocks from HTML and Confluence-style wrappers."""
+
+        name = element.name.lower()
+        if name in {"h1", "h2", "h3", "h4", "h5", "h6", "p", "ul", "ol", "table"}:
+            return [element]
+        children = [child for child in element.find_all(recursive=False) if isinstance(child, Tag)]
+        if children:
+            flattened: list[Tag] = []
+            for child in children:
+                flattened.extend(self._flatten_element(child))
+            return flattened
+        return [element] if self._text(element) else []
+
     def _table(self, table: Tag) -> TableData:
         rows: list[list[str]] = []
         headers: list[str] = []
@@ -288,9 +309,17 @@ class KnowledgeIngestor:
     def _unique_images(soup: BeautifulSoup) -> list[ImageRef]:
         images: list[ImageRef] = []
         seen: set[tuple[str, str]] = set()
-        for tag in soup.find_all("img"):
-            src = str(tag.get("src", "")).strip()
-            alt = str(tag.get("alt", "")).strip()
+        for tag in soup.find_all(["img", "image", "ac:image"]):
+            if tag.name.lower() == "ac:image":
+                attachment = tag.find("ri:attachment")
+                filename = str(attachment.get("ri:filename", "")).strip() if attachment else ""
+                src = f"attachment/{filename}" if filename else ""
+                alt = str(tag.get("alt", tag.get("ac:alt", ""))).strip()
+                if not alt:
+                    alt = filename
+            else:
+                src = str(tag.get("src", tag.get("href", ""))).strip()
+                alt = str(tag.get("alt", "")).strip()
             key = (src, alt)
             if src and key not in seen:
                 images.append(ImageRef(src=src, alt=alt))

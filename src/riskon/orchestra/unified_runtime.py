@@ -162,6 +162,7 @@ class UnifiedOrchestraRuntime:
         self.audit_sink = audit_sink
         self.network_enabled = network_enabled
         self.external_api_enabled = external_api_enabled
+        self.default_routing_profile = "default"
         self.recursive_orchestration_enabled = recursive_orchestration_enabled
         self.counterfactual_routing_enabled = counterfactual_routing_enabled
         self.agent_to_agent_citation_enabled = agent_to_agent_citation_enabled
@@ -904,7 +905,7 @@ class UnifiedOrchestraRuntime:
             request,
             baseline,
             assessment,
-            default_routing_profile="default",
+            default_routing_profile=self.default_routing_profile,
         )
 
     def _source_safety(self, report: SourceSafetyReport | None = None) -> SourceSafetyContext:

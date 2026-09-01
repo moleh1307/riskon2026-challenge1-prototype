@@ -48,10 +48,10 @@ runtime.
 
 ER-A accepts a repo-external event package as a read-only source root. The
 package may contain HTML, local assets, and an XLSX filename/title manifest;
-the manifest must remain below the declared source root and output must remain
-outside it. Source and manifest symlinks are resolved before use and any root
-escape blocks intake. The event path is supplied at invocation time and is not
-hard-coded into production configuration.
+the manifest may be supplied as an explicit external read-only file, while
+output must remain outside the HTML source root. Source symlinks are resolved
+before use and any root escape blocks intake. The event paths are supplied at
+invocation time and are not hard-coded into production configuration.
 
 The adapter opens only non-macro XLSX data with `read_only=True` and
 `data_only=True`, using the frozen alias registry or an explicit logical-column
@@ -79,6 +79,22 @@ artefacts, retention, and approved processors remain open questions for the
 event organisers. The 26 August Q&A is therefore non-blocking for M2/M3
 synthetic evaluation but still controls any later event-data, real routing, or
 deployment milestone.
+
+## Event runtime boundary
+
+The event runtime reads the ER-A-approved HTML source root and external XLSX
+manifest directly from operator-supplied paths. It never copies those inputs
+into the repository and never writes inside the source root. The event corpus
+is held in memory as the M4D `LocalCorpus`; generated intake descriptors and
+structured audit rows remain under ignored `data/generated/event_runtime/`.
+
+All event evidence uses `local://event-wiki/` references. Absolute paths,
+HTTP/HTTPS URLs, synthetic M4D references, source instructions, and credentials
+are excluded from the query payload. The runtime reuses the frozen M2/M1/M3/M4D
+components and keeps overlays, network access, external APIs, and recursive
+execution disabled. A missing or incomplete structured routing context can
+leave a safe `ABSTAIN` unable to produce an M3 expert route; the CLI reports
+that configuration failure rather than inventing a route.
 
 ## M4A boundary
 

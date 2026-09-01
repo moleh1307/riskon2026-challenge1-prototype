@@ -197,10 +197,15 @@ class CaseCapsule(BaseModel):
         invalid = [
             ref
             for ref in self.evidence_refs
-            if not ref.startswith(("local://synthetic-m4/", "local://synthetic-m4d/"))
+            if not ref.startswith(
+                ("local://synthetic-m4/", "local://synthetic-m4d/", "local://event-wiki/")
+            )
         ]
         if invalid:
-            raise ValueError(f"Case capsule evidence refs must be local M4 refs: {invalid}")
+            raise ValueError(
+                "Case capsule evidence refs must be local M4 refs "
+                f"(including event sources): {invalid}"
+            )
         return self
 
 

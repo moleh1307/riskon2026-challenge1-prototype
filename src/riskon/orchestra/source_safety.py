@@ -104,6 +104,7 @@ class SourceSafetyPolicy:
         "local://synthetic-m2/",
         "local://synthetic-m4/",
         "local://synthetic-m4d/",
+        "local://event-wiki/",
     )
 
     def __init__(self, raw: dict[str, Any], source_path: Path) -> None:
@@ -222,7 +223,8 @@ class SourceSafetyPolicy:
             if not isinstance(tag, Tag):
                 continue
             if any(
-                name.startswith("hidden") or name in {"aria-hidden", "style"} for name in tag.attrs
+                name.startswith("hidden") or name in {"aria-hidden", "style"}
+                for name in (tag.attrs or {})
             ):
                 tag.decompose()
         return " ".join(soup.get_text(" ", strip=True).split())

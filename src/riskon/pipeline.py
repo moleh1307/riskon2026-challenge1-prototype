@@ -1,7 +1,7 @@
 """Orchestration for the offline deterministic M0 walking skeleton."""
 
 from pathlib import Path
-from typing import cast
+from typing import TYPE_CHECKING, cast
 from uuid import uuid4
 
 from riskon.answering import AnswerComposer, ExtractiveAnswerComposer
@@ -69,6 +69,9 @@ from riskon.query_planning import M4DQueryPlanner, QueryPlanner
 from riskon.retrieval import SectionRetriever
 from riskon.routing import ExpertRouter
 from riskon.verification import VerificationEngine
+
+if TYPE_CHECKING:
+    from riskon.event_runtime.config import EventRuntimeConfig
 
 
 class RiskonPipeline:
@@ -397,6 +400,17 @@ class RiskonPipeline:
             agent_to_agent_citation_enabled=config.security.agent_to_agent_citation_enabled,
         )
         return cast(M4DRiskonPipeline, pipeline)
+
+    @classmethod
+    def from_event_runtime_config(
+        cls,
+        event_config: "EventRuntimeConfig",
+    ) -> "M4DRiskonPipeline":
+        """Construct the unified runtime over the external event corpus."""
+
+        from riskon.event_runtime.factory import EventRuntimeFactory
+
+        return EventRuntimeFactory.build(event_config)
 
     def run(self, request: QueryInput) -> PipelineResult:
         """Run one query and append its validated audit record."""

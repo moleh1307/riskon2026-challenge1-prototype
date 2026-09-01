@@ -14,6 +14,7 @@ class EvidenceLedger:
         "local://synthetic-m2/",
         "local://synthetic-m4/",
         "local://synthetic-m4d/",
+        "local://event-wiki/",
     )
 
     def __init__(self, allowed_evidence_refs: set[str] | frozenset[str] | None = None) -> None:

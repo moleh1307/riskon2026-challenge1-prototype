@@ -64,9 +64,11 @@ class ManifestLoader:
         root = source_root.resolve(strict=False)
         manifest = manifest_path.resolve(strict=False)
         relative_manifest = (
-            manifest.relative_to(root).as_posix() if manifest.is_relative_to(root) else None
+            manifest.relative_to(root).as_posix()
+            if manifest.is_relative_to(root)
+            else "<external-manifest>"
         )
-        if relative_manifest is None or not manifest.is_file():
+        if not manifest.is_file():
             return ManifestLoadResult(
                 manifest=None,
                 entries=(),
@@ -75,7 +77,7 @@ class ManifestLoader:
                         code="MANIFEST_NOT_FOUND",
                         severity=IssueSeverity.ERROR,
                         relative_path=relative_manifest,
-                        detail="The manifest is unavailable below the declared source root.",
+                        detail="The manifest is unavailable at the declared path.",
                     ),
                 ),
             )
