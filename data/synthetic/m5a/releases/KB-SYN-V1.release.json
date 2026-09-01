@@ -1,0 +1,10 @@
+{
+  "release_id": "KB-SYN-V1",
+  "version": "1.0.0",
+  "previous_release_id": null,
+  "patch_ids": ["M5A-050-PATCH"],
+  "created_at_utc": "2026-08-01T09:00:00Z",
+  "activated_at_utc": "2026-08-01T10:00:00Z",
+  "activated_by_role_id": "SYN-ROLE-KNOWLEDGE-OWNER-001",
+  "status": "SUPERSEDED"
+}

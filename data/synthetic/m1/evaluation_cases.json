@@ -1,0 +1,117 @@
+{
+  "schema_version": "1.0",
+  "cases": [
+    {
+      "id": "M1-006",
+      "query": "Can a delegated operator use ARC?",
+      "input_context": {},
+      "expected_decision": "CLARIFY",
+      "expected_reason_codes": ["AMBIGUOUS_ACRONYM"],
+      "expected_clarifying_question": "Do you mean Advisory Review Code or Account Routing Console?",
+      "required_claim_ids": [],
+      "forbidden_claim_ids": [],
+      "required_evidence_refs": [
+        "local://synthetic-m1/acronym_registry.html#section-acronym-registry-01:sentence-1",
+        "local://synthetic-m1/acronym_registry.html#section-acronym-registry-01:sentence-2"
+      ],
+      "expected_route": null
+    },
+    {
+      "id": "M1-007",
+      "query": "Does Control Delta apply to Execution Basic?",
+      "input_context": {},
+      "expected_decision": "ABSTAIN",
+      "expected_reason_codes": ["NO_EXPLICIT_SUPPORT"],
+      "expected_clarifying_question": null,
+      "required_claim_ids": [],
+      "forbidden_claim_ids": [],
+      "required_evidence_refs": [
+        "local://synthetic-m1/service_model_scope.html#section-service-model-scope-01:sentence-1"
+      ],
+      "expected_route": {
+        "support_function": "SUITABILITY_EXPERT_LEGAL",
+        "expert_id": "SYN-LEGAL-001"
+      }
+    },
+    {
+      "id": "M1-008",
+      "query": "What controls apply to an active recommendation?",
+      "input_context": {},
+      "expected_decision": "ANSWER",
+      "expected_reason_codes": [],
+      "expected_clarifying_question": null,
+      "required_claim_ids": ["do_not_proceed", "client_acceptance_does_not_override"],
+      "forbidden_claim_ids": [],
+      "required_evidence_refs": [
+        "local://synthetic-m1/active_recommendation_control.html#section-active-recommendation-control-01:sentence-1",
+        "local://synthetic-m1/active_recommendation_control.html#section-active-recommendation-control-01:sentence-2"
+      ],
+      "expected_route": null
+    },
+    {
+      "id": "M1-009",
+      "query": "What is the procedure for requesting a synthetic exception?",
+      "input_context": {},
+      "expected_decision": "ABSTAIN",
+      "expected_reason_codes": ["UNRESOLVED_REQUIRED_REFERENCE"],
+      "expected_clarifying_question": null,
+      "required_claim_ids": [],
+      "forbidden_claim_ids": [],
+      "required_evidence_refs": [
+        "local://synthetic-m1/procedure_with_required_form.html#section-exception-request-procedure-01:sentence-1"
+      ],
+      "expected_route": {
+        "support_function": "BUSINESS_FRONT_SUPPORT",
+        "expert_id": "SYN-BFS-001"
+      }
+    },
+    {
+      "id": "M1-010",
+      "query": "What methodology is shown in the unlabelled methodology diagram?",
+      "input_context": {},
+      "expected_decision": "ABSTAIN",
+      "expected_reason_codes": ["UNSUPPORTED_MODALITY"],
+      "expected_clarifying_question": null,
+      "required_claim_ids": [],
+      "forbidden_claim_ids": [],
+      "required_evidence_refs": [
+        "local://synthetic-m1/image_only_methodology.html#asset-1"
+      ],
+      "expected_route": {
+        "support_function": "BRM_SUITABILITY_LEAD",
+        "expert_id": null
+      }
+    },
+    {
+      "id": "M1-011",
+      "query": "What is the synthetic recommendation definition?",
+      "input_context": {},
+      "expected_decision": "ANSWER",
+      "expected_reason_codes": [],
+      "expected_clarifying_question": null,
+      "required_claim_ids": ["recommendation_definition"],
+      "forbidden_claim_ids": ["unrelated_solicitation_process"],
+      "required_evidence_refs": [
+        "local://synthetic-m1/recommendation_definition.html#section-recommendation-definition-01:sentence-1"
+      ],
+      "expected_route": null
+    },
+    {
+      "id": "M1-012",
+      "query": "Can the Control Omega block be overridden for a high-value client?",
+      "input_context": {},
+      "expected_decision": "ABSTAIN",
+      "expected_reason_codes": ["APPROVAL_REQUIRED"],
+      "expected_clarifying_question": null,
+      "required_claim_ids": [],
+      "forbidden_claim_ids": [],
+      "required_evidence_refs": [
+        "local://synthetic-m1/approval_escalation.html#section-control-omega-override-01:sentence-1"
+      ],
+      "expected_route": {
+        "support_function": "SUITABILITY_EXPERT_COMPLIANCE",
+        "expert_id": "SYN-COMPLIANCE-001"
+      }
+    }
+  ]
+}

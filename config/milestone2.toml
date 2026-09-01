@@ -1,0 +1,50 @@
+[base]
+config = "config/milestone1.toml"
+
+[extension]
+manifest = "data/synthetic/m2/manifest.xlsx"
+knowledge_root = "data/synthetic/m2/knowledge"
+alias_registry = "data/synthetic/m2/aliases.json"
+evaluation_cases = "data/synthetic/m2/evaluation_cases.json"
+generated_root = "data/generated/m2"
+
+[query_planning]
+max_subqueries = 3
+require_explicit_context = true
+split_markers = [";", " and where ", " and how ", " and what "]
+
+[retrieval]
+top_k = 8
+rrf_k = 60
+scope_filter_mode = "EXCLUDE_EXPLICIT_CONFLICTS"
+tie_breaker = "PROVENANCE_REF_ASCENDING"
+
+[retrieval.word_tfidf]
+lowercase = true
+stop_words = "english"
+ngram_min = 1
+ngram_max = 2
+
+[retrieval.char_tfidf]
+lowercase = true
+analyzer = "char_wb"
+ngram_min = 3
+ngram_max = 5
+
+[retrieval.channel_weights]
+exact = 2.00
+table_row = 1.25
+word_tfidf = 1.00
+char_tfidf = 0.75
+
+[evaluation]
+expected_m0_cases = 5
+expected_m1_new_cases = 7
+expected_m2_new_cases = 8
+expected_aggregate_cases = 20
+
+[security]
+network_enabled = false
+
+[runtime]
+confidence_kind = "DETERMINISTIC_GATE_PLACEHOLDER"

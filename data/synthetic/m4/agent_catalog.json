@@ -1,0 +1,213 @@
+{
+  "schema_version": "1.0",
+  "backend": "DETERMINISTIC_FIXTURE_V1",
+  "agents": [
+    {
+      "agent_id": "AGENT-M4-CONDUCTOR-001",
+      "role": "CONDUCTOR",
+      "backend": "DETERMINISTIC_FIXTURE_V1",
+      "enabled": true,
+      "may_delegate": true,
+      "allowed_delegate_ids": [
+        "AGENT-M4-EVIDENCE-001",
+        "AGENT-M4-SCOPE-001",
+        "AGENT-M4-PROCESS-001",
+        "AGENT-M4-SKEPTIC-001",
+        "AGENT-M4-COUNTERFACTUAL-001"
+      ],
+      "maximum_delegation_depth": 1,
+      "final_decision_authority": false,
+      "allowed_inputs": ["BASELINE_RUN", "RISK_SIGNALS", "ACTIVATION_POLICY", "CASE_CONTRACT"],
+      "allowed_tools": [
+        "READ_BASELINE_RUN",
+        "READ_LOCAL_EVIDENCE",
+        "READ_RETRIEVAL_DIAGNOSTICS",
+        "SEARCH_LOCAL_CORPUS",
+        "READ_SCOPE_METADATA",
+        "READ_TABLE_ROWS",
+        "RUN_COUNTERFACTUAL_PIPELINE",
+        "APPEND_EVIDENCE_LEDGER",
+        "APPEND_MATERIAL_OBJECTION"
+      ],
+      "forbidden_capabilities": [
+        "NETWORK",
+        "EXTERNAL_API",
+        "ARBITRARY_FILESYSTEM",
+        "SHELL",
+        "SUBPROCESS",
+        "EMAIL",
+        "CALENDAR",
+        "BROWSER",
+        "DATABASE_WRITE",
+        "KNOWLEDGE_ACTIVATION",
+        "EXPERT_ROUTE_OVERRIDE",
+        "FINAL_DECISION_OVERRIDE",
+        "AGENT_TO_AGENT_CITATION"
+      ]
+    },
+    {
+      "agent_id": "AGENT-M4-EVIDENCE-001",
+      "role": "EVIDENCE_SCOUT",
+      "backend": "DETERMINISTIC_FIXTURE_V1",
+      "enabled": true,
+      "may_delegate": false,
+      "allowed_delegate_ids": [],
+      "maximum_delegation_depth": 0,
+      "final_decision_authority": false,
+      "allowed_inputs": ["BASELINE_RUN", "LOCAL_EVIDENCE", "RETRIEVAL_DIAGNOSTICS", "TASK_SCOPE"],
+      "allowed_tools": [
+        "READ_BASELINE_RUN",
+        "READ_LOCAL_EVIDENCE",
+        "READ_RETRIEVAL_DIAGNOSTICS",
+        "SEARCH_LOCAL_CORPUS",
+        "APPEND_EVIDENCE_LEDGER"
+      ],
+      "forbidden_capabilities": [
+        "NETWORK",
+        "EXTERNAL_API",
+        "ARBITRARY_FILESYSTEM",
+        "SHELL",
+        "SUBPROCESS",
+        "EMAIL",
+        "CALENDAR",
+        "BROWSER",
+        "DATABASE_WRITE",
+        "KNOWLEDGE_ACTIVATION",
+        "EXPERT_ROUTE_OVERRIDE",
+        "FINAL_DECISION_OVERRIDE",
+        "AGENT_TO_AGENT_CITATION"
+      ]
+    },
+    {
+      "agent_id": "AGENT-M4-SCOPE-001",
+      "role": "SCOPE_SENTINEL",
+      "backend": "DETERMINISTIC_FIXTURE_V1",
+      "enabled": true,
+      "may_delegate": false,
+      "allowed_delegate_ids": [],
+      "maximum_delegation_depth": 0,
+      "final_decision_authority": false,
+      "allowed_inputs": ["BASELINE_RUN", "LOCAL_EVIDENCE", "SCOPE_METADATA", "TASK_SCOPE"],
+      "allowed_tools": [
+        "READ_BASELINE_RUN",
+        "READ_LOCAL_EVIDENCE",
+        "SEARCH_LOCAL_CORPUS",
+        "READ_SCOPE_METADATA",
+        "APPEND_MATERIAL_OBJECTION"
+      ],
+      "forbidden_capabilities": [
+        "NETWORK",
+        "EXTERNAL_API",
+        "ARBITRARY_FILESYSTEM",
+        "SHELL",
+        "SUBPROCESS",
+        "EMAIL",
+        "CALENDAR",
+        "BROWSER",
+        "DATABASE_WRITE",
+        "KNOWLEDGE_ACTIVATION",
+        "EXPERT_ROUTE_OVERRIDE",
+        "FINAL_DECISION_OVERRIDE",
+        "AGENT_TO_AGENT_CITATION"
+      ]
+    },
+    {
+      "agent_id": "AGENT-M4-PROCESS-001",
+      "role": "PROCESS_TABLE_SCOUT",
+      "backend": "DETERMINISTIC_FIXTURE_V1",
+      "enabled": true,
+      "may_delegate": false,
+      "allowed_delegate_ids": [],
+      "maximum_delegation_depth": 0,
+      "final_decision_authority": false,
+      "allowed_inputs": ["BASELINE_RUN", "LOCAL_EVIDENCE", "TABLE_ROWS", "TASK_SCOPE"],
+      "allowed_tools": [
+        "READ_BASELINE_RUN",
+        "READ_LOCAL_EVIDENCE",
+        "SEARCH_LOCAL_CORPUS",
+        "READ_TABLE_ROWS",
+        "APPEND_EVIDENCE_LEDGER"
+      ],
+      "forbidden_capabilities": [
+        "NETWORK",
+        "EXTERNAL_API",
+        "ARBITRARY_FILESYSTEM",
+        "SHELL",
+        "SUBPROCESS",
+        "EMAIL",
+        "CALENDAR",
+        "BROWSER",
+        "DATABASE_WRITE",
+        "KNOWLEDGE_ACTIVATION",
+        "EXPERT_ROUTE_OVERRIDE",
+        "FINAL_DECISION_OVERRIDE",
+        "AGENT_TO_AGENT_CITATION"
+      ]
+    },
+    {
+      "agent_id": "AGENT-M4-SKEPTIC-001",
+      "role": "SKEPTIC",
+      "backend": "DETERMINISTIC_FIXTURE_V1",
+      "enabled": true,
+      "may_delegate": false,
+      "allowed_delegate_ids": [],
+      "maximum_delegation_depth": 0,
+      "final_decision_authority": false,
+      "allowed_inputs": ["BASELINE_RUN", "LOCAL_EVIDENCE", "CANDIDATE_CLAIMS", "CASE_CONTRACT"],
+      "allowed_tools": [
+        "READ_BASELINE_RUN",
+        "READ_LOCAL_EVIDENCE",
+        "READ_SCOPE_METADATA",
+        "READ_TABLE_ROWS",
+        "APPEND_MATERIAL_OBJECTION"
+      ],
+      "forbidden_capabilities": [
+        "NETWORK",
+        "EXTERNAL_API",
+        "ARBITRARY_FILESYSTEM",
+        "SHELL",
+        "SUBPROCESS",
+        "EMAIL",
+        "CALENDAR",
+        "BROWSER",
+        "DATABASE_WRITE",
+        "KNOWLEDGE_ACTIVATION",
+        "EXPERT_ROUTE_OVERRIDE",
+        "FINAL_DECISION_OVERRIDE",
+        "AGENT_TO_AGENT_CITATION"
+      ]
+    },
+    {
+      "agent_id": "AGENT-M4-COUNTERFACTUAL-001",
+      "role": "COUNTERFACTUAL_SENTINEL",
+      "backend": "DETERMINISTIC_FIXTURE_V1",
+      "enabled": true,
+      "may_delegate": false,
+      "allowed_delegate_ids": [],
+      "maximum_delegation_depth": 0,
+      "final_decision_authority": false,
+      "allowed_inputs": ["BASELINE_RUN", "CASE_CONTEXT", "COUNTERFACTUAL_POLICY", "TASK_SCOPE"],
+      "allowed_tools": [
+        "READ_BASELINE_RUN",
+        "READ_LOCAL_EVIDENCE",
+        "RUN_COUNTERFACTUAL_PIPELINE",
+        "APPEND_MATERIAL_OBJECTION"
+      ],
+      "forbidden_capabilities": [
+        "NETWORK",
+        "EXTERNAL_API",
+        "ARBITRARY_FILESYSTEM",
+        "SHELL",
+        "SUBPROCESS",
+        "EMAIL",
+        "CALENDAR",
+        "BROWSER",
+        "DATABASE_WRITE",
+        "KNOWLEDGE_ACTIVATION",
+        "EXPERT_ROUTE_OVERRIDE",
+        "FINAL_DECISION_OVERRIDE",
+        "AGENT_TO_AGENT_CITATION"
+      ]
+    }
+  ]
+}

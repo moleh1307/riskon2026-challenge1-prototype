@@ -1,0 +1,8 @@
+{
+  "schema_version": "1.0",
+  "columns": {
+    "filename": ["filename", "file_name", "file"],
+    "title": ["title", "page_title", "page title"],
+    "url": ["url", "page_url", "page url"]
+  }
+}

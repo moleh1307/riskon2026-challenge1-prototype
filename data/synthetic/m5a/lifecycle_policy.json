@@ -1,0 +1,33 @@
+{
+  "schema_version": "1.0",
+  "milestone": "M5A_GOVERNED_EVOLUTION_CONTRACT",
+  "lifecycle_states": [
+    "PROPOSED",
+    "TESTED",
+    "AWAITING_APPROVAL",
+    "APPROVED",
+    "ACTIVE",
+    "REJECTED",
+    "SUPERSEDED",
+    "EXPIRED",
+    "ROLLED_BACK"
+  ],
+  "canonical_transitions": [
+    {"from": "PROPOSED", "to": "TESTED", "requirement": "POLICY_CI_COMPLETED"},
+    {"from": "TESTED", "to": "AWAITING_APPROVAL", "requirement": "ALL_MANDATORY_CHECKS_PASS"},
+    {"from": "AWAITING_APPROVAL", "to": "APPROVED", "requirement": "HUMAN_APPROVAL_APPROVE"},
+    {"from": "APPROVED", "to": "ACTIVE", "requirement": "INCLUDED_IN_ACTIVE_KNOWLEDGE_RELEASE"}
+  ],
+  "alternative_transitions": [
+    {"from": "TESTED", "to": "REJECTED", "requirement": "MANDATORY_CHECK_FAILS"},
+    {"from": "AWAITING_APPROVAL", "to": "REJECTED", "requirement": "HUMAN_APPROVAL_REJECT"},
+    {"from": "ACTIVE", "to": "SUPERSEDED", "requirement": "NEW_RELEASE_REPLACES_PATCH"},
+    {"from": "ACTIVE", "to": "EXPIRED", "requirement": "REFERENCE_TIME_AFTER_EFFECTIVE_TO"},
+    {"from": "ACTIVE", "to": "ROLLED_BACK", "requirement": "EXPLICIT_ROLLBACK_RELEASE"}
+  ],
+  "automatic_approval_allowed": false,
+  "automatic_activation_allowed": false,
+  "approval_required_for_activation": true,
+  "release_required_for_activation": true,
+  "official_corpus_mutable": false
+}

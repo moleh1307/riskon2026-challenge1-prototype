@@ -1,0 +1,37 @@
+{
+  "schema_version": "1.0",
+  "milestone": "ER-B_EVALUATION_DASHBOARD",
+  "decision_labels": ["ANSWER", "CLARIFY", "ABSTAIN"],
+  "metric_definitions": [
+    {"id": "m0_m4d_regression", "label": "M0-M4D regression", "source": "M5B.metrics.regression"},
+    {"id": "m5b_governed_evolution", "label": "M5B governed-evolution cases", "source": "M5B.metrics.m5b_case_match_rate"},
+    {"id": "policy_ci_checks", "label": "Policy CI checks", "source": "M5B.metrics.policy_ci"},
+    {"id": "counterfactual_transitions", "label": "Counterfactual transitions", "source": "M5B.metrics.counterfactual"},
+    {"id": "scope_violations", "label": "Scope violations", "source": "M5B.metrics.scope_violations"},
+    {"id": "unsupported_claims", "label": "Unsupported claims", "source": "M5B.metrics.unsupported_claims"},
+    {"id": "unsafe_routing", "label": "Unsafe routing", "source": "M5B.metrics.unsafe_routing"},
+    {"id": "automatic_approvals", "label": "Automatic approvals", "source": "M5B.metrics.automatic_approval_count"},
+    {"id": "automatic_activations", "label": "Automatic activations", "source": "M5B.metrics.automatic_activation_count"},
+    {"id": "network_violations", "label": "Network violations", "source": "M5B.metrics.network_violation_count"}
+  ],
+  "safety_metric_definitions": [
+    {"id": "correct_abstention_rate", "label": "Correct abstention rate"},
+    {"id": "unnecessary_abstention_rate", "label": "Unnecessary abstention rate"},
+    {"id": "citation_validity", "label": "Citation validity"},
+    {"id": "critical_control_recall", "label": "Critical-control recall"},
+    {"id": "scope_violation_count", "label": "Scope violation count"},
+    {"id": "counterfactual_consistency", "label": "Counterfactual consistency"},
+    {"id": "route_function_accuracy", "label": "Route-function accuracy"}
+  ],
+  "evaluation_configs": [
+    "config/milestone0.toml",
+    "config/milestone1.toml",
+    "config/milestone2.toml",
+    "config/milestone3.toml",
+    "config/milestone4a.toml",
+    "config/milestone4b.toml",
+    "config/milestone4c.toml",
+    "config/milestone4d.toml",
+    "config/milestone5b.toml"
+  ]
+}

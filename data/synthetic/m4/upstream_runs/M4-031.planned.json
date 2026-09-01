@@ -1,0 +1,60 @@
+{
+  "fixture_schema_version": "1.0",
+  "fixture_origin": "SYNTHETIC_ORCHESTRA_BASELINE_V1",
+  "case_id": "M4-031",
+  "planned_verified_run": {
+    "query_plan": {
+      "plan_id": "m4-fixture-M4-031",
+      "original_query": "Does the Region Alpha rule apply to a Region Beta case?",
+      "normalised_query": "Does the Region Alpha rule apply to a Region Beta case?",
+      "intent": "APPLICABILITY",
+      "canonical_terms": ["region alpha", "region beta", "scope rule"],
+      "required_context_fields": ["region"],
+      "missing_context_fields": [],
+      "subqueries": [],
+      "retrieval_channels": ["EXACT", "WORD_TFIDF", "CHAR_TFIDF"],
+      "retrieval_skipped": false
+    },
+    "retrieval_diagnostics": {"entries": []},
+    "verified_run": {
+      "result": {
+        "trace_id": "m4-fixture-M4-031",
+        "decision": "ABSTAIN",
+        "answer": null,
+        "clarifying_question": null,
+        "reason_codes": ["SCOPE_MISMATCH"],
+        "evidence": [],
+        "route": {
+          "support_function": "BRM_SUITABILITY_LEAD",
+          "expert_id": null,
+          "routing_reason": "Frozen synthetic legacy support-function fixture",
+          "routing_confidence": 0.5
+        },
+        "answer_confidence": 0.0,
+        "routing_confidence": 0.5,
+        "confidence_kind": "DETERMINISTIC_GATE_PLACEHOLDER",
+        "detected_context": {
+          "region": "REGION_BETA",
+          "channel": "ADVISORY",
+          "workflow_stage": "SCOPE_REVIEW",
+          "need_type": "COMPLEX_CASE",
+          "missing_context": []
+        },
+        "missing_context": [],
+        "retrieved_sections": []
+      },
+      "verification": {
+        "status": "INSUFFICIENT",
+        "reason_codes": ["SCOPE_MISMATCH"],
+        "supported_claim_ids": [],
+        "unsupported_claim_ids": [],
+        "missing_required_claim_ids": [],
+        "scope_mismatches": ["REGION_ALPHA"],
+        "unresolved_required_references": [],
+        "unsupported_modalities": [],
+        "evidence_refs": [],
+        "explanation": "The frozen synthetic baseline contains a Region Beta scope conflict."
+      }
+    }
+  }
+}

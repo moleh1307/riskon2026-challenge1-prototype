@@ -1,0 +1,31 @@
+{
+  "schema_version": "1.0",
+  "network_version": "m3-network-v1",
+  "edges": [
+    {
+      "requester_team": "TEAM-FRONT-ALPHA",
+      "network_node": "NODE-BFS-ALPHA",
+      "weight": 1.0
+    },
+    {
+      "requester_team": "TEAM-FRONT-ALPHA",
+      "network_node": "NODE-BFS-ALPHA-SECONDARY",
+      "weight": 0.0
+    },
+    {
+      "requester_team": "TEAM-LEGAL-ALPHA",
+      "network_node": "NODE-LEGAL-GLOBAL-PRIMARY",
+      "weight": 1.0
+    },
+    {
+      "requester_team": "TEAM-LEGAL-ALPHA",
+      "network_node": "NODE-LEGAL-GLOBAL-SECONDARY",
+      "weight": 0.0
+    },
+    {
+      "requester_team": "TEAM-BRM-BETA",
+      "network_node": "NODE-BRM-BETA",
+      "weight": 1.0
+    }
+  ]
+}

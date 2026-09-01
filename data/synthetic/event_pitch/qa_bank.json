@@ -1,0 +1,132 @@
+{
+  "schema_version": "1.0",
+  "recommended_answer_seconds": [20, 40],
+  "items": [
+    {
+      "id": "QA-01",
+      "question": "Why not use standard RAG?",
+      "answer": "Retrieval is necessary but not sufficient. The supplied evaluation set shows correct pages still producing wrong answers through scope leakage, incomplete tables, missing controls and acronym errors.",
+      "source_basis": "RiskON evaluation set and M2 retrieval contract",
+      "recommended_seconds": 25
+    },
+    {
+      "id": "QA-02",
+      "question": "Is this really a multi-agent system?",
+      "answer": "The orchestration, bounded roles, independent discovery, fan-out/fan-in, material objections and counterfactual workers are real. The current backend is deterministic rather than model-driven so the confidential-data-safe demo is reproducible.",
+      "source_basis": "M4A–M4D contracts and ER-B runtime",
+      "recommended_seconds": 30
+    },
+    {
+      "id": "QA-03",
+      "question": "Where is the AI if there is no LLM?",
+      "answer": "The current system combines adaptive planning, hybrid retrieval, risk-based orchestration and structured decision intelligence. The worker contract is model-agnostic and can host approved local models later, but final evidence and governance controls remain deterministic.",
+      "source_basis": "M2–M5B interfaces and deterministic worker boundary",
+      "recommended_seconds": 30
+    },
+    {
+      "id": "QA-04",
+      "question": "Why use multiple workers?",
+      "answer": "Different failure modes require independent perspectives: evidence discovery, scope, tables, adversarial critique and counterfactual consistency.",
+      "source_basis": "M4B worker contract",
+      "recommended_seconds": 22
+    },
+    {
+      "id": "QA-05",
+      "question": "Why no majority vote?",
+      "answer": "Agent agreement is not evidence. One proven scope conflict or unsupported material claim must be sufficient to block an answer.",
+      "source_basis": "M4 material-objection gate",
+      "recommended_seconds": 20
+    },
+    {
+      "id": "QA-06",
+      "question": "What happens when sources conflict?",
+      "answer": "The contradiction remains an open material objection, the system abstains and routes to the appropriate expert.",
+      "source_basis": "Evidence Constitution and contradiction policy",
+      "recommended_seconds": 20
+    },
+    {
+      "id": "QA-07",
+      "question": "How do you prevent hallucinations?",
+      "answer": "Every substantive claim needs explicit evidence; scope, critical controls, references and modality are verified before ANSWER is permitted.",
+      "source_basis": "M1 evidence gate and M5B policy CI",
+      "recommended_seconds": 22
+    },
+    {
+      "id": "QA-08",
+      "question": "How do you choose the expert?",
+      "answer": "First choose the support function from the need and failure reason. Then apply hard mandate, region, jurisdiction and system filters before ranking eligible synthetic experts or using a functional queue.",
+      "source_basis": "M3 routing contract",
+      "recommended_seconds": 30
+    },
+    {
+      "id": "QA-09",
+      "question": "Why route to a queue instead of always naming a person?",
+      "answer": "A low-confidence person guess is less reliable than the correct functional destination. The router requires a minimum score and margin.",
+      "source_basis": "M3 minimum-score and margin policy",
+      "recommended_seconds": 22
+    },
+    {
+      "id": "QA-10",
+      "question": "Are your confidence values calibrated probabilities?",
+      "answer": "No. They are explicitly labelled deterministic heuristics. Probabilistic calibration requires representative real outcomes that are not yet available.",
+      "source_basis": "M3 routing confidence contract",
+      "recommended_seconds": 22
+    },
+    {
+      "id": "QA-11",
+      "question": "How does the system learn?",
+      "answer": "It does not learn by remembering every conversation. Expert resolutions become proposed knowledge patches that require Policy CI, separate human approval and explicit release activation.",
+      "source_basis": "M5A/M5B governed-evolution contract",
+      "recommended_seconds": 25
+    },
+    {
+      "id": "QA-12",
+      "question": "Can human approval override a failed Policy CI check?",
+      "answer": "No. Human approval is necessary but not sufficient. Failed mandatory safety checks block activation.",
+      "source_basis": "M5B Policy CI and approval gates",
+      "recommended_seconds": 20
+    },
+    {
+      "id": "QA-13",
+      "question": "What happens if a worker fails?",
+      "answer": "A baseline ANSWER is never silently returned after incomplete safety checks. The system fails closed. A safe baseline ABSTAIN may be preserved with an incomplete-orchestration flag and human route.",
+      "source_basis": "M4D failure contract",
+      "recommended_seconds": 30
+    },
+    {
+      "id": "QA-14",
+      "question": "How do you protect confidential information?",
+      "answer": "The current system is local-only, network-disabled and uses no external APIs or telemetry. Real event data remains outside Git and outside generated presentation artifacts.",
+      "source_basis": "ER-A/ER-B security boundary and confidentiality declaration",
+      "recommended_seconds": 25
+    },
+    {
+      "id": "QA-15",
+      "question": "How will you ingest the event data?",
+      "answer": "A read-only adapter validates the Excel manifest, inventories HTML, tables, links and assets, blocks unsafe packs and runs a compatibility smoke test before the corpus reaches the existing pipeline.",
+      "source_basis": "ER-A event intake contract",
+      "recommended_seconds": 30
+    },
+    {
+      "id": "QA-16",
+      "question": "What about information contained only in images?",
+      "answer": "The current safety behaviour is to abstain when image-only evidence cannot be verified. Image understanding is a known extension, not a capability we pretend is solved.",
+      "source_basis": "M1 modality gate and evaluation set",
+      "recommended_seconds": 25
+    },
+    {
+      "id": "QA-17",
+      "question": "Why no API or Kubernetes?",
+      "answer": "The challenge guidance describes them as banking architecture considerations rather than evaluation criteria. We prioritised the decision-quality kernel and kept clean typed interfaces for later integration.",
+      "source_basis": "RiskON architecture guidance and local-only scope",
+      "recommended_seconds": 25
+    },
+    {
+      "id": "QA-18",
+      "question": "What is the business value?",
+      "answer": "Routine questions stay self-service; uncertain cases arrive at experts with evidence, context and a case capsule; repeated expert resolutions can improve the knowledge base without uncontrolled policy drift.",
+      "source_basis": "RiskON challenge objective and ER-B stories",
+      "recommended_seconds": 25
+    }
+  ]
+}

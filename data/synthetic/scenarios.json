@@ -1,0 +1,65 @@
+[
+  {
+    "id": "M0-001",
+    "query": "What is the direct rule for a delegated order giver?",
+    "context": {},
+    "expected": {
+      "decision": "ANSWER",
+      "reason_codes": [],
+      "route": null,
+      "evidence": true
+    }
+  },
+  {
+    "id": "M0-002",
+    "query": "An alert has no workflow stage. What should the assistant ask before applying a workflow rule?",
+    "context": {},
+    "expected": {
+      "decision": "CLARIFY",
+      "reason_codes": ["MISSING_REQUIRED_CONTEXT"],
+      "clarifying_question": "Did the alert arise during an interactive advice session or during overnight portfolio monitoring?",
+      "route": null,
+      "answer": null
+    }
+  },
+  {
+    "id": "M0-003",
+    "query": "A Region Beta client asks whether the Region Alpha-only suitability policy applies. What should we do?",
+    "context": {"region": "REGION_BETA"},
+    "expected": {
+      "decision": "ABSTAIN",
+      "reason_codes": ["SCOPE_MISMATCH"],
+      "route": {
+        "support_function": "BRM_SUITABILITY_LEAD",
+        "expert_id": "SYN-BRM-BETA-001"
+      },
+      "answer": null
+    }
+  },
+  {
+    "id": "M0-004",
+    "query": "Show the alert matrix rows and their control types.",
+    "context": {},
+    "expected": {
+      "decision": "ANSWER",
+      "reason_codes": [],
+      "route": null,
+      "evidence": true,
+      "answer_contains": ["Concentration", "Regional", "Manual review"]
+    }
+  },
+  {
+    "id": "M0-005",
+    "query": "The platform has a technical network-timeout. Who should handle the failure?",
+    "context": {},
+    "expected": {
+      "decision": "ABSTAIN",
+      "reason_codes": ["TECHNICAL_FAILURE"],
+      "route": {
+        "support_function": "IT_SERVICE_DESK",
+        "expert_id": "SYN-IT-001"
+      },
+      "answer": null
+    }
+  }
+]

@@ -1,0 +1,31 @@
+{
+  "schema_version": "1.0",
+  "title": "RiskON Orchestra",
+  "tagline": "Many agents investigate. Evidence decides. Humans approve.",
+  "subcopy": "A local-first suitability assistant that answers with evidence, clarifies missing context, abstains safely, routes to the right support function, and evolves only through governed approval.",
+  "status_chips": ["OFFLINE", "SYNTHETIC DEMO", "NO EXTERNAL API", "AUDIT ENABLED"],
+  "sections": ["Live Product Stories", "Evaluation Dashboard", "Architecture & Governance"],
+  "architecture": [
+    {"node": "Question", "description": "Receives a question and any explicitly supplied structured context."},
+    {"node": "Event Corpus Adapter", "description": "Keeps event-day source intake local, inspectable, and separate from the runtime."},
+    {"node": "Query Planner", "description": "Normalises the query and identifies required context and retrieval channels."},
+    {"node": "Hybrid Retrieval", "description": "Combines deterministic retrieval signals while retaining local provenance."},
+    {"node": "Context & Scope Detection", "description": "Checks the facts that determine whether evidence applies."},
+    {"node": "Risk-Adaptive Orchestra", "description": "Activates only the bounded workers justified by the assessed risk."},
+    {"node": "Evidence Constitution", "description": "Allows only explicitly supported, scope-valid claims through the gate."},
+    {"node": "ANSWER / CLARIFY / ABSTAIN", "description": "Returns the safe decision permitted by the evidence contract."},
+    {"node": "Expert Router", "description": "Routes abstentions to a functional support queue without inventing a person."},
+    {"node": "Governed Knowledge Patch", "description": "Adds approved knowledge only after Policy CI and independent human approval."}
+  ],
+  "principles": [
+    "Risk-adaptive activation",
+    "Evidence over consensus",
+    "Material objections block unsafe answers",
+    "Human approval before knowledge activation"
+  ],
+  "footer": [
+    "Synthetic local demonstration for RiskON 2026.",
+    "No real client or Bank data is included.",
+    "This demo is not legal or investment advice."
+  ]
+}

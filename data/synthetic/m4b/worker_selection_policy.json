@@ -1,0 +1,51 @@
+{
+  "schema_version": "1.0",
+  "backend": "DETERMINISTIC_WORKER_V1",
+  "maximum_worker_depth": 1,
+  "maximum_parallel_discovery_workers": 3,
+  "maximum_challenge_rounds": 1,
+  "canonical_role_order": [
+    "EVIDENCE_SCOUT",
+    "SCOPE_SENTINEL",
+    "PROCESS_TABLE_SCOUT",
+    "SKEPTIC",
+    "COUNTERFACTUAL_SENTINEL"
+  ],
+  "signal_mappings": [
+    {
+      "risk_signal": "CRITICAL_CONTROL_RISK",
+      "required_agent_roles": ["EVIDENCE_SCOUT", "SKEPTIC"],
+      "status": "IMPLEMENTED"
+    },
+    {
+      "risk_signal": "SCOPE_SENSITIVE",
+      "required_agent_roles": ["EVIDENCE_SCOUT", "SCOPE_SENTINEL", "SKEPTIC"],
+      "status": "IMPLEMENTED"
+    },
+    {
+      "risk_signal": "JURISDICTION_SENSITIVE",
+      "required_agent_roles": ["EVIDENCE_SCOUT", "SCOPE_SENTINEL", "SKEPTIC"],
+      "status": "IMPLEMENTED"
+    },
+    {
+      "risk_signal": "TABLE_DEPENDENT",
+      "required_agent_roles": ["PROCESS_TABLE_SCOUT", "SKEPTIC"],
+      "status": "IMPLEMENTED"
+    },
+    {
+      "risk_signal": "CONTRADICTORY_SOURCES",
+      "required_agent_roles": ["EVIDENCE_SCOUT", "SCOPE_SENTINEL", "SKEPTIC"],
+      "status": "IMPLEMENTED"
+    },
+    {
+      "risk_signal": "PROMPT_INJECTION_SIGNAL",
+      "required_agent_roles": ["EVIDENCE_SCOUT", "SKEPTIC"],
+      "status": "IMPLEMENTED"
+    },
+    {
+      "risk_signal": "COUNTERFACTUAL_REQUIRED",
+      "required_agent_roles": ["COUNTERFACTUAL_SENTINEL"],
+      "status": "NOT_IMPLEMENTED"
+    }
+  ]
+}

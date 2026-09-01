@@ -1,0 +1,318 @@
+{
+  "schema_version": "1.0",
+  "cases": [
+    {
+      "id": "M2-013",
+      "query": "What triggers an Emmiter Density Alert during an interactive session?",
+      "input_context": {
+        "workflow_stage": "interactive_session"
+      },
+      "expected_plan": {
+        "intent": "ALERT_RESOLUTION",
+        "normalised_query": "What triggers an emitter density alert during an interactive session?",
+        "canonical_terms": ["emitter density alert", "interactive session"],
+        "required_context_fields": ["workflow_stage"],
+        "missing_context_fields": [],
+        "subqueries": [],
+        "retrieval_channels": ["EXACT", "WORD_TFIDF", "CHAR_TFIDF"],
+        "retrieval_skipped": false
+      },
+      "expected_retrieval": {
+        "expected_top1_refs": [
+          "local://synthetic-m2/emitter_density_workflows.html#section-interactive-session"
+        ],
+        "required_refs_at_k": [
+          "local://synthetic-m2/emitter_density_workflows.html#section-interactive-session"
+        ],
+        "forbidden_refs": [
+          "local://synthetic-m2/emitter_density_workflows.html#section-overnight-monitoring"
+        ],
+        "required_table_row_refs": [],
+        "forbidden_table_row_refs": []
+      },
+      "expected_result": {
+        "decision": "ANSWER",
+        "reason_codes": [],
+        "clarifying_question": null,
+        "required_claim_ids": ["interactive_resolution_before_submission"],
+        "forbidden_claim_ids": ["overnight_resolution_deadline"],
+        "expected_route": null
+      }
+    },
+    {
+      "id": "M2-014",
+      "query": "Can a delegated operator use ARC, meaning Advisory Review Code?",
+      "input_context": {},
+      "expected_plan": {
+        "intent": "REFERENCE_LOOKUP",
+        "normalised_query": "Can a delegated operator use advisory review code, meaning Advisory Review Code?",
+        "canonical_terms": ["advisory review code", "delegated operator"],
+        "required_context_fields": [],
+        "missing_context_fields": [],
+        "subqueries": [],
+        "retrieval_channels": ["EXACT", "WORD_TFIDF", "CHAR_TFIDF"],
+        "retrieval_skipped": false
+      },
+      "expected_retrieval": {
+        "expected_top1_refs": [
+          "local://synthetic-m2/acronym_registry.html#section-advisory-review-code"
+        ],
+        "required_refs_at_k": [
+          "local://synthetic-m2/acronym_registry.html#section-advisory-review-code"
+        ],
+        "forbidden_refs": [
+          "local://synthetic-m2/acronym_registry.html#section-account-routing-console"
+        ],
+        "required_table_row_refs": [],
+        "forbidden_table_row_refs": []
+      },
+      "expected_result": {
+        "decision": "ANSWER",
+        "reason_codes": [],
+        "clarifying_question": null,
+        "required_claim_ids": ["delegated_operator_arc_use"],
+        "forbidden_claim_ids": ["account_routing_console_rule"],
+        "expected_route": null
+      }
+    },
+    {
+      "id": "M2-015",
+      "query": "Does Control Delta apply to Service Basic in Region Beta?",
+      "input_context": {
+        "region": "BETA",
+        "service_model": "BASIC"
+      },
+      "expected_plan": {
+        "intent": "APPLICABILITY",
+        "normalised_query": "Does Control Delta apply to Service Basic in Region Beta?",
+        "canonical_terms": ["control delta", "service basic", "region beta"],
+        "required_context_fields": ["region", "service_model"],
+        "missing_context_fields": [],
+        "subqueries": [],
+        "retrieval_channels": ["EXACT", "WORD_TFIDF", "CHAR_TFIDF"],
+        "retrieval_skipped": false
+      },
+      "expected_retrieval": {
+        "expected_top1_refs": [
+          "local://synthetic-m2/control_delta_region_beta.html#section-service-basic"
+        ],
+        "required_refs_at_k": [
+          "local://synthetic-m2/control_delta_region_beta.html#section-service-basic"
+        ],
+        "forbidden_refs": [
+          "local://synthetic-m2/control_delta_region_alpha.html#section-service-plus"
+        ],
+        "required_table_row_refs": [],
+        "forbidden_table_row_refs": []
+      },
+      "expected_result": {
+        "decision": "ANSWER",
+        "reason_codes": [],
+        "clarifying_question": null,
+        "required_claim_ids": ["delta_applies_beta_basic"],
+        "forbidden_claim_ids": [],
+        "expected_route": null
+      }
+    },
+    {
+      "id": "M2-016",
+      "query": "Which session alerts are active for Advisory Location Alpha and a Premium mandate?",
+      "input_context": {
+        "location": "ALPHA",
+        "mandate": "PREMIUM"
+      },
+      "expected_plan": {
+        "intent": "CONFIGURATION_LOOKUP",
+        "normalised_query": "Which session alerts are active for Advisory Location Alpha and a Premium mandate?",
+        "canonical_terms": ["session alerts", "advisory location alpha", "premium mandate"],
+        "required_context_fields": ["location", "mandate"],
+        "missing_context_fields": [],
+        "subqueries": [],
+        "retrieval_channels": ["EXACT", "TABLE_ROW", "WORD_TFIDF", "CHAR_TFIDF"],
+        "retrieval_skipped": false
+      },
+      "expected_retrieval": {
+        "expected_top1_refs": [
+          "local://synthetic-m2/alert_configuration.html#section-session-alerts:table-1:row-1"
+        ],
+        "required_refs_at_k": [
+          "local://synthetic-m2/alert_configuration.html#section-session-alerts:table-1:row-1",
+          "local://synthetic-m2/alert_configuration.html#section-session-alerts:table-1:row-2",
+          "local://synthetic-m2/alert_configuration.html#section-session-alerts:table-1:row-3"
+        ],
+        "forbidden_refs": [],
+        "required_table_row_refs": [
+          "local://synthetic-m2/alert_configuration.html#section-session-alerts:table-1:row-1",
+          "local://synthetic-m2/alert_configuration.html#section-session-alerts:table-1:row-2",
+          "local://synthetic-m2/alert_configuration.html#section-session-alerts:table-1:row-3"
+        ],
+        "forbidden_table_row_refs": [
+          "local://synthetic-m2/alert_configuration.html#section-session-alerts:table-1:row-4",
+          "local://synthetic-m2/alert_configuration.html#section-session-alerts:table-1:row-5"
+        ]
+      },
+      "expected_result": {
+        "decision": "ANSWER",
+        "reason_codes": [],
+        "clarifying_question": null,
+        "required_claim_ids": [
+          "atlas_alert_active",
+          "beacon_alert_active",
+          "cedar_alert_active"
+        ],
+        "forbidden_claim_ids": [
+          "drift_overnight_alert",
+          "inactive_orchid_alert"
+        ],
+        "expected_route": null
+      }
+    },
+    {
+      "id": "M2-017",
+      "query": "How long do I have to resolve the Emitter Density Alert?",
+      "input_context": {},
+      "expected_plan": {
+        "intent": "ALERT_RESOLUTION",
+        "normalised_query": "How long do I have to resolve the emitter density alert?",
+        "canonical_terms": ["emitter density alert"],
+        "required_context_fields": ["workflow_stage"],
+        "missing_context_fields": ["workflow_stage"],
+        "subqueries": [],
+        "retrieval_channels": [],
+        "retrieval_skipped": true
+      },
+      "expected_retrieval": {
+        "expected_top1_refs": [],
+        "required_refs_at_k": [],
+        "forbidden_refs": [],
+        "required_table_row_refs": [],
+        "forbidden_table_row_refs": []
+      },
+      "expected_result": {
+        "decision": "CLARIFY",
+        "reason_codes": ["MISSING_REQUIRED_CONTEXT"],
+        "clarifying_question": "Did the alert arise during an interactive session or during overnight monitoring?",
+        "required_claim_ids": [],
+        "forbidden_claim_ids": [],
+        "expected_route": null
+      }
+    },
+    {
+      "id": "M2-018",
+      "query": "How do I move a customer from standard protection to the elected tier?",
+      "input_context": {},
+      "expected_plan": {
+        "intent": "PROCEDURE",
+        "normalised_query": "How do I move a customer from standard protection to the elected tier?",
+        "canonical_terms": ["client tier election process", "elected tier"],
+        "required_context_fields": [],
+        "missing_context_fields": [],
+        "subqueries": [],
+        "retrieval_channels": ["EXACT", "WORD_TFIDF", "CHAR_TFIDF"],
+        "retrieval_skipped": false
+      },
+      "expected_retrieval": {
+        "expected_top1_refs": [
+          "local://synthetic-m2/tier_election_process.html#section-process"
+        ],
+        "required_refs_at_k": [
+          "local://synthetic-m2/tier_election_process.html#section-process"
+        ],
+        "forbidden_refs": [],
+        "required_table_row_refs": [],
+        "forbidden_table_row_refs": []
+      },
+      "expected_result": {
+        "decision": "ANSWER",
+        "reason_codes": [],
+        "clarifying_question": null,
+        "required_claim_ids": [
+          "tier_election_eligibility",
+          "tier_election_approval",
+          "tier_election_system_confirmation"
+        ],
+        "forbidden_claim_ids": [],
+        "expected_route": null
+      }
+    },
+    {
+      "id": "M2-019",
+      "query": "What are the eligibility conditions, and where is the application form?",
+      "input_context": {},
+      "expected_plan": {
+        "intent": "PROCEDURE",
+        "normalised_query": "What are the eligibility conditions, and where is the application form?",
+        "canonical_terms": ["eligibility conditions", "application form"],
+        "required_context_fields": [],
+        "missing_context_fields": [],
+        "subqueries": [
+          "What are the eligibility conditions?",
+          "Where is the application form?"
+        ],
+        "retrieval_channels": ["EXACT", "WORD_TFIDF", "CHAR_TFIDF"],
+        "retrieval_skipped": false
+      },
+      "expected_retrieval": {
+        "expected_top1_refs": [
+          "local://synthetic-m2/tier_election_process.html#section-eligibility",
+          "local://synthetic-m2/tier_election_process.html#section-form-location"
+        ],
+        "required_refs_at_k": [
+          "local://synthetic-m2/tier_election_process.html#section-eligibility",
+          "local://synthetic-m2/tier_election_process.html#section-form-location",
+          "local://synthetic-m2/attachments/tier-election-form.txt"
+        ],
+        "forbidden_refs": [],
+        "required_table_row_refs": [],
+        "forbidden_table_row_refs": []
+      },
+      "expected_result": {
+        "decision": "ANSWER",
+        "reason_codes": [],
+        "clarifying_question": null,
+        "required_claim_ids": [
+          "tier_election_eligibility",
+          "tier_election_form_location"
+        ],
+        "forbidden_claim_ids": [],
+        "expected_route": null
+      }
+    },
+    {
+      "id": "M2-020",
+      "query": "What is a suitable proposal?",
+      "input_context": {},
+      "expected_plan": {
+        "intent": "DEFINITION",
+        "normalised_query": "What is a suitable proposal?",
+        "canonical_terms": ["suitable proposal"],
+        "required_context_fields": [],
+        "missing_context_fields": [],
+        "subqueries": [],
+        "retrieval_channels": ["EXACT", "WORD_TFIDF", "CHAR_TFIDF"],
+        "retrieval_skipped": false
+      },
+      "expected_retrieval": {
+        "expected_top1_refs": [
+          "local://synthetic-m2/suitable_proposal_definition.html#section-definition"
+        ],
+        "required_refs_at_k": [
+          "local://synthetic-m2/suitable_proposal_definition.html#section-definition"
+        ],
+        "forbidden_refs": [
+          "local://synthetic-m2/solicitation_workflow.html#section-reverse-request"
+        ],
+        "required_table_row_refs": [],
+        "forbidden_table_row_refs": []
+      },
+      "expected_result": {
+        "decision": "ANSWER",
+        "reason_codes": [],
+        "clarifying_question": null,
+        "required_claim_ids": ["suitable_proposal_definition"],
+        "forbidden_claim_ids": ["reverse_request_workflow"],
+        "expected_route": null
+      }
+    }
+  ]
+}

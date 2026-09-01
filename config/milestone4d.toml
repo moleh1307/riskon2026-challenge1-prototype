@@ -1,0 +1,50 @@
+[base]
+config = "config/milestone4c.toml"
+
+[orchestra.m4d]
+evaluation_cases = "data/synthetic/m4d/evaluation_cases.json"
+manifest = "data/synthetic/m4d/manifest.xlsx"
+knowledge_root = "data/synthetic/m4d/knowledge"
+runtime_policy = "data/synthetic/m4d/runtime_policy.json"
+failure_policy = "data/synthetic/m4d/failure_policy.json"
+baseline_runs_root = "data/synthetic/m4d/baseline_runs"
+counterfactual_runs_root = "data/synthetic/m4d/counterfactual_runs"
+generated_root = "data/generated/m4d"
+
+auto_activation_enabled = true
+counterfactual_backend = "LOCAL_PLANNED_PIPELINE_V1"
+retry_count = 0
+partial_answer_enabled = false
+
+maximum_total_worker_tasks = 7
+maximum_worker_depth = 1
+maximum_parallel_discovery_workers = 3
+maximum_challenge_rounds = 1
+maximum_counterfactual_variants = 3
+maximum_counterfactual_depth = 1
+
+low_retrieval_margin_threshold = 0.015
+default_routing_profile = "default"
+
+[evaluation]
+included_cases = [
+  "M4D-041",
+  "M4D-042",
+  "M4D-043",
+  "M4D-044",
+  "M4D-045",
+]
+expected_cases = 5
+expected_fast_path = 1
+expected_short_circuit_clarify = 1
+expected_human_first = 1
+expected_dual_check = 1
+expected_full_orchestra = 1
+expected_local_counterfactual_transitions = 3
+
+[security]
+network_enabled = false
+external_api_enabled = false
+recursive_orchestration_enabled = false
+counterfactual_routing_enabled = false
+agent_to_agent_citation_enabled = false

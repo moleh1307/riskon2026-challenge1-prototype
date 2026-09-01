@@ -1,0 +1,21 @@
+{
+  "schema_version": "1.0",
+  "dimensions": [
+    {
+      "dimension": "region",
+      "values": ["REGION_ALPHA", "REGION_BETA"],
+      "replacements": [
+        {"from": "REGION_ALPHA", "to": "REGION_BETA"},
+        {"from": "REGION_BETA", "to": "REGION_ALPHA"}
+      ]
+    },
+    {
+      "dimension": "service_model",
+      "values": ["SERVICE_BASIC", "SERVICE_PLUS"],
+      "replacements": [
+        {"from": "SERVICE_BASIC", "to": "SERVICE_PLUS"},
+        {"from": "SERVICE_PLUS", "to": "SERVICE_BASIC"}
+      ]
+    }
+  ]
+}

@@ -1,0 +1,119 @@
+{
+  "schema_version": "1.0",
+  "milestone": "M4C_COUNTERFACTUAL_SENTINEL",
+  "cases": [
+    {
+      "id": "M4-035",
+      "m4_contract_ref": "local://synthetic-m4/evaluation_cases.json#M4-035",
+      "baseline_fixture_ref": "local://synthetic-m4/upstream-runs/M4-035.planned.json",
+      "runner_backend": "FROZEN_COUNTERFACTUAL_FIXTURE_V1",
+      "expected_agent_roles": [
+        "EVIDENCE_SCOUT",
+        "SCOPE_SENTINEL",
+        "COUNTERFACTUAL_SENTINEL"
+      ],
+      "expected_task_count": 3,
+      "variants": [
+        {
+          "variant_id": "M4-035-CF-01",
+          "dimension": "region",
+          "operation": "REPLACE",
+          "from_value": "REGION_BETA",
+          "to_value": "REGION_ALPHA",
+          "expectation_rule_id": "EXACT_SCOPE_REPLACED",
+          "expected_decision": "ABSTAIN",
+          "expected_reason_codes": ["SCOPE_MISMATCH"],
+          "actual_fixture_ref": "local://synthetic-m4c/counterfactual-runs/M4-035-region-alpha.planned.json"
+        },
+        {
+          "variant_id": "M4-035-CF-02",
+          "dimension": "service_model",
+          "operation": "REPLACE",
+          "from_value": "SERVICE_BASIC",
+          "to_value": "SERVICE_PLUS",
+          "expectation_rule_id": "EXACT_SCOPE_REPLACED",
+          "expected_decision": "ABSTAIN",
+          "expected_reason_codes": ["SCOPE_MISMATCH"],
+          "actual_fixture_ref": "local://synthetic-m4c/counterfactual-runs/M4-035-service-plus.planned.json"
+        },
+        {
+          "variant_id": "M4-035-CF-03",
+          "dimension": "region",
+          "operation": "REMOVE",
+          "from_value": "REGION_BETA",
+          "to_value": null,
+          "expectation_rule_id": "REQUIRED_CONTEXT_REMOVED",
+          "expected_decision": "CLARIFY",
+          "expected_reason_codes": ["MISSING_REQUIRED_CONTEXT"],
+          "actual_fixture_ref": "local://synthetic-m4c/counterfactual-runs/M4-035-region-removed.planned.json"
+        }
+      ],
+      "expected_material_objections": [],
+      "expected_final": {
+        "decision": "ANSWER",
+        "reason_codes": [],
+        "answer_required": true,
+        "clarifying_question": null,
+        "open_material_objection_count": 0,
+        "counterfactual_count": 3,
+        "route": null,
+        "case_capsule_required": false
+      },
+      "expected_route": null
+    },
+    {
+      "id": "M4-036",
+      "m4_contract_ref": "local://synthetic-m4/evaluation_cases.json#M4-036",
+      "baseline_fixture_ref": "local://synthetic-m4/upstream-runs/M4-036.planned.json",
+      "runner_backend": "FROZEN_COUNTERFACTUAL_FIXTURE_V1",
+      "expected_agent_roles": [
+        "EVIDENCE_SCOUT",
+        "SCOPE_SENTINEL",
+        "SKEPTIC",
+        "COUNTERFACTUAL_SENTINEL"
+      ],
+      "expected_task_count": 4,
+      "variants": [
+        {
+          "variant_id": "M4-036-CF-01",
+          "dimension": "service_model",
+          "operation": "REPLACE",
+          "from_value": "SERVICE_BASIC",
+          "to_value": "SERVICE_PLUS",
+          "expectation_rule_id": "EXACT_SCOPE_REPLACED",
+          "expected_decision": "ABSTAIN",
+          "expected_reason_codes": ["SCOPE_MISMATCH"],
+          "actual_fixture_ref": "local://synthetic-m4c/counterfactual-runs/M4-036-service-plus.planned.json"
+        }
+      ],
+      "expected_material_objections": [
+        {
+          "reason_code": "COUNTERFACTUAL_SCOPE_LEAK",
+          "target_claim_id": "ORCHESTRA_FINAL_ANSWER",
+          "materiality": "MATERIAL",
+          "status": "OPEN",
+          "resolvable_by": "HUMAN_REVIEW"
+        }
+      ],
+      "expected_final": {
+        "decision": "ABSTAIN",
+        "reason_codes": ["SCOPE_MISMATCH"],
+        "answer_required": false,
+        "clarifying_question": null,
+        "open_material_objection_count": 1,
+        "counterfactual_count": 1,
+        "route": {
+          "support_function": "BRM_SUITABILITY_LEAD",
+          "route_mode": "FUNCTIONAL_QUEUE",
+          "selected_expert_id": null
+        },
+        "case_capsule_required": true
+      },
+      "expected_route": {
+        "support_function": "BRM_SUITABILITY_LEAD",
+        "route_mode": "FUNCTIONAL_QUEUE",
+        "selected_expert_id": null
+      }
+    }
+  ]
+}

@@ -1,0 +1,39 @@
+{
+  "schema_version": "1.0",
+  "fixture_origin": "SYNTHETIC_COUNTERFACTUAL_RUN_V1",
+  "backend": "FROZEN_COUNTERFACTUAL_FIXTURE_V1",
+  "fixtures": [
+    {
+      "variant_id": "M4-035-CF-01",
+      "baseline_plan_id": "m4-fixture-M4-035",
+      "context_delta": {"dimension": "region", "before": "REGION_BETA", "after": "REGION_ALPHA"},
+      "fixture_ref": "local://synthetic-m4c/counterfactual-runs/M4-035-region-alpha.planned.json",
+      "actual_decision": "ABSTAIN",
+      "actual_reason_codes": ["SCOPE_MISMATCH"]
+    },
+    {
+      "variant_id": "M4-035-CF-02",
+      "baseline_plan_id": "m4-fixture-M4-035",
+      "context_delta": {"dimension": "service_model", "before": "SERVICE_BASIC", "after": "SERVICE_PLUS"},
+      "fixture_ref": "local://synthetic-m4c/counterfactual-runs/M4-035-service-plus.planned.json",
+      "actual_decision": "ABSTAIN",
+      "actual_reason_codes": ["SCOPE_MISMATCH"]
+    },
+    {
+      "variant_id": "M4-035-CF-03",
+      "baseline_plan_id": "m4-fixture-M4-035",
+      "context_delta": {"dimension": "region", "before": "REGION_BETA", "after": null},
+      "fixture_ref": "local://synthetic-m4c/counterfactual-runs/M4-035-region-removed.planned.json",
+      "actual_decision": "CLARIFY",
+      "actual_reason_codes": ["MISSING_REQUIRED_CONTEXT"]
+    },
+    {
+      "variant_id": "M4-036-CF-01",
+      "baseline_plan_id": "m4-fixture-M4-036",
+      "context_delta": {"dimension": "service_model", "before": "SERVICE_BASIC", "after": "SERVICE_PLUS"},
+      "fixture_ref": "local://synthetic-m4c/counterfactual-runs/M4-036-service-plus.planned.json",
+      "actual_decision": "ANSWER",
+      "actual_reason_codes": []
+    }
+  ]
+}

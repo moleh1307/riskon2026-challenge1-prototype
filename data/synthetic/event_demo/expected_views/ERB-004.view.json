@@ -1,0 +1,25 @@
+{
+  "schema_version": "1.0",
+  "case_id": "ERB-004",
+  "source_case_id": "M4D-043",
+  "decision": "ABSTAIN",
+  "activation_profile": "HUMAN_FIRST",
+  "agent_roles": [],
+  "reason_codes": ["UNRESOLVED_REQUIRED_REFERENCE"],
+  "answer_present": false,
+  "clarifying_question": null,
+  "route": {
+    "support_function": "BUSINESS_FRONT_SUPPORT",
+    "route_mode": "FUNCTIONAL_QUEUE",
+    "queue_id": "QUEUE-BFS-GLOBAL",
+    "selected_expert_id": null,
+    "routing_reason": "Structured M1 selector UNRESOLVED_REQUIRED_REFERENCE matched BUSINESS_FRONT_SUPPORT",
+    "routing_confidence": 0.5,
+    "confidence_kind": "DETERMINISTIC_ROUTING_HEURISTIC_V1"
+  },
+  "evidence_required": true,
+  "counterfactuals": [],
+  "governance": null,
+  "case_capsule_required": true,
+  "audit_reference": "m4d-eval-M4D-043"
+}

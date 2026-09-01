@@ -1,0 +1,28 @@
+{
+  "schema_version": "1.0",
+  "overlay_name": "Approved Knowledge Overlay",
+  "official_corpus_immutable": true,
+  "versioned": true,
+  "active_selection": {
+    "status": "ACTIVE",
+    "effective_from_lte_reference_time": true,
+    "effective_to_gt_reference_time_or_null": true
+  },
+  "activation_requirements": [
+    "APPROVED_PATCH_ONLY",
+    "ACTIVE_KNOWLEDGE_RELEASE_REQUIRED",
+    "ALL_MANDATORY_POLICY_CI_CHECKS_PASS",
+    "HUMAN_APPROVAL_REQUIRED",
+    "SEPARATION_OF_DUTIES_REQUIRED"
+  ],
+  "mutation_policy": {
+    "official_corpus_write_allowed": false,
+    "silent_patch_overwrite_allowed": false,
+    "rollback_reactivates_old_release": false
+  },
+  "expiry_policy": {
+    "expired_patch_retrievable": false,
+    "expired_patch_status": "EXPIRED",
+    "expired_patch_fallback": "AUTHORITATIVE_BASE_CORPUS_OR_ABSTAIN"
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "schema_version": "1.0",
+  "title": "RiskON Orchestra",
+  "tagline": "Many agents investigate. Evidence decides. Humans approve.",
+  "supporting_line": "A risk-adaptive suitability assistant that answers, clarifies, abstains, routes and evolves safely.",
+  "footer": "Synthetic local demonstration — no real client or Bank data",
+  "disclaimer": "This presentation uses synthetic local data only. It is not legal or investment advice.",
+  "font_family": "Arial",
+  "palette_keys": ["navy", "white", "warm_sand", "green", "amber", "red"]
+}

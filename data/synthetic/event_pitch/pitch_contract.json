@@ -1,0 +1,59 @@
+{
+  "schema_version": "1.0",
+  "milestone": "ER-C_FINAL_PITCH_PACKAGE",
+  "deck": {
+    "format": "pptx",
+    "aspect_ratio": "16:9",
+    "slide_width_px": 1280,
+    "slide_height_px": 720,
+    "main_slide_count": 8,
+    "appendix_slide_count": 4,
+    "total_slide_count": 12,
+    "animations_required": false,
+    "external_hyperlinks": false,
+    "external_media": false
+  },
+  "palette": {
+    "navy": "#0B1F33",
+    "white": "#FFFFFF",
+    "warm_sand": "#F2E7D5",
+    "green": "#2E8B57",
+    "amber": "#D99000",
+    "red": "#B84545",
+    "ink": "#17212B",
+    "muted": "#5C6B77",
+    "line": "#D7DEE4"
+  },
+  "fonts": ["Arial", "Aptos", "Calibri"],
+  "slides": [
+    {"slide_id": "S01", "slide_number": 1, "section": "main", "kind": "title", "required": true},
+    {"slide_id": "S02", "slide_number": 2, "section": "main", "kind": "problem", "required": true},
+    {"slide_id": "S03", "slide_number": 3, "section": "main", "kind": "decision", "required": true},
+    {"slide_id": "S04", "slide_number": 4, "section": "main", "kind": "architecture", "required": true},
+    {"slide_id": "S05", "slide_number": 5, "section": "main", "kind": "demo_interstitial", "required": true},
+    {"slide_id": "S06", "slide_number": 6, "section": "main", "kind": "governance", "required": true},
+    {"slide_id": "S07", "slide_number": 7, "section": "main", "kind": "metrics", "required": true},
+    {"slide_id": "S08", "slide_number": 8, "section": "main", "kind": "value", "required": true},
+    {"slide_id": "S09", "slide_number": 9, "section": "appendix", "kind": "routing", "required": true},
+    {"slide_id": "S10", "slide_number": 10, "section": "appendix", "kind": "security", "required": true},
+    {"slide_id": "S11", "slide_number": 11, "section": "appendix", "kind": "event_adaptation", "required": true},
+    {"slide_id": "S12", "slide_number": 12, "section": "appendix", "kind": "limitations", "required": true}
+  ],
+  "required_slide_fields": [
+    "slide_id",
+    "title",
+    "purpose",
+    "source_label",
+    "speaker_key_message",
+    "timing_profile_visibility"
+  ],
+  "security": {
+    "network_enabled": false,
+    "external_api_enabled": false,
+    "telemetry_enabled": false,
+    "server_enabled": false,
+    "real_names_allowed": false,
+    "absolute_paths_allowed": false,
+    "confidential_source_text_allowed": false
+  }
+}

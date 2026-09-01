@@ -1,0 +1,19 @@
+{
+  "approval_id": "M5A-049-REJECTION",
+  "patch_id": "M5A-049-PATCH",
+  "actor_type": "HUMAN_ROLE",
+  "actor_role_id": "SYN-ROLE-KNOWLEDGE-OWNER-001",
+  "decision": "REJECT",
+  "timestamp_utc": "2026-08-27T12:04:00Z",
+  "reviewed_claim_ids": ["meridian_beta_basic_applies"],
+  "reviewed_scope": {
+    "regions": ["REGION_ALPHA", "REGION_BETA"],
+    "jurisdictions": [],
+    "service_models": ["SERVICE_BASIC", "SERVICE_PLUS"],
+    "solicitation_types": [],
+    "workflow_stages": [],
+    "client_classifications": [],
+    "systems": []
+  },
+  "comment": "The proposed patch scope exceeds the candidate resolution scope."
+}

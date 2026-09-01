@@ -1,0 +1,405 @@
+{
+  "schema_version": "1.1",
+  "cases": [
+    {
+      "id": "M3-021",
+      "source_scenario_id": "M1-009",
+      "source_scenario_role": "LINEAGE_ONLY",
+      "upstream_fixture_ref": "local://synthetic-m3/upstream-runs/M3-021.planned.json",
+      "routing_profile": "default",
+      "routing_context": {
+        "need_type": "ROUTINE_PROCESS",
+        "reason_codes": ["UNRESOLVED_REQUIRED_REFERENCE"],
+        "topics": ["exception request"],
+        "jurisdiction": null,
+        "region": null,
+        "system": null,
+        "requester_team": "TEAM-FRONT-ALPHA"
+      },
+      "expected_legacy_route_function": "BUSINESS_FRONT_SUPPORT",
+      "expected_route": {
+        "support_function": "BUSINESS_FRONT_SUPPORT",
+        "route_mode": "PERSON",
+        "selected_expert_id": "SYN3-BFS-ALPHA-001",
+        "queue_id": "QUEUE-BFS-GLOBAL",
+        "support_model_version": "m3-v1",
+        "confidence_kind": "DETERMINISTIC_ROUTING_HEURISTIC_V1",
+        "expected_fallback_reason": null
+      },
+      "expected_candidates": {
+        "required_top3_ids": ["SYN3-BFS-ALPHA-001", "SYN3-BFS-ALPHA-002"],
+        "forbidden_selected_ids": [],
+        "required_exclusions": []
+      },
+      "expected_explanation": {
+        "required_fields": [
+          "function_reason",
+          "hard_constraints_applied",
+          "selected_candidate_factors",
+          "alternative_candidates",
+          "excluded_candidates",
+          "fallback_reason"
+        ],
+        "required_decisive_factors": [
+          "support_function_selection",
+          "mandate_match",
+          "context_match",
+          "strongest_two_score_components",
+          "alternative_candidate_reason"
+        ]
+      }
+    },
+    {
+      "id": "M3-022",
+      "source_scenario_id": "M0-005",
+      "source_scenario_role": "LINEAGE_ONLY",
+      "upstream_fixture_ref": "local://synthetic-m3/upstream-runs/M3-022.planned.json",
+      "routing_profile": "default",
+      "routing_context": {
+        "need_type": "TECHNICAL_FAILURE",
+        "reason_codes": ["TECHNICAL_FAILURE"],
+        "topics": ["network timeout"],
+        "jurisdiction": null,
+        "region": null,
+        "system": "PLATFORM",
+        "requester_team": "TEAM-FRONT-ALPHA"
+      },
+      "expected_legacy_route_function": "IT_SERVICE_DESK",
+      "expected_route": {
+        "support_function": "IT_SERVICE_DESK",
+        "route_mode": "PERSON",
+        "selected_expert_id": "SYN3-IT-GLOBAL-001",
+        "queue_id": "QUEUE-IT-GLOBAL",
+        "support_model_version": "m3-v1",
+        "confidence_kind": "DETERMINISTIC_ROUTING_HEURISTIC_V1",
+        "expected_fallback_reason": null
+      },
+      "expected_candidates": {
+        "required_top3_ids": ["SYN3-IT-GLOBAL-001"],
+        "forbidden_selected_ids": [],
+        "required_exclusions": []
+      },
+      "expected_explanation": {
+        "required_fields": [
+          "function_reason",
+          "hard_constraints_applied",
+          "selected_candidate_factors",
+          "alternative_candidates",
+          "excluded_candidates",
+          "fallback_reason"
+        ],
+        "required_decisive_factors": [
+          "support_function_selection",
+          "mandate_match",
+          "context_match",
+          "strongest_two_score_components",
+          "alternative_candidate_reason"
+        ]
+      }
+    },
+    {
+      "id": "M3-023",
+      "source_scenario_id": "M0-003",
+      "source_scenario_role": "LINEAGE_ONLY",
+      "upstream_fixture_ref": "local://synthetic-m3/upstream-runs/M3-023.planned.json",
+      "routing_profile": "default",
+      "routing_context": {
+        "need_type": "COMPLEX_CASE",
+        "reason_codes": ["SCOPE_MISMATCH"],
+        "topics": ["suitability policy"],
+        "jurisdiction": null,
+        "region": "REGION_BETA",
+        "system": "ADVISORY_PLATFORM",
+        "requester_team": "TEAM-BRM-BETA"
+      },
+      "expected_legacy_route_function": "BRM_SUITABILITY_LEAD",
+      "expected_route": {
+        "support_function": "BRM_SUITABILITY_LEAD",
+        "route_mode": "PERSON",
+        "selected_expert_id": "SYN3-BRM-BETA-001",
+        "queue_id": "QUEUE-BRM-BETA",
+        "support_model_version": "m3-v1",
+        "confidence_kind": "DETERMINISTIC_ROUTING_HEURISTIC_V1",
+        "expected_fallback_reason": null
+      },
+      "expected_candidates": {
+        "required_top3_ids": ["SYN3-BRM-BETA-001"],
+        "forbidden_selected_ids": ["SYN3-BRM-ALPHA-001"],
+        "required_exclusions": [
+          {
+            "expert_id": "SYN3-BRM-ALPHA-001",
+            "reason": "REGION_CONFLICT"
+          }
+        ]
+      },
+      "expected_explanation": {
+        "required_fields": [
+          "function_reason",
+          "hard_constraints_applied",
+          "selected_candidate_factors",
+          "alternative_candidates",
+          "excluded_candidates",
+          "fallback_reason"
+        ],
+        "required_decisive_factors": [
+          "support_function_selection",
+          "mandate_match",
+          "context_match",
+          "strongest_two_score_components",
+          "alternative_candidate_reason"
+        ]
+      }
+    },
+    {
+      "id": "M3-024",
+      "source_scenario_id": "M1-007",
+      "source_scenario_role": "LINEAGE_ONLY",
+      "upstream_fixture_ref": "local://synthetic-m3/upstream-runs/M3-024.planned.json",
+      "routing_profile": "default",
+      "routing_context": {
+        "need_type": "POLICY_INTERPRETATION",
+        "reason_codes": ["NO_EXPLICIT_SUPPORT"],
+        "topics": ["control delta", "policy interpretation"],
+        "jurisdiction": null,
+        "region": null,
+        "system": "ADVISORY_PLATFORM",
+        "requester_team": "TEAM-LEGAL-ALPHA"
+      },
+      "expected_legacy_route_function": "SUITABILITY_EXPERT_LEGAL",
+      "expected_route": {
+        "support_function": "SUITABILITY_EXPERT_LEGAL",
+        "route_mode": "PERSON",
+        "selected_expert_id": "SYN3-LEGAL-GLOBAL-001",
+        "queue_id": "QUEUE-LEGAL-GLOBAL",
+        "support_model_version": "m3-v1",
+        "confidence_kind": "DETERMINISTIC_ROUTING_HEURISTIC_V1",
+        "expected_fallback_reason": null
+      },
+      "expected_candidates": {
+        "required_top3_ids": ["SYN3-LEGAL-GLOBAL-001", "SYN3-LEGAL-GLOBAL-002"],
+        "forbidden_selected_ids": [],
+        "required_exclusions": []
+      },
+      "expected_explanation": {
+        "required_fields": [
+          "function_reason",
+          "hard_constraints_applied",
+          "selected_candidate_factors",
+          "alternative_candidates",
+          "excluded_candidates",
+          "fallback_reason"
+        ],
+        "required_decisive_factors": [
+          "support_function_selection",
+          "mandate_match",
+          "context_match",
+          "strongest_two_score_components",
+          "alternative_candidate_reason",
+          "network_proximity"
+        ]
+      }
+    },
+    {
+      "id": "M3-025",
+      "source_scenario_id": "M1-012",
+      "source_scenario_role": "LINEAGE_ONLY",
+      "upstream_fixture_ref": "local://synthetic-m3/upstream-runs/M3-025.planned.json",
+      "routing_profile": "default",
+      "routing_context": {
+        "need_type": "APPROVAL_REQUIRED",
+        "reason_codes": ["APPROVAL_REQUIRED"],
+        "topics": ["control override"],
+        "jurisdiction": null,
+        "region": null,
+        "system": "ADVISORY_PLATFORM",
+        "requester_team": "TEAM-FRONT-ALPHA"
+      },
+      "expected_legacy_route_function": "SUITABILITY_EXPERT_COMPLIANCE",
+      "expected_route": {
+        "support_function": "SUITABILITY_EXPERT_COMPLIANCE",
+        "route_mode": "PERSON",
+        "selected_expert_id": "SYN3-COMP-GLOBAL-001",
+        "queue_id": "QUEUE-COMPLIANCE-GLOBAL",
+        "support_model_version": "m3-v1",
+        "confidence_kind": "DETERMINISTIC_ROUTING_HEURISTIC_V1",
+        "expected_fallback_reason": null
+      },
+      "expected_candidates": {
+        "required_top3_ids": ["SYN3-COMP-GLOBAL-001"],
+        "forbidden_selected_ids": ["SYN3-LEGAL-GLOBAL-001", "SYN3-LEGAL-GLOBAL-002"],
+        "required_exclusions": []
+      },
+      "expected_explanation": {
+        "required_fields": [
+          "function_reason",
+          "hard_constraints_applied",
+          "selected_candidate_factors",
+          "alternative_candidates",
+          "excluded_candidates",
+          "fallback_reason"
+        ],
+        "required_decisive_factors": [
+          "support_function_selection",
+          "mandate_match",
+          "context_match",
+          "strongest_two_score_components",
+          "alternative_candidate_reason"
+        ]
+      }
+    },
+    {
+      "id": "M3-026",
+      "source_scenario_id": "M1-007",
+      "source_scenario_role": "LINEAGE_ONLY",
+      "upstream_fixture_ref": "local://synthetic-m3/upstream-runs/M3-026.planned.json",
+      "routing_profile": "default",
+      "routing_context": {
+        "need_type": "POLICY_INTERPRETATION",
+        "reason_codes": ["NO_EXPLICIT_SUPPORT"],
+        "topics": ["control delta", "policy interpretation"],
+        "jurisdiction": null,
+        "region": null,
+        "system": "ADVISORY_PLATFORM",
+        "requester_team": null
+      },
+      "expected_legacy_route_function": "SUITABILITY_EXPERT_LEGAL",
+      "expected_route": {
+        "support_function": "SUITABILITY_EXPERT_LEGAL",
+        "route_mode": "FUNCTIONAL_QUEUE",
+        "selected_expert_id": null,
+        "queue_id": "QUEUE-LEGAL-GLOBAL",
+        "routing_confidence": 0.500,
+        "support_model_version": "m3-v1",
+        "confidence_kind": "DETERMINISTIC_ROUTING_HEURISTIC_V1",
+        "expected_fallback_reason": "LOW_SCORE_OR_MARGIN"
+      },
+      "expected_candidates": {
+        "required_top3_ids": ["SYN3-LEGAL-GLOBAL-001", "SYN3-LEGAL-GLOBAL-002"],
+        "forbidden_selected_ids": [],
+        "required_exclusions": []
+      },
+      "expected_explanation": {
+        "required_fields": [
+          "function_reason",
+          "hard_constraints_applied",
+          "selected_candidate_factors",
+          "alternative_candidates",
+          "excluded_candidates",
+          "fallback_reason"
+        ],
+        "required_decisive_factors": [
+          "support_function_selection",
+          "hard_gate_result",
+          "low_score_or_margin",
+          "functional_queue_selection"
+        ]
+      }
+    },
+    {
+      "id": "M3-027",
+      "source_scenario_id": "M1-009",
+      "source_scenario_role": "LINEAGE_ONLY",
+      "upstream_fixture_ref": "local://synthetic-m3/upstream-runs/M3-027.planned.json",
+      "routing_profile": "capacity_stress",
+      "routing_context": {
+        "need_type": "ROUTINE_PROCESS",
+        "reason_codes": ["UNRESOLVED_REQUIRED_REFERENCE"],
+        "topics": ["exception request"],
+        "jurisdiction": null,
+        "region": null,
+        "system": null,
+        "requester_team": "TEAM-FRONT-ALPHA"
+      },
+      "expected_legacy_route_function": "BUSINESS_FRONT_SUPPORT",
+      "expected_route": {
+        "support_function": "BUSINESS_FRONT_SUPPORT",
+        "route_mode": "PERSON",
+        "selected_expert_id": "SYN3-BFS-ALPHA-002",
+        "queue_id": "QUEUE-BFS-GLOBAL",
+        "support_model_version": "m3-v1",
+        "confidence_kind": "DETERMINISTIC_ROUTING_HEURISTIC_V1",
+        "expected_fallback_reason": null
+      },
+      "expected_candidates": {
+        "required_top3_ids": ["SYN3-BFS-ALPHA-002"],
+        "forbidden_selected_ids": ["SYN3-BFS-ALPHA-001"],
+        "required_exclusions": [
+          {
+            "expert_id": "SYN3-BFS-ALPHA-001",
+            "reason": "NOT_ACCEPTING_CASES"
+          }
+        ]
+      },
+      "expected_explanation": {
+        "required_fields": [
+          "function_reason",
+          "hard_constraints_applied",
+          "selected_candidate_factors",
+          "alternative_candidates",
+          "excluded_candidates",
+          "fallback_reason"
+        ],
+        "required_decisive_factors": [
+          "support_function_selection",
+          "mandate_match",
+          "context_match",
+          "strongest_two_score_components",
+          "alternative_candidate_reason"
+        ]
+      }
+    },
+    {
+      "id": "M3-028",
+      "source_scenario_id": "M0-003",
+      "source_scenario_role": "LINEAGE_ONLY",
+      "upstream_fixture_ref": "local://synthetic-m3/upstream-runs/M3-028.planned.json",
+      "routing_profile": "support_v2",
+      "routing_context": {
+        "need_type": "COMPLEX_CASE",
+        "reason_codes": ["SCOPE_MISMATCH"],
+        "topics": ["suitability policy"],
+        "jurisdiction": null,
+        "region": "REGION_BETA",
+        "system": "ADVISORY_PLATFORM",
+        "requester_team": "TEAM-BRM-BETA"
+      },
+      "expected_legacy_route_function": "BRM_SUITABILITY_LEAD",
+      "expected_route": {
+        "support_function": "BRM_SUITABILITY_LEAD",
+        "route_mode": "PERSON",
+        "selected_expert_id": "SYN3-BRM-BETA-002",
+        "queue_id": "QUEUE-BRM-BETA",
+        "support_model_version": "m3-v2",
+        "confidence_kind": "DETERMINISTIC_ROUTING_HEURISTIC_V1",
+        "expected_fallback_reason": null
+      },
+      "expected_candidates": {
+        "required_top3_ids": ["SYN3-BRM-BETA-002"],
+        "forbidden_selected_ids": ["SYN3-BRM-BETA-001"],
+        "required_exclusions": [
+          {
+            "expert_id": "SYN3-BRM-BETA-001",
+            "reason": "INACTIVE_PROFILE"
+          }
+        ]
+      },
+      "expected_explanation": {
+        "required_fields": [
+          "function_reason",
+          "hard_constraints_applied",
+          "selected_candidate_factors",
+          "alternative_candidates",
+          "excluded_candidates",
+          "fallback_reason"
+        ],
+        "required_decisive_factors": [
+          "support_function_selection",
+          "mandate_match",
+          "context_match",
+          "strongest_two_score_components",
+          "alternative_candidate_reason"
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "schema_version": "1.0",
+  "retry_count": 0,
+  "partial_answer_enabled": false,
+  "rules": [
+    {
+      "rule_id": "ANSWER_WORKER_FAILURE",
+      "baseline_decision": "ANSWER",
+      "action": "FAIL_CLOSED",
+      "fallback_action": "NONE"
+    },
+    {
+      "rule_id": "ABSTAIN_WORKER_FAILURE",
+      "baseline_decision": "ABSTAIN",
+      "action": "PRESERVE_ABSTAIN",
+      "fallback_action": "ROUTE_AND_OPEN_ORCHESTRATION_INCOMPLETE"
+    },
+    {
+      "rule_id": "CLARIFY_WORKER_FAILURE",
+      "baseline_decision": "CLARIFY",
+      "action": "NO_WORKERS",
+      "fallback_action": "PRESERVE_CLARIFY"
+    },
+    {
+      "rule_id": "CONFIGURATION_FAILURE",
+      "baseline_decision": "ANY",
+      "action": "RAISE_CONFIGURATION_ERROR",
+      "fallback_action": "NONE"
+    }
+  ]
+}

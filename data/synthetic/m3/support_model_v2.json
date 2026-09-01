@@ -1,0 +1,66 @@
+{
+  "schema_version": "1.0",
+  "support_model_version": "m3-v2",
+  "rules": [
+    {
+      "priority": 1,
+      "selector_type": "REASON_CODE",
+      "selector_value": "TECHNICAL_FAILURE",
+      "support_function": "IT_SERVICE_DESK"
+    },
+    {
+      "priority": 2,
+      "selector_type": "NEED_TYPE",
+      "selector_value": "ROUTINE_PROCESS",
+      "support_function": "BUSINESS_FRONT_SUPPORT"
+    },
+    {
+      "priority": 3,
+      "selector_type": "NEED_TYPE",
+      "selector_value": "SYSTEM_GUIDANCE",
+      "support_function": "BUSINESS_FRONT_SUPPORT"
+    },
+    {
+      "priority": 4,
+      "selector_type": "REASON_CODE",
+      "selector_value": "UNRESOLVED_REQUIRED_REFERENCE",
+      "support_function": "BUSINESS_FRONT_SUPPORT"
+    },
+    {
+      "priority": 5,
+      "selector_type": "NEED_TYPE",
+      "selector_value": "COMPLEX_CASE",
+      "support_function": "BRM_SUITABILITY_LEAD"
+    },
+    {
+      "priority": 6,
+      "selector_type": "REASON_CODE",
+      "selector_value": "SCOPE_MISMATCH",
+      "support_function": "BRM_SUITABILITY_LEAD"
+    },
+    {
+      "priority": 7,
+      "selector_type": "REASON_CODE",
+      "selector_value": "UNSUPPORTED_MODALITY",
+      "support_function": "BRM_SUITABILITY_LEAD"
+    },
+    {
+      "priority": 8,
+      "selector_type": "NEED_TYPE",
+      "selector_value": "POLICY_INTERPRETATION",
+      "support_function": "SUITABILITY_EXPERT_LEGAL"
+    },
+    {
+      "priority": 9,
+      "selector_type": "REASON_CODE",
+      "selector_value": "NO_EXPLICIT_SUPPORT",
+      "support_function": "SUITABILITY_EXPERT_LEGAL"
+    },
+    {
+      "priority": 10,
+      "selector_type": "NEED_TYPE",
+      "selector_value": "APPROVAL_REQUIRED",
+      "support_function": "SUITABILITY_EXPERT_COMPLIANCE"
+    }
+  ]
+}

@@ -1,0 +1,36 @@
+[base]
+config = "config/milestone3.toml"
+
+[orchestra]
+evaluation_cases = "data/synthetic/m4/evaluation_cases.json"
+activation_policy = "data/synthetic/m4/activation_policy.json"
+agent_catalog = "data/synthetic/m4/agent_catalog.json"
+source_safety_policy = "data/synthetic/m4/source_safety_policy.json"
+counterfactual_policy = "data/synthetic/m4/counterfactual_policy.json"
+upstream_runs_root = "data/synthetic/m4/upstream_runs"
+generated_root = "data/generated/m4a"
+
+[orchestra.m4a]
+supported_profiles = [
+  "FAST_PATH",
+  "SHORT_CIRCUIT_CLARIFY",
+  "HUMAN_FIRST"
+]
+worker_execution_enabled = false
+
+[evaluation]
+included_cases = [
+  "M4-029",
+  "M4-033",
+  "M4-034",
+  "M4-039",
+  "M4-040"
+]
+expected_cases = 5
+expected_fast_path = 1
+expected_short_circuit_clarify = 1
+expected_human_first = 3
+expected_active_agents = 0
+
+[security]
+network_enabled = false

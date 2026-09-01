@@ -1,0 +1,28 @@
+{
+  "schema_version": "1.0",
+  "case_id": "ERB-005",
+  "source_case_id": "M5A-046",
+  "decision": "ANSWER",
+  "activation_profile": "GOVERNED_EVOLUTION",
+  "agent_roles": [],
+  "reason_codes": [],
+  "answer_present": true,
+  "clarifying_question": null,
+  "route": null,
+  "evidence_required": true,
+  "counterfactuals": [
+    {"dimension": "region", "before": "REGION_BETA", "after": "REGION_ALPHA", "decision": "ABSTAIN"},
+    {"dimension": "service_model", "before": "SERVICE_BASIC", "after": "SERVICE_PLUS", "decision": "ABSTAIN"},
+    {"dimension": "required_context", "before": "present", "after": "removed", "decision": "CLARIFY"}
+  ],
+  "governance": {
+    "policy_ci": {"matched": 11, "expected": 11},
+    "regression": {"matched": 45, "expected": 45},
+    "counterfactual_containment": {"matched": 4, "expected": 4},
+    "automatic_approval": 0,
+    "automatic_activation": 0,
+    "human_approval": true,
+    "release_activation": true
+  },
+  "audit_reference": "m5b:M5A-046"
+}

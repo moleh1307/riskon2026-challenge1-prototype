@@ -1,0 +1,38 @@
+{
+  "schema_version": "1.0",
+  "profiles": [
+    {
+      "profile_id": "3_MIN",
+      "label": "3-minute concise path",
+      "target_seconds": 180,
+      "tolerance_seconds": 10,
+      "official_duration_assumed": false,
+      "included_slides": [1, 2, 3, 4, 5, 8],
+      "slide_seconds": {"1": 10, "2": 20, "3": 20, "4": 30, "8": 10},
+      "demo_seconds": 90,
+      "appendix_slides": []
+    },
+    {
+      "profile_id": "5_MIN",
+      "label": "5-minute canonical path",
+      "target_seconds": 300,
+      "tolerance_seconds": 15,
+      "official_duration_assumed": false,
+      "included_slides": [1, 2, 3, 4, 5, 6, 7, 8],
+      "slide_seconds": {"1": 15, "2": 30, "3": 35, "4": 40, "6": 30, "7": 25, "8": 35},
+      "demo_seconds": 90,
+      "appendix_slides": []
+    },
+    {
+      "profile_id": "7_MIN",
+      "label": "7-minute extended path",
+      "target_seconds": 420,
+      "tolerance_seconds": 15,
+      "official_duration_assumed": false,
+      "included_slides": [1, 2, 3, 4, 5, 6, 7, 8, "APPENDIX_SELECTED"],
+      "slide_seconds": {"1": 20, "2": 40, "3": 45, "4": 60, "6": 40, "7": 35, "8": 55, "APPENDIX_SELECTED": 35},
+      "demo_seconds": 90,
+      "appendix_slides": [9, 10, 11, 12]
+    }
+  ]
+}

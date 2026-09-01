@@ -1,0 +1,16 @@
+{
+  "schema_version": "1.0",
+  "suite_configs": [
+    "config/milestone0.toml",
+    "config/milestone1.toml",
+    "config/milestone2.toml",
+    "config/milestone3.toml",
+    "config/milestone4a.toml",
+    "config/milestone4b.toml",
+    "config/milestone4c.toml",
+    "config/milestone4d.toml"
+  ],
+  "expected_aggregate": 45,
+  "execution_mode": "IN_PROCESS_EXISTING_EVALUATORS",
+  "subprocess_execution_allowed": false
+}

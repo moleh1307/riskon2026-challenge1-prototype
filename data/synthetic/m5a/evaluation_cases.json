@@ -1,0 +1,181 @@
+{
+  "schema_version": "1.0",
+  "milestone": "M5A_GOVERNED_EVOLUTION_CONTRACT",
+  "cases": [
+    {
+      "id": "M5A-046",
+      "title": "Successful governed evolution",
+      "case_capsule_ref": "local://synthetic-m5a/case_capsules/M5A-046.capsule.json",
+      "expert_resolution_ref": "local://synthetic-m5a/expert_resolutions/M5A-046.resolution.json",
+      "knowledge_patch_ref": "local://synthetic-m5a/knowledge_patches/M5A-046.patch.json",
+      "approval_ref": "local://synthetic-m5a/approvals/M5A-046.approval.json",
+      "pre_patch_decision": {
+        "decision": "ABSTAIN",
+        "reason_codes": ["NO_EXPLICIT_SUPPORT"]
+      },
+      "expected_policy_ci_checks": {
+        "EVIDENCE_COMPLETENESS": "PASS",
+        "CLAIM_SUBSET": "PASS",
+        "SCOPE_CONTAINMENT": "PASS",
+        "CONTRADICTION_DETECTION": "PASS",
+        "CRITICAL_CONTROL_PRESERVATION": "PASS",
+        "REFERENCE_RESOLUTION": "PASS",
+        "M0_M4D_REGRESSION": "PASS",
+        "COUNTERFACTUAL_CONTAINMENT": "PASS",
+        "SEPARATION_OF_DUTIES": "PASS",
+        "HUMAN_APPROVAL_PRESENT": "PASS",
+        "EFFECTIVE_PERIOD_VALID": "PASS"
+      },
+      "expected_patch_status": "ACTIVE",
+      "expected_active_release": "KB-SYN-V2",
+      "expected_post_patch_behaviour": {
+        "exact_scope": "ANSWER",
+        "alternate_region": "ABSTAIN",
+        "alternate_service_model": "ABSTAIN",
+        "required_context_removed": "CLARIFY"
+      },
+      "expected_counterfactuals": [
+        {"variant_id": "M5A-046-region-beta", "dimension": "region", "value": "REGION_BETA", "decision": "ANSWER"},
+        {"variant_id": "M5A-046-region-alpha", "dimension": "region", "value": "REGION_ALPHA", "decision": "ABSTAIN"},
+        {"variant_id": "M5A-046-service-basic", "dimension": "service_model", "value": "SERVICE_BASIC", "decision": "ANSWER"},
+        {"variant_id": "M5A-046-service-plus", "dimension": "service_model", "value": "SERVICE_PLUS", "decision": "ABSTAIN"}
+      ]
+    },
+    {
+      "id": "M5A-047",
+      "title": "Automated checks pass without human approval",
+      "case_capsule_ref": "local://synthetic-m5a/case_capsules/M5A-047.capsule.json",
+      "expert_resolution_ref": "local://synthetic-m5a/expert_resolutions/M5A-047.resolution.json",
+      "knowledge_patch_ref": "local://synthetic-m5a/knowledge_patches/M5A-047.patch.json",
+      "approval_ref": null,
+      "pre_patch_decision": {
+        "decision": "ABSTAIN",
+        "reason_codes": ["NO_EXPLICIT_SUPPORT"]
+      },
+      "expected_policy_ci_checks": {
+        "EVIDENCE_COMPLETENESS": "PASS",
+        "CLAIM_SUBSET": "PASS",
+        "SCOPE_CONTAINMENT": "PASS",
+        "CONTRADICTION_DETECTION": "PASS",
+        "CRITICAL_CONTROL_PRESERVATION": "PASS",
+        "REFERENCE_RESOLUTION": "PASS",
+        "M0_M4D_REGRESSION": "PASS",
+        "COUNTERFACTUAL_CONTAINMENT": "PASS",
+        "SEPARATION_OF_DUTIES": "PASS",
+        "HUMAN_APPROVAL_PRESENT": "NOT_RUN",
+        "EFFECTIVE_PERIOD_VALID": "PASS"
+      },
+      "expected_patch_status": "AWAITING_APPROVAL",
+      "expected_active_release": null,
+      "expected_post_patch_behaviour": {
+        "exact_scope": "ABSTAIN",
+        "alternate_region": "ABSTAIN",
+        "alternate_service_model": "ABSTAIN",
+        "required_context_removed": "CLARIFY"
+      },
+      "expected_counterfactuals": []
+    },
+    {
+      "id": "M5A-048",
+      "title": "Critical-control contradiction",
+      "case_capsule_ref": "local://synthetic-m5a/case_capsules/M5A-048.capsule.json",
+      "expert_resolution_ref": "local://synthetic-m5a/expert_resolutions/M5A-048.resolution.json",
+      "knowledge_patch_ref": "local://synthetic-m5a/knowledge_patches/M5A-048.patch.json",
+      "approval_ref": "local://synthetic-m5a/approvals/M5A-048.rejection.json",
+      "pre_patch_decision": {
+        "decision": "ABSTAIN",
+        "reason_codes": ["NO_EXPLICIT_SUPPORT"]
+      },
+      "expected_policy_ci_checks": {
+        "EVIDENCE_COMPLETENESS": "PASS",
+        "CLAIM_SUBSET": "PASS",
+        "SCOPE_CONTAINMENT": "PASS",
+        "CONTRADICTION_DETECTION": "FAIL",
+        "CRITICAL_CONTROL_PRESERVATION": "FAIL",
+        "REFERENCE_RESOLUTION": "PASS",
+        "M0_M4D_REGRESSION": "PASS",
+        "COUNTERFACTUAL_CONTAINMENT": "PASS",
+        "SEPARATION_OF_DUTIES": "PASS",
+        "HUMAN_APPROVAL_PRESENT": "PASS",
+        "EFFECTIVE_PERIOD_VALID": "PASS"
+      },
+      "expected_patch_status": "REJECTED",
+      "expected_active_release": null,
+      "expected_post_patch_behaviour": {
+        "exact_scope": "ABSTAIN",
+        "alternate_region": "ABSTAIN",
+        "alternate_service_model": "ABSTAIN",
+        "required_context_removed": "CLARIFY"
+      },
+      "expected_counterfactuals": []
+    },
+    {
+      "id": "M5A-049",
+      "title": "Scope overreach",
+      "case_capsule_ref": "local://synthetic-m5a/case_capsules/M5A-049.capsule.json",
+      "expert_resolution_ref": "local://synthetic-m5a/expert_resolutions/M5A-049.resolution.json",
+      "knowledge_patch_ref": "local://synthetic-m5a/knowledge_patches/M5A-049.patch.json",
+      "approval_ref": "local://synthetic-m5a/approvals/M5A-049.rejection.json",
+      "pre_patch_decision": {
+        "decision": "ABSTAIN",
+        "reason_codes": ["NO_EXPLICIT_SUPPORT"]
+      },
+      "expected_policy_ci_checks": {
+        "EVIDENCE_COMPLETENESS": "PASS",
+        "CLAIM_SUBSET": "PASS",
+        "SCOPE_CONTAINMENT": "FAIL",
+        "CONTRADICTION_DETECTION": "PASS",
+        "CRITICAL_CONTROL_PRESERVATION": "PASS",
+        "REFERENCE_RESOLUTION": "PASS",
+        "M0_M4D_REGRESSION": "PASS",
+        "COUNTERFACTUAL_CONTAINMENT": "FAIL",
+        "SEPARATION_OF_DUTIES": "PASS",
+        "HUMAN_APPROVAL_PRESENT": "PASS",
+        "EFFECTIVE_PERIOD_VALID": "PASS"
+      },
+      "expected_patch_status": "REJECTED",
+      "expected_active_release": null,
+      "expected_post_patch_behaviour": {
+        "exact_scope": "ABSTAIN",
+        "alternate_region": "ABSTAIN",
+        "alternate_service_model": "ABSTAIN",
+        "required_context_removed": "CLARIFY"
+      },
+      "expected_counterfactuals": []
+    },
+    {
+      "id": "M5A-050",
+      "title": "Expired knowledge is not answerable",
+      "case_capsule_ref": "local://synthetic-m5a/case_capsules/M5A-050.capsule.json",
+      "expert_resolution_ref": "local://synthetic-m5a/expert_resolutions/M5A-050.resolution.json",
+      "knowledge_patch_ref": "local://synthetic-m5a/knowledge_patches/M5A-050.patch.json",
+      "approval_ref": null,
+      "pre_patch_decision": {
+        "decision": "ABSTAIN",
+        "reason_codes": ["NO_EXPLICIT_SUPPORT"]
+      },
+      "expected_policy_ci_checks": {
+        "EVIDENCE_COMPLETENESS": "PASS",
+        "CLAIM_SUBSET": "PASS",
+        "SCOPE_CONTAINMENT": "PASS",
+        "CONTRADICTION_DETECTION": "PASS",
+        "CRITICAL_CONTROL_PRESERVATION": "PASS",
+        "REFERENCE_RESOLUTION": "PASS",
+        "M0_M4D_REGRESSION": "PASS",
+        "COUNTERFACTUAL_CONTAINMENT": "PASS",
+        "SEPARATION_OF_DUTIES": "PASS",
+        "HUMAN_APPROVAL_PRESENT": "PASS",
+        "EFFECTIVE_PERIOD_VALID": "FAIL"
+      },
+      "expected_patch_status": "EXPIRED",
+      "expected_active_release": null,
+      "expected_post_patch_behaviour": {
+        "exact_scope": "ABSTAIN",
+        "alternate_region": "ABSTAIN",
+        "alternate_service_model": "ABSTAIN",
+        "required_context_removed": "CLARIFY"
+      },
+      "expected_counterfactuals": []
+    }
+  ]
+}

@@ -1,0 +1,75 @@
+{
+  "fixture_schema_version": "1.0",
+  "fixture_origin": "SYNTHETIC_ORCHESTRA_BASELINE_V1",
+  "case_id": "M4-029",
+  "planned_verified_run": {
+    "query_plan": {
+      "plan_id": "m4-fixture-M4-029",
+      "original_query": "What is Control Atlas?",
+      "normalised_query": "What is Control Atlas?",
+      "intent": "DEFINITION",
+      "canonical_terms": ["control atlas"],
+      "required_context_fields": [],
+      "missing_context_fields": [],
+      "subqueries": [],
+      "retrieval_channels": ["EXACT", "WORD_TFIDF", "CHAR_TFIDF"],
+      "retrieval_skipped": false
+    },
+    "retrieval_diagnostics": {"entries": []},
+    "verified_run": {
+      "result": {
+        "trace_id": "m4-fixture-M4-029",
+        "decision": "ANSWER",
+        "answer": "Control Atlas is a synthetic review marker used to indicate that a case has entered the controlled advisory workflow.",
+        "clarifying_question": null,
+        "reason_codes": [],
+        "evidence": [
+          {
+            "section_id": "clear_definition.html::section-02",
+            "source_ref": "local://synthetic-m4/clear_definition.html#section-definition",
+            "title": "Control Atlas definition",
+            "heading_path": ["Definition"],
+            "score": 1.0,
+            "excerpt": "Control Atlas is a synthetic review marker used to indicate that a case has entered the controlled advisory workflow.",
+            "table_rows": []
+          }
+        ],
+        "route": null,
+        "answer_confidence": 0.9,
+        "routing_confidence": 0.0,
+        "confidence_kind": "DETERMINISTIC_GATE_PLACEHOLDER",
+        "detected_context": {
+          "region": null,
+          "channel": null,
+          "workflow_stage": "DEFINITION_LOOKUP",
+          "need_type": "UNKNOWN",
+          "missing_context": []
+        },
+        "missing_context": [],
+        "retrieved_sections": [
+          {
+            "section_id": "clear_definition.html::section-02",
+            "source_ref": "local://synthetic-m4/clear_definition.html#section-definition",
+            "title": "Control Atlas definition",
+            "heading_path": ["Definition"],
+            "score": 1.0,
+            "excerpt": "Control Atlas is a synthetic review marker used to indicate that a case has entered the controlled advisory workflow.",
+            "table_rows": []
+          }
+        ]
+      },
+      "verification": {
+        "status": "SUFFICIENT",
+        "reason_codes": [],
+        "supported_claim_ids": ["control_atlas_definition"],
+        "unsupported_claim_ids": [],
+        "missing_required_claim_ids": [],
+        "scope_mismatches": [],
+        "unresolved_required_references": [],
+        "unsupported_modalities": [],
+        "evidence_refs": ["local://synthetic-m4/clear_definition.html#section-definition"],
+        "explanation": "The synthetic baseline has one direct local definition."
+      }
+    }
+  }
+}

@@ -1,0 +1,50 @@
+{
+  "schema_version": "1.0",
+  "requests": [
+    {
+      "request_id": "M5B-REQ-046",
+      "case_id": "M5A-046",
+      "patch_id": "M5A-046-PATCH",
+      "release_id": "KB-SYN-V2",
+      "requested_by_role_id": "SYN-ROLE-KNOWLEDGE-OWNER-001",
+      "requested_at_utc": "2026-08-27T12:00:00Z",
+      "expected_outcome": "ACTIVE"
+    },
+    {
+      "request_id": "M5B-REQ-047",
+      "case_id": "M5A-047",
+      "patch_id": "M5A-047-PATCH",
+      "release_id": "KB-SYN-V3",
+      "requested_by_role_id": "SYN-ROLE-KNOWLEDGE-OWNER-001",
+      "requested_at_utc": "2026-08-27T12:01:00Z",
+      "expected_outcome": "BLOCKED_NO_APPROVAL"
+    },
+    {
+      "request_id": "M5B-REQ-048",
+      "case_id": "M5A-048",
+      "patch_id": "M5A-048-PATCH",
+      "release_id": "KB-SYN-V4",
+      "requested_by_role_id": "SYN-ROLE-KNOWLEDGE-OWNER-001",
+      "requested_at_utc": "2026-08-27T12:02:00Z",
+      "expected_outcome": "BLOCKED_POLICY_CI"
+    },
+    {
+      "request_id": "M5B-REQ-049",
+      "case_id": "M5A-049",
+      "patch_id": "M5A-049-PATCH",
+      "release_id": "KB-SYN-V5",
+      "requested_by_role_id": "SYN-ROLE-KNOWLEDGE-OWNER-001",
+      "requested_at_utc": "2026-08-27T12:03:00Z",
+      "expected_outcome": "BLOCKED_POLICY_CI"
+    },
+    {
+      "request_id": "M5B-REQ-050",
+      "case_id": "M5A-050",
+      "patch_id": "M5A-050-PATCH",
+      "release_id": "KB-SYN-V6",
+      "requested_by_role_id": "SYN-ROLE-KNOWLEDGE-OWNER-001",
+      "requested_at_utc": "2026-08-27T12:04:00Z",
+      "expected_outcome": "BLOCKED_EXPIRED"
+    }
+  ]
+}

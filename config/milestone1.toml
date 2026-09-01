@@ -1,0 +1,28 @@
+[base]
+config = "config/milestone0.toml"
+
+[extension]
+manifest = "data/synthetic/m1/manifest.xlsx"
+knowledge_root = "data/synthetic/m1/knowledge"
+evaluation_cases = "data/synthetic/m1/evaluation_cases.json"
+generated_root = "data/generated/m1"
+
+[verification]
+require_explicit_support = true
+require_scope_match = true
+require_local_evidence = true
+require_required_references = true
+fail_on_unsupported_modality = true
+include_critical_controls = true
+exclude_unrequested_sections = true
+
+[evaluation]
+expected_m0_cases = 5
+expected_m1_cases = 7
+expected_total_cases = 12
+
+[security]
+network_enabled = false
+
+[runtime]
+confidence_kind = "DETERMINISTIC_GATE_PLACEHOLDER"

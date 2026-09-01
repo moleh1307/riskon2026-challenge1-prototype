@@ -1,0 +1,42 @@
+{
+  "schema_version": "1.0",
+  "base_policy_ref": "local://synthetic-m4/counterfactual_policy.json",
+  "fixture_backend": "FROZEN_COUNTERFACTUAL_FIXTURE_V1",
+  "runtime_backend": "LOCAL_PLANNED_PIPELINE_V1",
+  "implemented_dimensions": [
+    "region",
+    "service_model"
+  ],
+  "maximum_variants_per_case": 3,
+  "maximum_parallel_variants": 3,
+  "maximum_dimensions_changed_per_variant": 1,
+  "variant_precedence": [
+    "region:REPLACE",
+    "service_model:REPLACE",
+    "region:REMOVE"
+  ],
+  "recursive_orchestration_enabled": false,
+  "counterfactual_routing_enabled": false,
+  "expectation_rules": [
+    {
+      "rule_id": "EXACT_SCOPE_REPLACED",
+      "operation": "REPLACE",
+      "preconditions": [
+        "baseline source scope explicitly contains the original value",
+        "replacement value differs from explicit source scope"
+      ],
+      "expected_decision": "ABSTAIN",
+      "expected_reason_code": "SCOPE_MISMATCH"
+    },
+    {
+      "rule_id": "REQUIRED_CONTEXT_REMOVED",
+      "operation": "REMOVE",
+      "preconditions": [
+        "dimension is listed as required answer-changing context",
+        "operation = REMOVE"
+      ],
+      "expected_decision": "CLARIFY",
+      "expected_reason_code": "MISSING_REQUIRED_CONTEXT"
+    }
+  ]
+}

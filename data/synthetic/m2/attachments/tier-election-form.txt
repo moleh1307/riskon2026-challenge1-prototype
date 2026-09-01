@@ -1,0 +1,4 @@
+SYNTHETIC CLIENT TIER ELECTION FORM
+
+This local attachment is a placeholder form for the synthetic evaluation corpus.
+It contains the application form fields for the client tier election process.

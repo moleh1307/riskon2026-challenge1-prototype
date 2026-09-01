@@ -1,0 +1,73 @@
+{
+  "schema_version": "1.0",
+  "contract_ref": "local://synthetic-m5a/evaluation-cases.json",
+  "policy_ci_phases": [
+    {
+      "phase": "PRE_APPROVAL",
+      "runs_human_approval_check": false,
+      "success_state": "AWAITING_HUMAN",
+      "failure_state": "FAIL"
+    },
+    {
+      "phase": "ACTIVATION",
+      "runs_human_approval_check": true,
+      "success_state": "APPROVED",
+      "failure_state": "FAIL"
+    },
+    {
+      "phase": "CURRENT_STATE",
+      "runs_human_approval_check": false,
+      "success_state": "CURRENT_OR_EXPIRED",
+      "failure_state": "FAIL"
+    }
+  ],
+  "mandatory_checks": [
+    "EVIDENCE_COMPLETENESS",
+    "CLAIM_SUBSET",
+    "SCOPE_CONTAINMENT",
+    "CONTRADICTION_DETECTION",
+    "CRITICAL_CONTROL_PRESERVATION",
+    "REFERENCE_RESOLUTION",
+    "M0_M4D_REGRESSION",
+    "COUNTERFACTUAL_CONTAINMENT",
+    "SEPARATION_OF_DUTIES",
+    "HUMAN_APPROVAL_PRESENT",
+    "EFFECTIVE_PERIOD_VALID"
+  ],
+  "lifecycle_transitions": [
+    {"from": "PROPOSED", "to": "TESTED", "requirement": "PRE_APPROVAL_POLICY_CI"},
+    {"from": "TESTED", "to": "AWAITING_APPROVAL", "requirement": "AUTOMATED_CHECKS_PASS"},
+    {"from": "AWAITING_APPROVAL", "to": "APPROVED", "requirement": "VALID_HUMAN_APPROVAL"},
+    {"from": "APPROVED", "to": "ACTIVE", "requirement": "EXPLICIT_RELEASE_ACTIVATION"},
+    {"from": "TESTED", "to": "REJECTED", "requirement": "MANDATORY_CHECK_FAIL"},
+    {"from": "AWAITING_APPROVAL", "to": "REJECTED", "requirement": "HUMAN_REJECTION"},
+    {"from": "ACTIVE", "to": "EXPIRED", "requirement": "EFFECTIVE_TO_REACHED"}
+  ],
+  "overlay_policy": {
+    "official_corpus_immutable": true,
+    "provenance_prefix": "local://knowledge-overlay/",
+    "special_ranking_boost": false,
+    "include_expired_patches": false,
+    "include_rejected_patches": false,
+    "include_awaiting_approval_patches": false,
+    "expert_resolution_is_evidence_unit": false,
+    "overlay_conflict_action": "M1_FAIL_CLOSED"
+  },
+  "event_store_policy": {
+    "path": "data/generated/m5b/governance_events.jsonl",
+    "append_only": true,
+    "update_allowed": false,
+    "delete_allowed": false,
+    "allowed_event_types": [
+      "PATCH_PROPOSED",
+      "POLICY_CI_COMPLETED",
+      "PATCH_AWAITING_APPROVAL",
+      "HUMAN_DECISION_RECORDED",
+      "PATCH_APPROVED",
+      "PATCH_REJECTED",
+      "RELEASE_CREATED",
+      "RELEASE_ACTIVATED",
+      "PATCH_EXPIRED"
+    ]
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "release_id": "KB-SYN-V2",
+  "version": "2.0.0",
+  "previous_release_id": "KB-SYN-V1",
+  "patch_ids": ["M5A-046-PATCH"],
+  "created_at_utc": "2026-08-27T11:00:00Z",
+  "activated_at_utc": "2026-08-27T12:00:00Z",
+  "activated_by_role_id": "SYN-ROLE-KNOWLEDGE-OWNER-001",
+  "status": "ACTIVE"
+}

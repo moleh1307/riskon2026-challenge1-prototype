@@ -1,0 +1,60 @@
+{
+  "fixture_schema_version": "1.0",
+  "fixture_origin": "SYNTHETIC_ROUTING_FIXTURE_V1",
+  "source_scenario_id": "M1-009",
+  "planned_verified_run": {
+    "query_plan": {
+      "plan_id": "m3-fixture-M3-021",
+      "original_query": "What is the procedure for requesting a synthetic exception?",
+      "normalised_query": "What is the procedure for requesting a synthetic exception?",
+      "intent": "PROCEDURE",
+      "canonical_terms": ["synthetic exception"],
+      "required_context_fields": [],
+      "missing_context_fields": [],
+      "subqueries": [],
+      "retrieval_channels": ["EXACT", "WORD_TFIDF", "CHAR_TFIDF"],
+      "retrieval_skipped": false
+    },
+    "retrieval_diagnostics": {"entries": []},
+    "verified_run": {
+      "result": {
+        "trace_id": "m3-fixture-M3-021",
+        "decision": "ABSTAIN",
+        "answer": null,
+        "clarifying_question": null,
+        "reason_codes": ["UNRESOLVED_REQUIRED_REFERENCE"],
+        "evidence": [],
+        "route": {
+          "support_function": "BUSINESS_FRONT_SUPPORT",
+          "expert_id": null,
+          "routing_reason": "Frozen legacy support-function fixture",
+          "routing_confidence": 0.5
+        },
+        "answer_confidence": 0.0,
+        "routing_confidence": 0.5,
+        "confidence_kind": "DETERMINISTIC_GATE_PLACEHOLDER",
+        "detected_context": {
+          "region": null,
+          "channel": null,
+          "workflow_stage": "INTAKE",
+          "need_type": "ROUTINE_PROCESS",
+          "missing_context": []
+        },
+        "missing_context": [],
+        "retrieved_sections": []
+      },
+      "verification": {
+        "status": "INSUFFICIENT",
+        "reason_codes": ["UNRESOLVED_REQUIRED_REFERENCE"],
+        "supported_claim_ids": [],
+        "unsupported_claim_ids": [],
+        "missing_required_claim_ids": [],
+        "scope_mismatches": [],
+        "unresolved_required_references": ["synthetic_exception_form"],
+        "unsupported_modalities": [],
+        "evidence_refs": [],
+        "explanation": "Frozen synthetic upstream state: required reference remains unresolved."
+      }
+    }
+  }
+}

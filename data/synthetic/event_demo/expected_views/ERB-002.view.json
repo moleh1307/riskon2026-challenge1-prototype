@@ -1,0 +1,16 @@
+{
+  "schema_version": "1.0",
+  "case_id": "ERB-002",
+  "source_case_id": "M4D-042",
+  "decision": "CLARIFY",
+  "activation_profile": "SHORT_CIRCUIT_CLARIFY",
+  "agent_roles": [],
+  "reason_codes": ["AMBIGUOUS_ACRONYM"],
+  "answer_present": false,
+  "clarifying_question": "Do you mean Advisory Review Code or Account Routing Console?",
+  "route": null,
+  "evidence_required": false,
+  "counterfactuals": [],
+  "governance": null,
+  "audit_reference": "m4d-eval-M4D-042"
+}

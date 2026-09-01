@@ -1,0 +1,69 @@
+{
+  "fixture_schema_version": "1.0",
+  "fixture_origin": "SYNTHETIC_M4D_BASELINE_V1",
+  "case_id": "M4D-042",
+  "query_input": {
+    "query": "Can a delegated operator use ARC?",
+    "context": {},
+    "trace_id": null
+  },
+  "planned_verified_run": {
+    "query_plan": {
+      "plan_id": "plan-d3d8005001d527e9",
+      "original_query": "Can a delegated operator use ARC?",
+      "normalised_query": "Can a delegated operator use ARC?",
+      "intent": "REFERENCE_LOOKUP",
+      "canonical_terms": [
+        "delegated operator",
+        "arc"
+      ],
+      "required_context_fields": [],
+      "missing_context_fields": [],
+      "subqueries": [],
+      "retrieval_channels": [],
+      "retrieval_skipped": true
+    },
+    "retrieval_diagnostics": {
+      "entries": []
+    },
+    "verified_run": {
+      "result": {
+        "trace_id": "720e2435-4beb-4cab-9f02-82a5b0a58d12",
+        "decision": "CLARIFY",
+        "answer": null,
+        "clarifying_question": "Do you mean Advisory Review Code or Account Routing Console?",
+        "reason_codes": [
+          "AMBIGUOUS_ACRONYM"
+        ],
+        "evidence": [],
+        "route": null,
+        "answer_confidence": 0.0,
+        "routing_confidence": 0.0,
+        "confidence_kind": "DETERMINISTIC_GATE_PLACEHOLDER",
+        "detected_context": {
+          "region": null,
+          "channel": null,
+          "workflow_stage": null,
+          "need_type": "UNKNOWN",
+          "missing_context": []
+        },
+        "missing_context": [],
+        "retrieved_sections": []
+      },
+      "verification": {
+        "status": "INSUFFICIENT",
+        "reason_codes": [
+          "AMBIGUOUS_ACRONYM"
+        ],
+        "supported_claim_ids": [],
+        "unsupported_claim_ids": [],
+        "missing_required_claim_ids": [],
+        "scope_mismatches": [],
+        "unresolved_required_references": [],
+        "unsupported_modalities": [],
+        "evidence_refs": [],
+        "explanation": "M4D planned execution short-circuited before retrieval."
+      }
+    }
+  }
+}

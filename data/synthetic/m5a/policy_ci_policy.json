@@ -1,0 +1,38 @@
+{
+  "schema_version": "1.0",
+  "mandatory_checks": [
+    {"check_id": "EVIDENCE_COMPLETENESS", "description": "Every substantive claim has authoritative local evidence."},
+    {"check_id": "CLAIM_SUBSET", "description": "Patch claims are a subset of resolution claims."},
+    {"check_id": "SCOPE_CONTAINMENT", "description": "Patch scope is contained by resolution scope."},
+    {"check_id": "CONTRADICTION_DETECTION", "description": "The proposal does not contradict authoritative controls."},
+    {"check_id": "CRITICAL_CONTROL_PRESERVATION", "description": "Existing critical controls remain preserved."},
+    {"check_id": "REFERENCE_RESOLUTION", "description": "Every local evidence reference resolves."},
+    {"check_id": "M0_M4D_REGRESSION", "description": "The frozen regression suite remains green."},
+    {"check_id": "COUNTERFACTUAL_CONTAINMENT", "description": "Scope-sensitive behavior is contained under counterfactual tests."},
+    {"check_id": "SEPARATION_OF_DUTIES", "description": "Resolution author and approval actor are different roles."},
+    {"check_id": "HUMAN_APPROVAL_PRESENT", "description": "A valid human approval record exists."},
+    {"check_id": "EFFECTIVE_PERIOD_VALID", "description": "The patch is valid at the reference time."}
+  ],
+  "allowed_statuses": ["PASS", "FAIL", "NOT_RUN"],
+  "regression_gate": {
+    "m0_m3": 28,
+    "m4a": 5,
+    "m4b": 5,
+    "m4c": 2,
+    "m4d": 5,
+    "total": 45
+  },
+  "activation_rule": {
+    "all_mandatory_checks": "PASS",
+    "human_approval_decision": "APPROVE",
+    "approval_actor_differs_from_resolution_author": true,
+    "effective_period_valid": true,
+    "included_in_knowledge_release": true
+  },
+  "counterfactual_requirements": [
+    "exact patch scope",
+    "alternate region",
+    "alternate service model",
+    "required context removed"
+  ]
+}

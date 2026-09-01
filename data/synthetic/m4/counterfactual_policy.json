@@ -1,0 +1,60 @@
+{
+  "schema_version": "1.0",
+  "maximum_variants_per_case": 3,
+  "maximum_dimensions_changed_per_variant": 1,
+  "allowed_dimensions": [
+    "region",
+    "jurisdiction",
+    "service_model",
+    "solicitation_type",
+    "workflow_stage",
+    "client_classification"
+  ],
+  "rules": [
+    {
+      "rule_id": "ONE_DIMENSION_ONLY",
+      "maximum_dimensions_changed": 1,
+      "statement": "A counterfactual may change exactly one declared dimension."
+    },
+    {
+      "rule_id": "CASE_CONTRACT_VALUES_ONLY",
+      "allowed_value_source": "CASE_CONTRACT",
+      "statement": "Counterfactual values must come from the case contract."
+    },
+    {
+      "rule_id": "NO_GENERATIVE_VALUES",
+      "free_form_values_allowed": false,
+      "statement": "No free-form or generative domain values may be invented."
+    },
+    {
+      "rule_id": "MAXIMUM_THREE_VARIANTS",
+      "maximum_variants": 3,
+      "statement": "A case may have at most three counterfactual variants."
+    },
+    {
+      "rule_id": "DIAGNOSTIC_ONLY",
+      "authoritative_evidence": false,
+      "statement": "Counterfactual output is diagnostic and not authoritative evidence."
+    },
+    {
+      "rule_id": "LOCAL_PIPELINE_ONLY",
+      "allowed_execution": "LOCAL_EXISTING_PIPELINE",
+      "statement": "Counterfactual runs may call only the existing local pipeline."
+    },
+    {
+      "rule_id": "NO_EXPERT_ROUTING",
+      "expert_routing_allowed": false,
+      "statement": "Counterfactual runs may not trigger expert routing."
+    },
+    {
+      "rule_id": "REQUIRED_TRANSITION",
+      "failure_code": "COUNTERFACTUAL_SCOPE_LEAK",
+      "statement": "A missing required decision transition produces a scope-leak objection."
+    },
+    {
+      "rule_id": "ANSWER_PRESERVATION",
+      "preserve_answer_only_if": "ALL_EXPECTED_TRANSITIONS_PASS",
+      "statement": "An original ANSWER is preserved only when every required transition passes."
+    }
+  ]
+}

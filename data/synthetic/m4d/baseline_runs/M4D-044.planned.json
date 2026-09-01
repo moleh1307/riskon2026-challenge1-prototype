@@ -1,0 +1,497 @@
+{
+  "fixture_schema_version": "1.0",
+  "fixture_origin": "SYNTHETIC_M4D_BASELINE_V1",
+  "case_id": "M4D-044",
+  "query_input": {
+    "query": "An active recommendation triggered the Synthetic Atlas Control. Can I proceed if the client accepts the risk?",
+    "context": {},
+    "trace_id": null
+  },
+  "planned_verified_run": {
+    "query_plan": {
+      "plan_id": "plan-ca6ca9398bf9a226",
+      "original_query": "An active recommendation triggered the Synthetic Atlas Control. Can I proceed if the client accepts the risk?",
+      "normalised_query": "An active recommendation triggered the Synthetic Atlas Control. Can I proceed if the client accepts the risk?",
+      "intent": "PROCEDURE",
+      "canonical_terms": [
+        "synthetic atlas control"
+      ],
+      "required_context_fields": [],
+      "missing_context_fields": [],
+      "subqueries": [],
+      "retrieval_channels": [
+        "EXACT",
+        "WORD_TFIDF",
+        "CHAR_TFIDF"
+      ],
+      "retrieval_skipped": false
+    },
+    "retrieval_diagnostics": {
+      "entries": [
+        {
+          "plan_id": "plan-ca6ca9398bf9a226",
+          "subquery": "An active recommendation triggered the Synthetic Atlas Control. Can I proceed if the client accepts the risk?",
+          "channel": "CHAR_TFIDF",
+          "candidate_ref": "local://synthetic-m4d/atlas_critical_control.html#section-critical-controls",
+          "channel_rank": 1,
+          "raw_score": 0.6206504636953613,
+          "rrf_contribution": 0.012295081967213115,
+          "final_rank": 1,
+          "included": true,
+          "exclusion_reason": null
+        },
+        {
+          "plan_id": "plan-ca6ca9398bf9a226",
+          "subquery": "An active recommendation triggered the Synthetic Atlas Control. Can I proceed if the client accepts the risk?",
+          "channel": "EXACT",
+          "candidate_ref": "local://synthetic-m4d/atlas_critical_control.html#section-critical-controls",
+          "channel_rank": 1,
+          "raw_score": 7.75,
+          "rrf_contribution": 0.03278688524590164,
+          "final_rank": 1,
+          "included": true,
+          "exclusion_reason": null
+        },
+        {
+          "plan_id": "plan-ca6ca9398bf9a226",
+          "subquery": "An active recommendation triggered the Synthetic Atlas Control. Can I proceed if the client accepts the risk?",
+          "channel": "WORD_TFIDF",
+          "candidate_ref": "local://synthetic-m4d/atlas_critical_control.html#section-critical-controls",
+          "channel_rank": 1,
+          "raw_score": 0.5905820148500243,
+          "rrf_contribution": 0.01639344262295082,
+          "final_rank": 1,
+          "included": true,
+          "exclusion_reason": null
+        },
+        {
+          "plan_id": "plan-ca6ca9398bf9a226",
+          "subquery": "An active recommendation triggered the Synthetic Atlas Control. Can I proceed if the client accepts the risk?",
+          "channel": "CHAR_TFIDF",
+          "candidate_ref": "local://synthetic-m4d/atlas_critical_control.html#section-synthetic-atlas-control",
+          "channel_rank": 2,
+          "raw_score": 0.3228001627210184,
+          "rrf_contribution": 0.012096774193548387,
+          "final_rank": 2,
+          "included": true,
+          "exclusion_reason": null
+        },
+        {
+          "plan_id": "plan-ca6ca9398bf9a226",
+          "subquery": "An active recommendation triggered the Synthetic Atlas Control. Can I proceed if the client accepts the risk?",
+          "channel": "EXACT",
+          "candidate_ref": "local://synthetic-m4d/atlas_critical_control.html#section-synthetic-atlas-control",
+          "channel_rank": 3,
+          "raw_score": 6.25,
+          "rrf_contribution": 0.031746031746031744,
+          "final_rank": 2,
+          "included": true,
+          "exclusion_reason": null
+        },
+        {
+          "plan_id": "plan-ca6ca9398bf9a226",
+          "subquery": "An active recommendation triggered the Synthetic Atlas Control. Can I proceed if the client accepts the risk?",
+          "channel": "WORD_TFIDF",
+          "candidate_ref": "local://synthetic-m4d/atlas_critical_control.html#section-synthetic-atlas-control",
+          "channel_rank": 2,
+          "raw_score": 0.516607223293926,
+          "rrf_contribution": 0.016129032258064516,
+          "final_rank": 2,
+          "included": true,
+          "exclusion_reason": null
+        },
+        {
+          "plan_id": "plan-ca6ca9398bf9a226",
+          "subquery": "An active recommendation triggered the Synthetic Atlas Control. Can I proceed if the client accepts the risk?",
+          "channel": "CHAR_TFIDF",
+          "candidate_ref": "local://synthetic-m4d/atlas_exception_process.html#section-required-reference",
+          "channel_rank": 3,
+          "raw_score": 0.2941694257200558,
+          "rrf_contribution": 0.011904761904761904,
+          "final_rank": 3,
+          "included": true,
+          "exclusion_reason": null
+        },
+        {
+          "plan_id": "plan-ca6ca9398bf9a226",
+          "subquery": "An active recommendation triggered the Synthetic Atlas Control. Can I proceed if the client accepts the risk?",
+          "channel": "EXACT",
+          "candidate_ref": "local://synthetic-m4d/atlas_exception_process.html#section-required-reference",
+          "channel_rank": 2,
+          "raw_score": 6.5,
+          "rrf_contribution": 0.03225806451612903,
+          "final_rank": 3,
+          "included": true,
+          "exclusion_reason": null
+        },
+        {
+          "plan_id": "plan-ca6ca9398bf9a226",
+          "subquery": "An active recommendation triggered the Synthetic Atlas Control. Can I proceed if the client accepts the risk?",
+          "channel": "WORD_TFIDF",
+          "candidate_ref": "local://synthetic-m4d/atlas_exception_process.html#section-required-reference",
+          "channel_rank": 4,
+          "raw_score": 0.18954937801354668,
+          "rrf_contribution": 0.015625,
+          "final_rank": 3,
+          "included": true,
+          "exclusion_reason": null
+        },
+        {
+          "plan_id": "plan-ca6ca9398bf9a226",
+          "subquery": "An active recommendation triggered the Synthetic Atlas Control. Can I proceed if the client accepts the risk?",
+          "channel": "CHAR_TFIDF",
+          "candidate_ref": "local://synthetic-m4d/atlas_exception_process.html#section-synthetic-atlas-exception-process",
+          "channel_rank": 4,
+          "raw_score": 0.27179222547398935,
+          "rrf_contribution": 0.01171875,
+          "final_rank": 4,
+          "included": true,
+          "exclusion_reason": null
+        },
+        {
+          "plan_id": "plan-ca6ca9398bf9a226",
+          "subquery": "An active recommendation triggered the Synthetic Atlas Control. Can I proceed if the client accepts the risk?",
+          "channel": "EXACT",
+          "candidate_ref": "local://synthetic-m4d/atlas_exception_process.html#section-synthetic-atlas-exception-process",
+          "channel_rank": 4,
+          "raw_score": 6.25,
+          "rrf_contribution": 0.03125,
+          "final_rank": 4,
+          "included": true,
+          "exclusion_reason": null
+        },
+        {
+          "plan_id": "plan-ca6ca9398bf9a226",
+          "subquery": "An active recommendation triggered the Synthetic Atlas Control. Can I proceed if the client accepts the risk?",
+          "channel": "WORD_TFIDF",
+          "candidate_ref": "local://synthetic-m4d/atlas_exception_process.html#section-synthetic-atlas-exception-process",
+          "channel_rank": 3,
+          "raw_score": 0.2041762641715296,
+          "rrf_contribution": 0.015873015873015872,
+          "final_rank": 4,
+          "included": true,
+          "exclusion_reason": null
+        },
+        {
+          "plan_id": "plan-ca6ca9398bf9a226",
+          "subquery": "An active recommendation triggered the Synthetic Atlas Control. Can I proceed if the client accepts the risk?",
+          "channel": "CHAR_TFIDF",
+          "candidate_ref": "local://synthetic-m4d/ambiguous_arc_registry.html#section-synthetic-arc-registry",
+          "channel_rank": 7,
+          "raw_score": 0.10598081920586579,
+          "rrf_contribution": 0.011194029850746268,
+          "final_rank": 5,
+          "included": true,
+          "exclusion_reason": null
+        },
+        {
+          "plan_id": "plan-ca6ca9398bf9a226",
+          "subquery": "An active recommendation triggered the Synthetic Atlas Control. Can I proceed if the client accepts the risk?",
+          "channel": "EXACT",
+          "candidate_ref": "local://synthetic-m4d/ambiguous_arc_registry.html#section-synthetic-arc-registry",
+          "channel_rank": 6,
+          "raw_score": 5.0,
+          "rrf_contribution": 0.030303030303030304,
+          "final_rank": 5,
+          "included": true,
+          "exclusion_reason": null
+        },
+        {
+          "plan_id": "plan-ca6ca9398bf9a226",
+          "subquery": "An active recommendation triggered the Synthetic Atlas Control. Can I proceed if the client accepts the risk?",
+          "channel": "WORD_TFIDF",
+          "candidate_ref": "local://synthetic-m4d/ambiguous_arc_registry.html#section-synthetic-arc-registry",
+          "channel_rank": 9,
+          "raw_score": 0.045123080970122534,
+          "rrf_contribution": 0.014492753623188406,
+          "final_rank": 5,
+          "included": true,
+          "exclusion_reason": null
+        },
+        {
+          "plan_id": "plan-ca6ca9398bf9a226",
+          "subquery": "An active recommendation triggered the Synthetic Atlas Control. Can I proceed if the client accepts the risk?",
+          "channel": "CHAR_TFIDF",
+          "candidate_ref": "local://synthetic-m4d/stability_marker_definition.html#section-definition",
+          "channel_rank": 6,
+          "raw_score": 0.12137323242923606,
+          "rrf_contribution": 0.011363636363636364,
+          "final_rank": 6,
+          "included": true,
+          "exclusion_reason": null
+        },
+        {
+          "plan_id": "plan-ca6ca9398bf9a226",
+          "subquery": "An active recommendation triggered the Synthetic Atlas Control. Can I proceed if the client accepts the risk?",
+          "channel": "EXACT",
+          "candidate_ref": "local://synthetic-m4d/stability_marker_definition.html#section-definition",
+          "channel_rank": 7,
+          "raw_score": 5.0,
+          "rrf_contribution": 0.029850746268656716,
+          "final_rank": 6,
+          "included": true,
+          "exclusion_reason": null
+        },
+        {
+          "plan_id": "plan-ca6ca9398bf9a226",
+          "subquery": "An active recommendation triggered the Synthetic Atlas Control. Can I proceed if the client accepts the risk?",
+          "channel": "WORD_TFIDF",
+          "candidate_ref": "local://synthetic-m4d/stability_marker_definition.html#section-definition",
+          "channel_rank": 11,
+          "raw_score": 0.042632855679090295,
+          "rrf_contribution": 0.014084507042253521,
+          "final_rank": 6,
+          "included": true,
+          "exclusion_reason": null
+        },
+        {
+          "plan_id": "plan-ca6ca9398bf9a226",
+          "subquery": "An active recommendation triggered the Synthetic Atlas Control. Can I proceed if the client accepts the risk?",
+          "channel": "CHAR_TFIDF",
+          "candidate_ref": "local://synthetic-m4d/meridian_region_beta.html#section-applicability",
+          "channel_rank": 5,
+          "raw_score": 0.1291588731496817,
+          "rrf_contribution": 0.011538461538461539,
+          "final_rank": 7,
+          "included": true,
+          "exclusion_reason": null
+        },
+        {
+          "plan_id": "plan-ca6ca9398bf9a226",
+          "subquery": "An active recommendation triggered the Synthetic Atlas Control. Can I proceed if the client accepts the risk?",
+          "channel": "EXACT",
+          "candidate_ref": "local://synthetic-m4d/meridian_region_beta.html#section-applicability",
+          "channel_rank": 9,
+          "raw_score": 0.75,
+          "rrf_contribution": 0.028985507246376812,
+          "final_rank": 7,
+          "included": true,
+          "exclusion_reason": null
+        },
+        {
+          "plan_id": "plan-ca6ca9398bf9a226",
+          "subquery": "An active recommendation triggered the Synthetic Atlas Control. Can I proceed if the client accepts the risk?",
+          "channel": "WORD_TFIDF",
+          "candidate_ref": "local://synthetic-m4d/meridian_region_beta.html#section-applicability",
+          "channel_rank": 8,
+          "raw_score": 0.05433351998846886,
+          "rrf_contribution": 0.014705882352941176,
+          "final_rank": 7,
+          "included": true,
+          "exclusion_reason": null
+        },
+        {
+          "plan_id": "plan-ca6ca9398bf9a226",
+          "subquery": "An active recommendation triggered the Synthetic Atlas Control. Can I proceed if the client accepts the risk?",
+          "channel": "CHAR_TFIDF",
+          "candidate_ref": "local://synthetic-m4d/ambiguous_arc_registry.html#section-declared-expansions",
+          "channel_rank": 11,
+          "raw_score": 0.08574927941270521,
+          "rrf_contribution": 0.01056338028169014,
+          "final_rank": 8,
+          "included": true,
+          "exclusion_reason": null
+        },
+        {
+          "plan_id": "plan-ca6ca9398bf9a226",
+          "subquery": "An active recommendation triggered the Synthetic Atlas Control. Can I proceed if the client accepts the risk?",
+          "channel": "EXACT",
+          "candidate_ref": "local://synthetic-m4d/ambiguous_arc_registry.html#section-declared-expansions",
+          "channel_rank": 5,
+          "raw_score": 5.0,
+          "rrf_contribution": 0.03076923076923077,
+          "final_rank": 8,
+          "included": true,
+          "exclusion_reason": null
+        },
+        {
+          "plan_id": "plan-ca6ca9398bf9a226",
+          "subquery": "An active recommendation triggered the Synthetic Atlas Control. Can I proceed if the client accepts the risk?",
+          "channel": "WORD_TFIDF",
+          "candidate_ref": "local://synthetic-m4d/ambiguous_arc_registry.html#section-declared-expansions",
+          "channel_rank": 12,
+          "raw_score": 0.02220903350307601,
+          "rrf_contribution": 0.013888888888888888,
+          "final_rank": 8,
+          "included": true,
+          "exclusion_reason": null
+        },
+        {
+          "plan_id": "plan-ca6ca9398bf9a226",
+          "subquery": "An active recommendation triggered the Synthetic Atlas Control. Can I proceed if the client accepts the risk?",
+          "channel": "CHAR_TFIDF",
+          "candidate_ref": "local://synthetic-m4d/stability_marker_definition.html#section-synthetic-stability-marker",
+          "channel_rank": 10,
+          "raw_score": 0.08851560232076383,
+          "rrf_contribution": 0.010714285714285714,
+          "final_rank": 9,
+          "included": false,
+          "exclusion_reason": "NOT_SELECTED_TOP_K"
+        },
+        {
+          "plan_id": "plan-ca6ca9398bf9a226",
+          "subquery": "An active recommendation triggered the Synthetic Atlas Control. Can I proceed if the client accepts the risk?",
+          "channel": "EXACT",
+          "candidate_ref": "local://synthetic-m4d/stability_marker_definition.html#section-synthetic-stability-marker",
+          "channel_rank": 8,
+          "raw_score": 5.0,
+          "rrf_contribution": 0.029411764705882353,
+          "final_rank": 9,
+          "included": false,
+          "exclusion_reason": "NOT_SELECTED_TOP_K"
+        },
+        {
+          "plan_id": "plan-ca6ca9398bf9a226",
+          "subquery": "An active recommendation triggered the Synthetic Atlas Control. Can I proceed if the client accepts the risk?",
+          "channel": "WORD_TFIDF",
+          "candidate_ref": "local://synthetic-m4d/stability_marker_definition.html#section-synthetic-stability-marker",
+          "channel_rank": 10,
+          "raw_score": 0.045123080970122534,
+          "rrf_contribution": 0.014285714285714285,
+          "final_rank": 9,
+          "included": false,
+          "exclusion_reason": "NOT_SELECTED_TOP_K"
+        },
+        {
+          "plan_id": "plan-ca6ca9398bf9a226",
+          "subquery": "An active recommendation triggered the Synthetic Atlas Control. Can I proceed if the client accepts the risk?",
+          "channel": "CHAR_TFIDF",
+          "candidate_ref": "local://synthetic-m4d/meridian_region_alpha.html#section-control-meridian-region-alpha",
+          "channel_rank": 9,
+          "raw_score": 0.09128173318218237,
+          "rrf_contribution": 0.010869565217391304,
+          "final_rank": 10,
+          "included": false,
+          "exclusion_reason": "NOT_SELECTED_TOP_K"
+        },
+        {
+          "plan_id": "plan-ca6ca9398bf9a226",
+          "subquery": "An active recommendation triggered the Synthetic Atlas Control. Can I proceed if the client accepts the risk?",
+          "channel": "WORD_TFIDF",
+          "candidate_ref": "local://synthetic-m4d/meridian_region_alpha.html#section-control-meridian-region-alpha",
+          "channel_rank": 5,
+          "raw_score": 0.05936878501336458,
+          "rrf_contribution": 0.015384615384615385,
+          "final_rank": 10,
+          "included": false,
+          "exclusion_reason": "NOT_SELECTED_TOP_K"
+        },
+        {
+          "plan_id": "plan-ca6ca9398bf9a226",
+          "subquery": "An active recommendation triggered the Synthetic Atlas Control. Can I proceed if the client accepts the risk?",
+          "channel": "CHAR_TFIDF",
+          "candidate_ref": "local://synthetic-m4d/meridian_region_beta.html#section-control-meridian-region-beta",
+          "channel_rank": 8,
+          "raw_score": 0.0972679764196294,
+          "rrf_contribution": 0.011029411764705883,
+          "final_rank": 11,
+          "included": false,
+          "exclusion_reason": "NOT_SELECTED_TOP_K"
+        },
+        {
+          "plan_id": "plan-ca6ca9398bf9a226",
+          "subquery": "An active recommendation triggered the Synthetic Atlas Control. Can I proceed if the client accepts the risk?",
+          "channel": "WORD_TFIDF",
+          "candidate_ref": "local://synthetic-m4d/meridian_region_beta.html#section-control-meridian-region-beta",
+          "channel_rank": 6,
+          "raw_score": 0.05936878501336458,
+          "rrf_contribution": 0.015151515151515152,
+          "final_rank": 11,
+          "included": false,
+          "exclusion_reason": "NOT_SELECTED_TOP_K"
+        },
+        {
+          "plan_id": "plan-ca6ca9398bf9a226",
+          "subquery": "An active recommendation triggered the Synthetic Atlas Control. Can I proceed if the client accepts the risk?",
+          "channel": "CHAR_TFIDF",
+          "candidate_ref": "local://synthetic-m4d/meridian_region_alpha.html#section-applicability",
+          "channel_rank": 12,
+          "raw_score": 0.07103998490147166,
+          "rrf_contribution": 0.010416666666666666,
+          "final_rank": 12,
+          "included": false,
+          "exclusion_reason": "NOT_SELECTED_TOP_K"
+        },
+        {
+          "plan_id": "plan-ca6ca9398bf9a226",
+          "subquery": "An active recommendation triggered the Synthetic Atlas Control. Can I proceed if the client accepts the risk?",
+          "channel": "WORD_TFIDF",
+          "candidate_ref": "local://synthetic-m4d/meridian_region_alpha.html#section-applicability",
+          "channel_rank": 7,
+          "raw_score": 0.05477627761869941,
+          "rrf_contribution": 0.014925373134328358,
+          "final_rank": 12,
+          "included": false,
+          "exclusion_reason": "NOT_SELECTED_TOP_K"
+        }
+      ]
+    },
+    "verified_run": {
+      "result": {
+        "trace_id": "9c093210-1d62-4e5b-ae52-97b5f7042c95",
+        "decision": "ANSWER",
+        "answer": "atlas_do_not_proceed: do not proceed with the synthetic recommendation until the active control review is complete.\natlas_client_acceptance_no_override: client acceptance of the risk does not override an active Synthetic Atlas Control.",
+        "clarifying_question": null,
+        "reason_codes": [],
+        "evidence": [
+          {
+            "section_id": "atlas_critical_control.html::section-02",
+            "source_ref": "local://synthetic-m4d/atlas_critical_control.html",
+            "title": "Synthetic Atlas Control",
+            "heading_path": [
+              "Synthetic Atlas Control",
+              "Critical controls"
+            ],
+            "score": 1.0,
+            "excerpt": "Critical controls\natlas_do_not_proceed: do not proceed with the synthetic recommendation until the active control review is complete.\natlas_client_acceptance_no_override: client acceptance of the risk does not override an active Synthetic Atlas Control.",
+            "table_rows": []
+          }
+        ],
+        "route": null,
+        "answer_confidence": 1.0,
+        "routing_confidence": 0.0,
+        "confidence_kind": "DETERMINISTIC_GATE_PLACEHOLDER",
+        "detected_context": {
+          "region": null,
+          "channel": null,
+          "workflow_stage": null,
+          "need_type": "UNKNOWN",
+          "missing_context": []
+        },
+        "missing_context": [],
+        "retrieved_sections": [
+          {
+            "section_id": "atlas_critical_control.html::section-02",
+            "source_ref": "local://synthetic-m4d/atlas_critical_control.html",
+            "title": "Synthetic Atlas Control",
+            "heading_path": [
+              "Synthetic Atlas Control",
+              "Critical controls"
+            ],
+            "score": 1.0,
+            "excerpt": "Critical controls\natlas_do_not_proceed: do not proceed with the synthetic recommendation until the active control review is complete.\natlas_client_acceptance_no_override: client acceptance of the risk does not override an active Synthetic Atlas Control.",
+            "table_rows": []
+          }
+        ]
+      },
+      "verification": {
+        "status": "SUFFICIENT",
+        "reason_codes": [],
+        "supported_claim_ids": [
+          "atlas_do_not_proceed",
+          "atlas_client_acceptance_no_override"
+        ],
+        "unsupported_claim_ids": [],
+        "missing_required_claim_ids": [],
+        "scope_mismatches": [],
+        "unresolved_required_references": [],
+        "unsupported_modalities": [],
+        "evidence_refs": [
+          "local://synthetic-m4d/atlas_critical_control.html#section-critical-controls:sentence-1",
+          "local://synthetic-m4d/atlas_critical_control.html#section-critical-controls:sentence-2"
+        ],
+        "explanation": "Every M4D answer claim has explicit local provenance support."
+      }
+    }
+  }
+}

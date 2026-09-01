@@ -1,0 +1,42 @@
+[
+  {
+    "priority": 1,
+    "reason_code": "TECHNICAL_FAILURE",
+    "support_function": "IT_SERVICE_DESK"
+  },
+  {
+    "priority": 2,
+    "need_type": "ROUTINE_PROCESS",
+    "support_function": "BUSINESS_FRONT_SUPPORT"
+  },
+  {
+    "priority": 2,
+    "need_type": "SYSTEM_GUIDANCE",
+    "support_function": "BUSINESS_FRONT_SUPPORT"
+  },
+  {
+    "priority": 3,
+    "need_type": "COMPLEX_CASE",
+    "support_function": "BRM_SUITABILITY_LEAD"
+  },
+  {
+    "priority": 3,
+    "reason_code": "SCOPE_MISMATCH",
+    "support_function": "BRM_SUITABILITY_LEAD"
+  },
+  {
+    "priority": 4,
+    "need_type": "POLICY_INTERPRETATION",
+    "support_function": "SUITABILITY_EXPERT_LEGAL"
+  },
+  {
+    "priority": 5,
+    "need_type": "APPROVAL_REQUIRED",
+    "support_function": "SUITABILITY_EXPERT_COMPLIANCE"
+  },
+  {
+    "priority": 6,
+    "fallback": true,
+    "support_function": "BRM_SUITABILITY_LEAD"
+  }
+]

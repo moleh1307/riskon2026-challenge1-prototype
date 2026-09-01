@@ -1,0 +1,9 @@
+[event_readiness]
+column_aliases = "data/synthetic/event_readiness/manifest_column_aliases.json"
+generated_root = "data/generated/event_intake"
+pipeline_config = "config/milestone2.toml"
+url_prefix = "local://event-corpus/"
+network_enabled = false
+external_fetch_enabled = false
+source_mutation_enabled = false
+source_instruction_execution_enabled = false

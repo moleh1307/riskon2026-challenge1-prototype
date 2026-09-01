@@ -1,0 +1,26 @@
+{
+  "schema_version": "1.0",
+  "milestone": "ER-B_LIVE_QUERY_CONTEXT_PRESETS",
+  "presets": [
+    {
+      "id": "REGION_BETA_SERVICE_BASIC",
+      "label": "Region Beta / Service Basic",
+      "context": {"region": "REGION_BETA", "service_model": "SERVICE_BASIC"}
+    },
+    {
+      "id": "REGION_ALPHA_SERVICE_BASIC",
+      "label": "Region Alpha / Service Basic",
+      "context": {"region": "REGION_ALPHA", "service_model": "SERVICE_BASIC"}
+    },
+    {
+      "id": "REGION_BETA_SERVICE_PLUS",
+      "label": "Region Beta / Service Plus",
+      "context": {"region": "REGION_BETA", "service_model": "SERVICE_PLUS"}
+    },
+    {
+      "id": "NO_CONTEXT",
+      "label": "No structured context",
+      "context": {}
+    }
+  ]
+}

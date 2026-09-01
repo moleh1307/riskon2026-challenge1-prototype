@@ -1,0 +1,23 @@
+{
+  "capsule_id": "m5a-capsule-M5A-046",
+  "baseline_trace_id": "m5a-baseline-M5A-046",
+  "baseline_decision": "ABSTAIN",
+  "reason_codes": ["NO_EXPLICIT_SUPPORT"],
+  "detected_context": {
+    "region": "REGION_BETA",
+    "channel": "ADVISORY",
+    "workflow_stage": "PRE_DECISION",
+    "need_type": "POLICY_INTERPRETATION",
+    "missing_context": []
+  },
+  "missing_context": [],
+  "evidence_refs": [],
+  "verification_status": "INSUFFICIENT",
+  "support_function": "POLICY_INTERPRETATION",
+  "route_mode": "FUNCTIONAL_QUEUE",
+  "selected_expert_id": null,
+  "queue_id": "QUEUE-POLICY-INTERPRETATION",
+  "routing_reason": "Synthetic policy interpretation requires governed review.",
+  "routing_confidence": 0.82,
+  "confidence_kind": "SYNTHETIC_CONTRACT"
+}

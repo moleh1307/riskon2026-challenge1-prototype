@@ -1,0 +1,39 @@
+[base]
+config = "config/milestone4b.toml"
+
+[orchestra.m4c]
+evaluation_cases = "data/synthetic/m4c/evaluation_cases.json"
+execution_policy = "data/synthetic/m4c/counterfactual_execution_policy.json"
+context_value_registry = "data/synthetic/m4c/context_value_registry.json"
+fixture_catalog = "data/synthetic/m4c/counterfactual_fixture_catalog.json"
+worker_selection_extension = "data/synthetic/m4c/worker_selection_extension.json"
+fixture_root = "data/synthetic/m4c/counterfactual_runs"
+fixture_backend = "FROZEN_COUNTERFACTUAL_FIXTURE_V1"
+runtime_backend = "LOCAL_PLANNED_PIPELINE_V1"
+maximum_parallel_variants = 3
+maximum_counterfactual_depth = 1
+implemented_dimensions = [
+  "region",
+  "service_model"
+]
+generated_root = "data/generated/m4c"
+
+[evaluation]
+included_cases = [
+  "M4-035",
+  "M4-036"
+]
+expected_cases = 2
+expected_counterfactual_variants = 4
+expected_safe_transition_passes = 3
+expected_scope_leaks = 1
+expected_final_answers = 1
+expected_final_abstentions = 1
+expected_brm_queue_routes = 1
+expected_worker_tasks = 7
+
+[security]
+network_enabled = false
+counterfactual_routing_enabled = false
+recursive_orchestration_enabled = false
+agent_to_agent_citation_enabled = false

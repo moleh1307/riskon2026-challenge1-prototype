@@ -1,0 +1,70 @@
+{
+  "fixture_schema_version": "1.0",
+  "fixture_origin": "SYNTHETIC_ORCHESTRA_BASELINE_V1",
+  "case_id": "M4-039",
+  "planned_verified_run": {
+    "query_plan": {
+      "plan_id": "m4-fixture-M4-039",
+      "original_query": "What does the unlabelled synthetic methodology visual require?",
+      "normalised_query": "What does the unlabelled synthetic methodology visual require?",
+      "intent": "REFERENCE_LOOKUP",
+      "canonical_terms": ["unlabelled methodology", "synthetic visual"],
+      "required_context_fields": [],
+      "missing_context_fields": [],
+      "subqueries": [],
+      "retrieval_channels": ["EXACT", "WORD_TFIDF", "CHAR_TFIDF"],
+      "retrieval_skipped": false
+    },
+    "retrieval_diagnostics": {"entries": []},
+    "verified_run": {
+      "result": {
+        "trace_id": "m4-fixture-M4-039",
+        "decision": "ABSTAIN",
+        "answer": null,
+        "clarifying_question": null,
+        "reason_codes": ["UNSUPPORTED_MODALITY"],
+        "evidence": [],
+        "route": {
+          "support_function": "BRM_SUITABILITY_LEAD",
+          "expert_id": null,
+          "routing_reason": "Frozen synthetic legacy support-function fixture",
+          "routing_confidence": 0.5
+        },
+        "answer_confidence": 0.0,
+        "routing_confidence": 0.5,
+        "confidence_kind": "DETERMINISTIC_GATE_PLACEHOLDER",
+        "detected_context": {
+          "region": null,
+          "channel": "ADVISORY",
+          "workflow_stage": "VISUAL_REVIEW",
+          "need_type": "COMPLEX_CASE",
+          "missing_context": []
+        },
+        "missing_context": [],
+        "retrieved_sections": [
+          {
+            "section_id": "image_only_methodology.html::section-image-only-methodology",
+            "source_ref": "local://synthetic-m4/image_only_methodology.html#section-image-only-methodology",
+            "title": "Image-only methodology",
+            "heading_path": ["Image-only methodology"],
+            "score": 1.0,
+            "excerpt": "The methodology is represented by the attached synthetic visual asset.",
+            "table_rows": []
+          }
+        ]
+      },
+      "verification": {
+        "status": "INSUFFICIENT",
+        "reason_codes": ["UNSUPPORTED_MODALITY"],
+        "supported_claim_ids": [],
+        "unsupported_claim_ids": [],
+        "missing_required_claim_ids": [],
+        "scope_mismatches": [],
+        "unresolved_required_references": [],
+        "unsupported_modalities": ["unlabelled_methodology.svg"],
+        "evidence_refs": ["local://synthetic-m4/image_only_methodology.html#section-image-only-methodology"],
+        "explanation": "The baseline identifies a visual modality but has no visual capability; it does not interpret the asset or infer an answer from its filename, dimensions, or surrounding prose."
+      }
+    }
+  }
+}

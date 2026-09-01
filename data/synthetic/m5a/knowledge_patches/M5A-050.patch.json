@@ -1,0 +1,31 @@
+{
+  "patch_id": "M5A-050-PATCH",
+  "operation": "ADD",
+  "status": "EXPIRED",
+  "source_resolution_id": "M5A-050-RESOLUTION",
+  "claims": [
+    {
+      "claim_id": "meridian_beta_basic_applies",
+      "text": "Control Meridian applies to SERVICE_BASIC in REGION_BETA.",
+      "evidence_refs": ["local://synthetic-m5a/evaluation_cases.json#M5A-050-authoritative-evidence"],
+      "critical": false
+    }
+  ],
+  "scope": {
+    "regions": ["REGION_BETA"],
+    "jurisdictions": [],
+    "service_models": ["SERVICE_BASIC"],
+    "solicitation_types": [],
+    "workflow_stages": [],
+    "client_classifications": [],
+    "systems": []
+  },
+  "authoritative_evidence_refs": ["local://synthetic-m5a/evaluation_cases.json#M5A-050-authoritative-evidence"],
+  "risk_level": "NORMAL",
+  "effective_from": "2026-08-01T00:00:00Z",
+  "effective_to": "2026-08-20T00:00:00Z",
+  "supersedes_patch_id": null,
+  "knowledge_owner_role_id": "SYN-ROLE-KNOWLEDGE-OWNER-001",
+  "policy_ci_report_ref": "local://synthetic-m5a/policy_ci_policy.json#M5A-050-policy-ci",
+  "approval_ref": null
+}

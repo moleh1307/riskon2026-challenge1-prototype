@@ -1,0 +1,30 @@
+{
+  "resolution_id": "M5A-049-RESOLUTION",
+  "case_capsule_id": "m5a-capsule-M5A-049",
+  "status": "CANDIDATE_RESOLUTION",
+  "resolution_author_role_id": "SYN-ROLE-BRM-LEAD-001",
+  "resolution_text": "Control Meridian applies only to the basic service in Region Beta under the stated synthetic scope.",
+  "authoritative_evidence_refs": ["local://synthetic-m5a/evaluation_cases.json#M5A-049-authoritative-evidence"],
+  "claims": [
+    {
+      "claim_id": "meridian_beta_basic_applies",
+      "text": "Control Meridian applies to SERVICE_BASIC in REGION_BETA.",
+      "evidence_refs": ["local://synthetic-m5a/evaluation_cases.json#M5A-049-authoritative-evidence"],
+      "critical": false
+    }
+  ],
+  "scope": {
+    "regions": ["REGION_BETA"],
+    "jurisdictions": [],
+    "service_models": ["SERVICE_BASIC"],
+    "solicitation_types": [],
+    "workflow_stages": [],
+    "client_classifications": [],
+    "systems": []
+  },
+  "effective_from": "2026-08-01T00:00:00Z",
+  "effective_to": null,
+  "review_by": "2026-12-31T00:00:00Z",
+  "knowledge_owner_role_id": "SYN-ROLE-KNOWLEDGE-OWNER-001",
+  "approval_required": true
+}

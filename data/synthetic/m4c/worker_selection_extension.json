@@ -1,0 +1,8 @@
+{
+  "schema_version": "1.0",
+  "extends": "local://synthetic-m4b/worker-selection-policy.json",
+  "backend": "DETERMINISTIC_WORKER_V1",
+  "implemented_roles": [
+    "COUNTERFACTUAL_SENTINEL"
+  ]
+}

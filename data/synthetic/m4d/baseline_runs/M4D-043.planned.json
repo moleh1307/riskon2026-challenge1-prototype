@@ -1,0 +1,456 @@
+{
+  "fixture_schema_version": "1.0",
+  "fixture_origin": "SYNTHETIC_M4D_BASELINE_V1",
+  "case_id": "M4D-043",
+  "query_input": {
+    "query": "Where can I submit the Synthetic Atlas exception request?",
+    "context": {},
+    "trace_id": null
+  },
+  "planned_verified_run": {
+    "query_plan": {
+      "plan_id": "plan-4afdc26fe4273cdf",
+      "original_query": "Where can I submit the Synthetic Atlas exception request?",
+      "normalised_query": "Where can I submit the Synthetic Atlas exception request?",
+      "intent": "PROCEDURE",
+      "canonical_terms": [
+        "synthetic atlas exception request"
+      ],
+      "required_context_fields": [],
+      "missing_context_fields": [],
+      "subqueries": [],
+      "retrieval_channels": [
+        "EXACT",
+        "WORD_TFIDF",
+        "CHAR_TFIDF"
+      ],
+      "retrieval_skipped": false
+    },
+    "retrieval_diagnostics": {
+      "entries": [
+        {
+          "plan_id": "plan-4afdc26fe4273cdf",
+          "subquery": "Where can I submit the Synthetic Atlas exception request?",
+          "channel": "CHAR_TFIDF",
+          "candidate_ref": "local://synthetic-m4d/atlas_exception_process.html#section-required-reference",
+          "channel_rank": 1,
+          "raw_score": 0.6777290367748711,
+          "rrf_contribution": 0.012295081967213115,
+          "final_rank": 1,
+          "included": true,
+          "exclusion_reason": null
+        },
+        {
+          "plan_id": "plan-4afdc26fe4273cdf",
+          "subquery": "Where can I submit the Synthetic Atlas exception request?",
+          "channel": "EXACT",
+          "candidate_ref": "local://synthetic-m4d/atlas_exception_process.html#section-required-reference",
+          "channel_rank": 1,
+          "raw_score": 5.5,
+          "rrf_contribution": 0.03278688524590164,
+          "final_rank": 1,
+          "included": true,
+          "exclusion_reason": null
+        },
+        {
+          "plan_id": "plan-4afdc26fe4273cdf",
+          "subquery": "Where can I submit the Synthetic Atlas exception request?",
+          "channel": "WORD_TFIDF",
+          "candidate_ref": "local://synthetic-m4d/atlas_exception_process.html#section-required-reference",
+          "channel_rank": 1,
+          "raw_score": 0.6413504591143396,
+          "rrf_contribution": 0.01639344262295082,
+          "final_rank": 1,
+          "included": true,
+          "exclusion_reason": null
+        },
+        {
+          "plan_id": "plan-4afdc26fe4273cdf",
+          "subquery": "Where can I submit the Synthetic Atlas exception request?",
+          "channel": "CHAR_TFIDF",
+          "candidate_ref": "local://synthetic-m4d/atlas_exception_process.html#section-synthetic-atlas-exception-process",
+          "channel_rank": 2,
+          "raw_score": 0.570437128292121,
+          "rrf_contribution": 0.012096774193548387,
+          "final_rank": 2,
+          "included": true,
+          "exclusion_reason": null
+        },
+        {
+          "plan_id": "plan-4afdc26fe4273cdf",
+          "subquery": "Where can I submit the Synthetic Atlas exception request?",
+          "channel": "EXACT",
+          "candidate_ref": "local://synthetic-m4d/atlas_exception_process.html#section-synthetic-atlas-exception-process",
+          "channel_rank": 2,
+          "raw_score": 5.0,
+          "rrf_contribution": 0.03225806451612903,
+          "final_rank": 2,
+          "included": true,
+          "exclusion_reason": null
+        },
+        {
+          "plan_id": "plan-4afdc26fe4273cdf",
+          "subquery": "Where can I submit the Synthetic Atlas exception request?",
+          "channel": "WORD_TFIDF",
+          "candidate_ref": "local://synthetic-m4d/atlas_exception_process.html#section-synthetic-atlas-exception-process",
+          "channel_rank": 2,
+          "raw_score": 0.5804580303030641,
+          "rrf_contribution": 0.016129032258064516,
+          "final_rank": 2,
+          "included": true,
+          "exclusion_reason": null
+        },
+        {
+          "plan_id": "plan-4afdc26fe4273cdf",
+          "subquery": "Where can I submit the Synthetic Atlas exception request?",
+          "channel": "CHAR_TFIDF",
+          "candidate_ref": "local://synthetic-m4d/atlas_critical_control.html#section-critical-controls",
+          "channel_rank": 4,
+          "raw_score": 0.25960725342915364,
+          "rrf_contribution": 0.01171875,
+          "final_rank": 3,
+          "included": true,
+          "exclusion_reason": null
+        },
+        {
+          "plan_id": "plan-4afdc26fe4273cdf",
+          "subquery": "Where can I submit the Synthetic Atlas exception request?",
+          "channel": "EXACT",
+          "candidate_ref": "local://synthetic-m4d/atlas_critical_control.html#section-critical-controls",
+          "channel_rank": 3,
+          "raw_score": 3.75,
+          "rrf_contribution": 0.031746031746031744,
+          "final_rank": 3,
+          "included": true,
+          "exclusion_reason": null
+        },
+        {
+          "plan_id": "plan-4afdc26fe4273cdf",
+          "subquery": "Where can I submit the Synthetic Atlas exception request?",
+          "channel": "WORD_TFIDF",
+          "candidate_ref": "local://synthetic-m4d/atlas_critical_control.html#section-critical-controls",
+          "channel_rank": 4,
+          "raw_score": 0.20640923667721522,
+          "rrf_contribution": 0.015625,
+          "final_rank": 3,
+          "included": true,
+          "exclusion_reason": null
+        },
+        {
+          "plan_id": "plan-4afdc26fe4273cdf",
+          "subquery": "Where can I submit the Synthetic Atlas exception request?",
+          "channel": "CHAR_TFIDF",
+          "candidate_ref": "local://synthetic-m4d/atlas_critical_control.html#section-synthetic-atlas-control",
+          "channel_rank": 3,
+          "raw_score": 0.36921430523725346,
+          "rrf_contribution": 0.011904761904761904,
+          "final_rank": 4,
+          "included": true,
+          "exclusion_reason": null
+        },
+        {
+          "plan_id": "plan-4afdc26fe4273cdf",
+          "subquery": "Where can I submit the Synthetic Atlas exception request?",
+          "channel": "EXACT",
+          "candidate_ref": "local://synthetic-m4d/atlas_critical_control.html#section-synthetic-atlas-control",
+          "channel_rank": 4,
+          "raw_score": 3.75,
+          "rrf_contribution": 0.03125,
+          "final_rank": 4,
+          "included": true,
+          "exclusion_reason": null
+        },
+        {
+          "plan_id": "plan-4afdc26fe4273cdf",
+          "subquery": "Where can I submit the Synthetic Atlas exception request?",
+          "channel": "WORD_TFIDF",
+          "candidate_ref": "local://synthetic-m4d/atlas_critical_control.html#section-synthetic-atlas-control",
+          "channel_rank": 3,
+          "raw_score": 0.33676031755589314,
+          "rrf_contribution": 0.015873015873015872,
+          "final_rank": 4,
+          "included": true,
+          "exclusion_reason": null
+        },
+        {
+          "plan_id": "plan-4afdc26fe4273cdf",
+          "subquery": "Where can I submit the Synthetic Atlas exception request?",
+          "channel": "CHAR_TFIDF",
+          "candidate_ref": "local://synthetic-m4d/ambiguous_arc_registry.html#section-synthetic-arc-registry",
+          "channel_rank": 5,
+          "raw_score": 0.16517245025330726,
+          "rrf_contribution": 0.011538461538461539,
+          "final_rank": 5,
+          "included": true,
+          "exclusion_reason": null
+        },
+        {
+          "plan_id": "plan-4afdc26fe4273cdf",
+          "subquery": "Where can I submit the Synthetic Atlas exception request?",
+          "channel": "EXACT",
+          "candidate_ref": "local://synthetic-m4d/ambiguous_arc_registry.html#section-synthetic-arc-registry",
+          "channel_rank": 6,
+          "raw_score": 2.5,
+          "rrf_contribution": 0.030303030303030304,
+          "final_rank": 5,
+          "included": true,
+          "exclusion_reason": null
+        },
+        {
+          "plan_id": "plan-4afdc26fe4273cdf",
+          "subquery": "Where can I submit the Synthetic Atlas exception request?",
+          "channel": "WORD_TFIDF",
+          "candidate_ref": "local://synthetic-m4d/ambiguous_arc_registry.html#section-synthetic-arc-registry",
+          "channel_rank": 5,
+          "raw_score": 0.05631140271209491,
+          "rrf_contribution": 0.015384615384615385,
+          "final_rank": 5,
+          "included": true,
+          "exclusion_reason": null
+        },
+        {
+          "plan_id": "plan-4afdc26fe4273cdf",
+          "subquery": "Where can I submit the Synthetic Atlas exception request?",
+          "channel": "CHAR_TFIDF",
+          "candidate_ref": "local://synthetic-m4d/ambiguous_arc_registry.html#section-declared-expansions",
+          "channel_rank": 8,
+          "raw_score": 0.08588330070997598,
+          "rrf_contribution": 0.011029411764705883,
+          "final_rank": 6,
+          "included": true,
+          "exclusion_reason": null
+        },
+        {
+          "plan_id": "plan-4afdc26fe4273cdf",
+          "subquery": "Where can I submit the Synthetic Atlas exception request?",
+          "channel": "EXACT",
+          "candidate_ref": "local://synthetic-m4d/ambiguous_arc_registry.html#section-declared-expansions",
+          "channel_rank": 5,
+          "raw_score": 2.5,
+          "rrf_contribution": 0.03076923076923077,
+          "final_rank": 6,
+          "included": true,
+          "exclusion_reason": null
+        },
+        {
+          "plan_id": "plan-4afdc26fe4273cdf",
+          "subquery": "Where can I submit the Synthetic Atlas exception request?",
+          "channel": "WORD_TFIDF",
+          "candidate_ref": "local://synthetic-m4d/ambiguous_arc_registry.html#section-declared-expansions",
+          "channel_rank": 8,
+          "raw_score": 0.02771578984746628,
+          "rrf_contribution": 0.014705882352941176,
+          "final_rank": 6,
+          "included": true,
+          "exclusion_reason": null
+        },
+        {
+          "plan_id": "plan-4afdc26fe4273cdf",
+          "subquery": "Where can I submit the Synthetic Atlas exception request?",
+          "channel": "CHAR_TFIDF",
+          "candidate_ref": "local://synthetic-m4d/stability_marker_definition.html#section-definition",
+          "channel_rank": 6,
+          "raw_score": 0.15975652445568123,
+          "rrf_contribution": 0.011363636363636364,
+          "final_rank": 7,
+          "included": true,
+          "exclusion_reason": null
+        },
+        {
+          "plan_id": "plan-4afdc26fe4273cdf",
+          "subquery": "Where can I submit the Synthetic Atlas exception request?",
+          "channel": "EXACT",
+          "candidate_ref": "local://synthetic-m4d/stability_marker_definition.html#section-definition",
+          "channel_rank": 7,
+          "raw_score": 2.5,
+          "rrf_contribution": 0.029850746268656716,
+          "final_rank": 7,
+          "included": true,
+          "exclusion_reason": null
+        },
+        {
+          "plan_id": "plan-4afdc26fe4273cdf",
+          "subquery": "Where can I submit the Synthetic Atlas exception request?",
+          "channel": "WORD_TFIDF",
+          "candidate_ref": "local://synthetic-m4d/stability_marker_definition.html#section-definition",
+          "channel_rank": 7,
+          "raw_score": 0.05320372309021781,
+          "rrf_contribution": 0.014925373134328358,
+          "final_rank": 7,
+          "included": true,
+          "exclusion_reason": null
+        },
+        {
+          "plan_id": "plan-4afdc26fe4273cdf",
+          "subquery": "Where can I submit the Synthetic Atlas exception request?",
+          "channel": "CHAR_TFIDF",
+          "candidate_ref": "local://synthetic-m4d/stability_marker_definition.html#section-synthetic-stability-marker",
+          "channel_rank": 7,
+          "raw_score": 0.13759907972250573,
+          "rrf_contribution": 0.011194029850746268,
+          "final_rank": 8,
+          "included": true,
+          "exclusion_reason": null
+        },
+        {
+          "plan_id": "plan-4afdc26fe4273cdf",
+          "subquery": "Where can I submit the Synthetic Atlas exception request?",
+          "channel": "EXACT",
+          "candidate_ref": "local://synthetic-m4d/stability_marker_definition.html#section-synthetic-stability-marker",
+          "channel_rank": 8,
+          "raw_score": 2.5,
+          "rrf_contribution": 0.029411764705882353,
+          "final_rank": 8,
+          "included": true,
+          "exclusion_reason": null
+        },
+        {
+          "plan_id": "plan-4afdc26fe4273cdf",
+          "subquery": "Where can I submit the Synthetic Atlas exception request?",
+          "channel": "WORD_TFIDF",
+          "candidate_ref": "local://synthetic-m4d/stability_marker_definition.html#section-synthetic-stability-marker",
+          "channel_rank": 6,
+          "raw_score": 0.05631140271209491,
+          "rrf_contribution": 0.015151515151515152,
+          "final_rank": 8,
+          "included": true,
+          "exclusion_reason": null
+        },
+        {
+          "plan_id": "plan-4afdc26fe4273cdf",
+          "subquery": "Where can I submit the Synthetic Atlas exception request?",
+          "channel": "CHAR_TFIDF",
+          "candidate_ref": "local://synthetic-m4d/meridian_region_beta.html#section-applicability",
+          "channel_rank": 9,
+          "raw_score": 0.0735213592715256,
+          "rrf_contribution": 0.010869565217391304,
+          "final_rank": 9,
+          "included": false,
+          "exclusion_reason": "NOT_SELECTED_TOP_K"
+        },
+        {
+          "plan_id": "plan-4afdc26fe4273cdf",
+          "subquery": "Where can I submit the Synthetic Atlas exception request?",
+          "channel": "EXACT",
+          "candidate_ref": "local://synthetic-m4d/meridian_region_beta.html#section-applicability",
+          "channel_rank": 9,
+          "raw_score": 0.25,
+          "rrf_contribution": 0.028985507246376812,
+          "final_rank": 9,
+          "included": false,
+          "exclusion_reason": "NOT_SELECTED_TOP_K"
+        },
+        {
+          "plan_id": "plan-4afdc26fe4273cdf",
+          "subquery": "Where can I submit the Synthetic Atlas exception request?",
+          "channel": "CHAR_TFIDF",
+          "candidate_ref": "local://synthetic-m4d/meridian_region_alpha.html#section-applicability",
+          "channel_rank": 10,
+          "raw_score": 0.03438188087227338,
+          "rrf_contribution": 0.010714285714285714,
+          "final_rank": 10,
+          "included": false,
+          "exclusion_reason": "NOT_SELECTED_TOP_K"
+        },
+        {
+          "plan_id": "plan-4afdc26fe4273cdf",
+          "subquery": "Where can I submit the Synthetic Atlas exception request?",
+          "channel": "CHAR_TFIDF",
+          "candidate_ref": "local://synthetic-m4d/meridian_region_beta.html#section-control-meridian-region-beta",
+          "channel_rank": 11,
+          "raw_score": 0.03063568819710957,
+          "rrf_contribution": 0.01056338028169014,
+          "final_rank": 11,
+          "included": false,
+          "exclusion_reason": "NOT_SELECTED_TOP_K"
+        },
+        {
+          "plan_id": "plan-4afdc26fe4273cdf",
+          "subquery": "Where can I submit the Synthetic Atlas exception request?",
+          "channel": "CHAR_TFIDF",
+          "candidate_ref": "local://synthetic-m4d/meridian_region_alpha.html#section-control-meridian-region-alpha",
+          "channel_rank": 12,
+          "raw_score": 0.028750250789598412,
+          "rrf_contribution": 0.010416666666666666,
+          "final_rank": 12,
+          "included": false,
+          "exclusion_reason": "NOT_SELECTED_TOP_K"
+        }
+      ]
+    },
+    "verified_run": {
+      "result": {
+        "trace_id": "aefcf19c-7002-49b0-9f0e-d44564b5c1c6",
+        "decision": "ABSTAIN",
+        "answer": null,
+        "clarifying_question": null,
+        "reason_codes": [
+          "UNRESOLVED_REQUIRED_REFERENCE"
+        ],
+        "evidence": [
+          {
+            "section_id": "atlas_exception_process.html::section-02",
+            "source_ref": "local://synthetic-m4d/atlas_exception_process.html",
+            "title": "Synthetic Atlas exception process",
+            "heading_path": [
+              "Synthetic Atlas exception process",
+              "Required reference"
+            ],
+            "score": 1.0,
+            "excerpt": "Required reference\nThe Synthetic Atlas exception request requires the designated form before review can begin.\nOpen the Synthetic Atlas exception form",
+            "table_rows": []
+          }
+        ],
+        "route": {
+          "support_function": "BUSINESS_FRONT_SUPPORT",
+          "expert_id": "SYN-BFS-001",
+          "routing_reason": "Structured M1 selector UNRESOLVED_REQUIRED_REFERENCE matched BUSINESS_FRONT_SUPPORT",
+          "routing_confidence": 1.0
+        },
+        "answer_confidence": 0.0,
+        "routing_confidence": 1.0,
+        "confidence_kind": "DETERMINISTIC_GATE_PLACEHOLDER",
+        "detected_context": {
+          "region": null,
+          "channel": null,
+          "workflow_stage": null,
+          "need_type": "UNKNOWN",
+          "missing_context": []
+        },
+        "missing_context": [],
+        "retrieved_sections": [
+          {
+            "section_id": "atlas_exception_process.html::section-02",
+            "source_ref": "local://synthetic-m4d/atlas_exception_process.html",
+            "title": "Synthetic Atlas exception process",
+            "heading_path": [
+              "Synthetic Atlas exception process",
+              "Required reference"
+            ],
+            "score": 1.0,
+            "excerpt": "Required reference\nThe Synthetic Atlas exception request requires the designated form before review can begin.\nOpen the Synthetic Atlas exception form",
+            "table_rows": []
+          }
+        ]
+      },
+      "verification": {
+        "status": "INSUFFICIENT",
+        "reason_codes": [
+          "UNRESOLVED_REQUIRED_REFERENCE"
+        ],
+        "supported_claim_ids": [],
+        "unsupported_claim_ids": [],
+        "missing_required_claim_ids": [],
+        "scope_mismatches": [],
+        "unresolved_required_references": [
+          "local://synthetic-m4d/attachments/atlas-exception-form.txt"
+        ],
+        "unsupported_modalities": [],
+        "evidence_refs": [
+          "local://synthetic-m4d/atlas_exception_process.html#section-required-reference:sentence-1"
+        ],
+        "explanation": "The M4D procedure depends on an unresolved local form reference."
+      }
+    }
+  }
+}

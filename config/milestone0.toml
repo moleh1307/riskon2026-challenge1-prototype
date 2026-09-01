@@ -1,0 +1,18 @@
+[paths]
+data_root = "data/synthetic"
+generated_root = "data/generated"
+
+[retrieval]
+top_k = 5
+minimum_score = 0.10
+ngram_min = 1
+ngram_max = 2
+
+[audit]
+path = "data/generated/audit.jsonl"
+
+[security]
+network_enabled = false
+
+[runtime]
+confidence_kind = "DETERMINISTIC_GATE_PLACEHOLDER"

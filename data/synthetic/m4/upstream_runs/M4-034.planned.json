@@ -1,0 +1,60 @@
+{
+  "fixture_schema_version": "1.0",
+  "fixture_origin": "SYNTHETIC_ORCHESTRA_BASELINE_V1",
+  "case_id": "M4-034",
+  "planned_verified_run": {
+    "query_plan": {
+      "plan_id": "m4-fixture-M4-034",
+      "original_query": "Where is the synthetic exception form and can the request proceed without it?",
+      "normalised_query": "Where is the synthetic exception form and can the request proceed without it?",
+      "intent": "PROCEDURE",
+      "canonical_terms": ["synthetic exception form", "proceed without form"],
+      "required_context_fields": [],
+      "missing_context_fields": [],
+      "subqueries": ["Where is the synthetic exception form?", "Can the request proceed without it?"],
+      "retrieval_channels": ["EXACT", "WORD_TFIDF", "CHAR_TFIDF"],
+      "retrieval_skipped": false
+    },
+    "retrieval_diagnostics": {"entries": []},
+    "verified_run": {
+      "result": {
+        "trace_id": "m4-fixture-M4-034",
+        "decision": "ABSTAIN",
+        "answer": null,
+        "clarifying_question": null,
+        "reason_codes": ["UNRESOLVED_REQUIRED_REFERENCE"],
+        "evidence": [],
+        "route": {
+          "support_function": "BUSINESS_FRONT_SUPPORT",
+          "expert_id": null,
+          "routing_reason": "Frozen synthetic legacy support-function fixture",
+          "routing_confidence": 0.5
+        },
+        "answer_confidence": 0.0,
+        "routing_confidence": 0.5,
+        "confidence_kind": "DETERMINISTIC_GATE_PLACEHOLDER",
+        "detected_context": {
+          "region": null,
+          "channel": "ADVISORY",
+          "workflow_stage": "EXCEPTION_INTAKE",
+          "need_type": "ROUTINE_PROCESS",
+          "missing_context": []
+        },
+        "missing_context": [],
+        "retrieved_sections": []
+      },
+      "verification": {
+        "status": "INSUFFICIENT",
+        "reason_codes": ["UNRESOLVED_REQUIRED_REFERENCE"],
+        "supported_claim_ids": [],
+        "unsupported_claim_ids": [],
+        "missing_required_claim_ids": [],
+        "scope_mismatches": [],
+        "unresolved_required_references": ["synthetic-exception-form.txt"],
+        "unsupported_modalities": [],
+        "evidence_refs": [],
+        "explanation": "The required synthetic form link is unresolved in the frozen baseline."
+      }
+    }
+  }
+}

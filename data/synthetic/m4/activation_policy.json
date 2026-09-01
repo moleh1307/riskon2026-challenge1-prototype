@@ -1,0 +1,75 @@
+{
+  "schema_version": "1.0",
+  "precedence": [
+    "SHORT_CIRCUIT_CLARIFY",
+    "HUMAN_FIRST",
+    "FULL_ORCHESTRA",
+    "DUAL_CHECK",
+    "FAST_PATH"
+  ],
+  "profiles": [
+    {
+      "profile_id": "SHORT_CIRCUIT_CLARIFY",
+      "trigger_signals": ["BASELINE_CLARIFY", "MISSING_REQUIRED_CONTEXT", "AMBIGUOUS_ACRONYM"],
+      "available_worker_roles": [],
+      "worker_activation": "NONE",
+      "final_decision_behavior": "PRESERVE_CLARIFY"
+    },
+    {
+      "profile_id": "HUMAN_FIRST",
+      "trigger_signals": [
+        "APPROVAL_REQUIRED",
+        "TECHNICAL_FAILURE",
+        "UNSUPPORTED_MODALITY",
+        "UNRESOLVED_REQUIRED_REFERENCE"
+      ],
+      "available_worker_roles": [],
+      "worker_activation": "NONE",
+      "final_decision_behavior": "PRESERVE_ABSTAIN_AND_USE_M3_ROUTE"
+    },
+    {
+      "profile_id": "FULL_ORCHESTRA",
+      "trigger_signals": [
+        "SCOPE_SENSITIVE",
+        "JURISDICTION_SENSITIVE",
+        "SERVICE_MODEL_SENSITIVE",
+        "SOLICITATION_SENSITIVE",
+        "WORKFLOW_STAGE_SENSITIVE",
+        "CONTRADICTORY_SOURCES",
+        "COUNTERFACTUAL_REQUIRED"
+      ],
+      "available_worker_roles": [
+        "EVIDENCE_SCOUT",
+        "SCOPE_SENTINEL",
+        "PROCESS_TABLE_SCOUT",
+        "SKEPTIC",
+        "COUNTERFACTUAL_SENTINEL"
+      ],
+      "worker_activation": "CASE_REQUIRED_ONLY",
+      "final_decision_behavior": "M1_VERIFICATION_AUTHORITY"
+    },
+    {
+      "profile_id": "DUAL_CHECK",
+      "trigger_signals": [
+        "CRITICAL_CONTROL_RISK",
+        "TABLE_DEPENDENT",
+        "REQUIRED_REFERENCE",
+        "LOW_RETRIEVAL_MARGIN",
+        "MULTI_PART_QUERY",
+        "PROMPT_INJECTION_SIGNAL"
+      ],
+      "available_worker_roles": ["EVIDENCE_SCOUT", "PROCESS_TABLE_SCOUT", "SKEPTIC"],
+      "worker_activation": "CASE_REQUIRED_ONLY",
+      "final_decision_behavior": "M1_VERIFICATION_AUTHORITY"
+    },
+    {
+      "profile_id": "FAST_PATH",
+      "trigger_signals": [],
+      "available_worker_roles": [],
+      "worker_activation": "NONE",
+      "baseline_decision": "ANSWER",
+      "requires_empty_risk_signals": true,
+      "final_decision_behavior": "PRESERVE_BASELINE"
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="520" height="160" viewBox="0 0 520 160" role="img" aria-labelledby="title desc">
+  <title id="title">Synthetic escalation flow</title>
+  <desc id="desc">A non-interpreted fixture showing a question moving to an evidence gate and a support queue.</desc>
+  <rect x="20" y="55" width="120" height="50" rx="8" fill="#d9e9ff" stroke="#234"/>
+  <rect x="200" y="55" width="120" height="50" rx="8" fill="#e6f6df" stroke="#234"/>
+  <rect x="380" y="55" width="120" height="50" rx="8" fill="#ffe8d1" stroke="#234"/>
+  <text x="80" y="85" text-anchor="middle" font-family="sans-serif" font-size="14">Question</text>
+  <text x="260" y="85" text-anchor="middle" font-family="sans-serif" font-size="14">Evidence gate</text>
+  <text x="440" y="85" text-anchor="middle" font-family="sans-serif" font-size="14">Queue</text>
+  <path d="M140 80h60M320 80h60" stroke="#234" stroke-width="3" marker-end="url(#arrow)"/>
+  <defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0l6 3-6 3z" fill="#234"/></marker></defs>
+</svg>

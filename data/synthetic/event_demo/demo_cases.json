@@ -1,0 +1,145 @@
+{
+  "schema_version": "1.0",
+  "milestone": "ER-B_THIN_LOCAL_DEMO",
+  "cases": [
+    {
+      "id": "ERB-001",
+      "source_case_id": "M4D-041",
+      "source_milestone": "M4D",
+      "story_kind": "FAST_VERIFIED_ANSWER",
+      "title": "A simple question should stay simple",
+      "question": "What is the Synthetic Stability Marker?",
+      "expected_decision": "ANSWER",
+      "expected_activation_profile": "FAST_PATH",
+      "expected_reason_codes": [],
+      "expected_agent_roles": [],
+      "expected_counterfactuals": [],
+      "expected_route": null,
+      "expected_evidence": true,
+      "presentation_message": "The system does not spend five agents on a question that one explicit source can answer safely."
+    },
+    {
+      "id": "ERB-002",
+      "source_case_id": "M4D-042",
+      "source_milestone": "M4D",
+      "story_kind": "TARGETED_CLARIFICATION",
+      "title": "Missing context is detected before answering",
+      "question": "Can a delegated operator use ARC?",
+      "expected_decision": "CLARIFY",
+      "expected_activation_profile": "SHORT_CIRCUIT_CLARIFY",
+      "expected_reason_codes": ["AMBIGUOUS_ACRONYM"],
+      "expected_agent_roles": [],
+      "expected_counterfactuals": [],
+      "expected_route": null,
+      "expected_evidence": false,
+      "expected_clarifying_question": "Do you mean Advisory Review Code or Account Routing Console?",
+      "presentation_message": "The system asks for the missing meaning instead of guessing."
+    },
+    {
+      "id": "ERB-003",
+      "source_case_id": "M4D-045",
+      "source_milestone": "M4D",
+      "story_kind": "FULL_ORCHESTRA_COUNTERFACTUAL",
+      "title": "The answer is challenged before it is released",
+      "question": "Does Control Meridian apply to Service Basic in Region Beta?",
+      "expected_decision": "ANSWER",
+      "expected_activation_profile": "FULL_ORCHESTRA",
+      "expected_reason_codes": [],
+      "expected_agent_roles": ["EVIDENCE_SCOUT", "SCOPE_SENTINEL", "COUNTERFACTUAL_SENTINEL"],
+      "expected_counterfactuals": [
+        {
+          "variant_id": "cf-001",
+          "dimension": "region",
+          "before": "REGION_BETA",
+          "after": "REGION_ALPHA",
+          "decision": "ABSTAIN",
+          "reason_codes": ["SCOPE_MISMATCH"]
+        },
+        {
+          "variant_id": "cf-002",
+          "dimension": "service_model",
+          "before": "SERVICE_BASIC",
+          "after": "SERVICE_PLUS",
+          "decision": "ABSTAIN",
+          "reason_codes": ["SCOPE_MISMATCH"]
+        },
+        {
+          "variant_id": "cf-003",
+          "dimension": "region",
+          "before": "REGION_BETA",
+          "after": null,
+          "decision": "CLARIFY",
+          "reason_codes": ["MISSING_REQUIRED_CONTEXT"]
+        }
+      ],
+      "expected_route": null,
+      "expected_evidence": true,
+      "presentation_message": "The system tests whether an answer stops being valid when the facts change."
+    },
+    {
+      "id": "ERB-004",
+      "source_case_id": "M4D-043",
+      "source_milestone": "M4D",
+      "story_kind": "SAFE_ABSTENTION_HUMAN_ROUTING",
+      "title": "When the evidence is incomplete, the system knows who should help",
+      "question": "Where can I submit the Synthetic Atlas exception request?",
+      "expected_decision": "ABSTAIN",
+      "expected_activation_profile": "HUMAN_FIRST",
+      "expected_reason_codes": ["UNRESOLVED_REQUIRED_REFERENCE"],
+      "expected_agent_roles": [],
+      "expected_counterfactuals": [],
+      "expected_route": {
+        "support_function": "BUSINESS_FRONT_SUPPORT",
+        "route_mode": "FUNCTIONAL_QUEUE",
+        "queue_id": "QUEUE-BFS-GLOBAL",
+        "selected_expert_id": null,
+        "routing_reason": "Structured M1 selector UNRESOLVED_REQUIRED_REFERENCE matched BUSINESS_FRONT_SUPPORT",
+        "routing_confidence": 0.5,
+        "confidence_kind": "DETERMINISTIC_ROUTING_HEURISTIC_V1"
+      },
+      "expected_evidence": true,
+      "expected_case_capsule": true,
+      "presentation_message": "A safe abstention still produces a useful, functional handoff."
+    },
+    {
+      "id": "ERB-005",
+      "source_case_id": "M5A-046",
+      "source_milestone": "M5B",
+      "story_kind": "GOVERNED_EVOLUTION",
+      "title": "The system learns without silently rewriting policy",
+      "question": "Does Control Meridian apply to Service Basic in Region Beta?",
+      "expected_decision": "ANSWER",
+      "expected_activation_profile": "GOVERNED_EVOLUTION",
+      "expected_reason_codes": [],
+      "expected_agent_roles": [],
+      "expected_counterfactuals": [
+        {"dimension": "region", "before": "REGION_BETA", "after": "REGION_ALPHA", "decision": "ABSTAIN"},
+        {"dimension": "service_model", "before": "SERVICE_BASIC", "after": "SERVICE_PLUS", "decision": "ABSTAIN"},
+        {"dimension": "required_context", "before": "present", "after": "removed", "decision": "CLARIFY"}
+      ],
+      "expected_route": null,
+      "expected_evidence": true,
+      "expected_before": {
+        "decision": "ABSTAIN",
+        "reason_codes": ["NO_EXPLICIT_SUPPORT"],
+        "route_present": true
+      },
+      "expected_after": {
+        "exact_scope": "ANSWER",
+        "alternate_region": "ABSTAIN",
+        "alternate_service_model": "ABSTAIN",
+        "required_context_removed": "CLARIFY"
+      },
+      "expected_governance_checks": {
+        "policy_ci": {"matched": 11, "expected": 11},
+        "regression": {"matched": 45, "expected": 45},
+        "counterfactual_containment": {"matched": 4, "expected": 4},
+        "automatic_approval": 0,
+        "automatic_activation": 0,
+        "human_approval": true,
+        "release_activation": true
+      },
+      "presentation_message": "Expert feedback becomes knowledge only after regression, scope containment, and separate human approval."
+    }
+  ]
+}

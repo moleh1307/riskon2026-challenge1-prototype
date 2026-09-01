@@ -1,0 +1,16 @@
+{
+  "schema_version": "1.0",
+  "case_id": "ERB-001",
+  "source_case_id": "M4D-041",
+  "decision": "ANSWER",
+  "activation_profile": "FAST_PATH",
+  "agent_roles": [],
+  "reason_codes": [],
+  "answer_present": true,
+  "clarifying_question": null,
+  "route": null,
+  "evidence_required": true,
+  "counterfactuals": [],
+  "governance": null,
+  "audit_reference": "m4d-eval-M4D-041"
+}

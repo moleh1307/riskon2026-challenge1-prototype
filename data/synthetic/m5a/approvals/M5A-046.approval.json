@@ -1,0 +1,19 @@
+{
+  "approval_id": "M5A-046-APPROVAL",
+  "patch_id": "M5A-046-PATCH",
+  "actor_type": "HUMAN_ROLE",
+  "actor_role_id": "SYN-ROLE-KNOWLEDGE-OWNER-001",
+  "decision": "APPROVE",
+  "timestamp_utc": "2026-08-27T12:00:00Z",
+  "reviewed_claim_ids": ["meridian_beta_basic_applies"],
+  "reviewed_scope": {
+    "regions": ["REGION_BETA"],
+    "jurisdictions": [],
+    "service_models": ["SERVICE_BASIC"],
+    "solicitation_types": [],
+    "workflow_stages": [],
+    "client_classifications": [],
+    "systems": []
+  },
+  "comment": "Synthetic governance review approved within the declared scope."
+}

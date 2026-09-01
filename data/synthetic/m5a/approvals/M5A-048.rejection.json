@@ -1,0 +1,19 @@
+{
+  "approval_id": "M5A-048-REJECTION",
+  "patch_id": "M5A-048-PATCH",
+  "actor_type": "HUMAN_ROLE",
+  "actor_role_id": "SYN-ROLE-COMPLIANCE-APPROVER-001",
+  "decision": "REJECT",
+  "timestamp_utc": "2026-08-27T12:02:00Z",
+  "reviewed_claim_ids": ["atlas_client_acceptance_overrides"],
+  "reviewed_scope": {
+    "regions": ["REGION_BETA"],
+    "jurisdictions": [],
+    "service_models": ["SERVICE_BASIC"],
+    "solicitation_types": [],
+    "workflow_stages": [],
+    "client_classifications": [],
+    "systems": ["SYNTHETIC_ATLAS_CONTROL"]
+  },
+  "comment": "Synthetic critical-control contradiction must not weaken the existing safe rule."
+}

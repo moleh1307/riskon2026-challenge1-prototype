@@ -1,0 +1,28 @@
+{
+  "schema_version": "1.0",
+  "approval_actor_type": "HUMAN_ROLE",
+  "self_approval_allowed": false,
+  "automatic_approval_allowed": false,
+  "agent_approval_allowed": false,
+  "activation_without_approval_allowed": false,
+  "allowed_decisions": ["APPROVE", "REJECT"],
+  "required_record_fields": [
+    "approval_id",
+    "patch_id",
+    "actor_type",
+    "actor_role_id",
+    "decision",
+    "timestamp_utc",
+    "reviewed_claim_ids",
+    "reviewed_scope",
+    "comment"
+  ],
+  "synthetic_role_ids": [
+    "SYN-ROLE-LEGAL-EXPERT-001",
+    "SYN-ROLE-COMPLIANCE-EXPERT-001",
+    "SYN-ROLE-BRM-LEAD-001",
+    "SYN-ROLE-KNOWLEDGE-OWNER-001",
+    "SYN-ROLE-COMPLIANCE-APPROVER-001"
+  ],
+  "approval_authority_roles": ["SYN-ROLE-KNOWLEDGE-OWNER-001", "SYN-ROLE-COMPLIANCE-APPROVER-001"]
+}

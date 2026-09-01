@@ -1,0 +1,50 @@
+[base]
+config = "config/milestone4d.toml"
+
+[governance]
+contract_cases = "data/synthetic/m5a/evaluation_cases.json"
+execution_policy = "data/synthetic/m5b/execution_policy.json"
+claim_relations = "data/synthetic/m5b/claim_relations.json"
+regression_suites = "data/synthetic/m5b/regression_suites.json"
+overlay_evaluation_cases = "data/synthetic/m5b/overlay_evaluation_cases.json"
+release_activation_requests = "data/synthetic/m5b/release_activation_requests.json"
+generated_root = "data/generated/m5b"
+
+official_corpus_mutation_enabled = false
+automatic_approval_enabled = false
+automatic_activation_enabled = false
+agent_approval_enabled = false
+self_approval_enabled = false
+
+[governance.overlay]
+provenance_prefix = "local://knowledge-overlay/"
+special_ranking_boost = false
+include_expired_patches = false
+include_rejected_patches = false
+include_awaiting_approval_patches = false
+
+[governance.policy_ci]
+required_regression_passes = 45
+counterfactual_routing_enabled = false
+recursive_policy_ci_enabled = false
+
+[evaluation]
+included_cases = [
+  "M5A-046",
+  "M5A-047",
+  "M5A-048",
+  "M5A-049",
+  "M5A-050"
+]
+
+expected_cases = 5
+expected_active_patches = 1
+expected_awaiting_approval = 1
+expected_rejected_patches = 2
+expected_expired_patches = 1
+expected_post_patch_transitions = 4
+
+[security]
+network_enabled = false
+external_api_enabled = false
+telemetry_enabled = false

@@ -1,0 +1,47 @@
+[runtime]
+pipeline_config = "config/milestone5b.toml"
+event_intake_config = "config/event_readiness.toml"
+demo_cases = "data/synthetic/event_demo/demo_cases.json"
+dashboard_contract = "data/synthetic/event_demo/dashboard_contract.json"
+presentation_copy = "data/synthetic/event_demo/presentation_copy.json"
+context_presets = "data/synthetic/event_demo/context_presets.json"
+expected_views_root = "data/synthetic/event_demo/expected_views"
+generated_root = "data/generated/event_demo"
+
+[rendering]
+language = "en"
+self_contained_html = true
+external_assets_enabled = false
+maximum_evidence_excerpt_characters = 280
+include_private_reasoning = false
+include_raw_source_html = false
+include_absolute_paths = false
+
+[demo]
+included_cases = [
+  "ERB-001",
+  "ERB-002",
+  "ERB-003",
+  "ERB-004",
+  "ERB-005"
+]
+
+[dashboard]
+evaluation_configs = [
+  "config/milestone0.toml",
+  "config/milestone1.toml",
+  "config/milestone2.toml",
+  "config/milestone3.toml",
+  "config/milestone4a.toml",
+  "config/milestone4b.toml",
+  "config/milestone4c.toml",
+  "config/milestone4d.toml",
+  "config/milestone5b.toml"
+]
+show_unmeasured_as_not_measured = true
+
+[security]
+network_enabled = false
+external_api_enabled = false
+telemetry_enabled = false
+local_server_enabled = false

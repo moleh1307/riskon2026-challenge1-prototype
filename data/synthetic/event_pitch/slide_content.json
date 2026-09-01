@@ -1,0 +1,146 @@
+{
+  "schema_version": "1.0",
+  "slides": [
+    {
+      "slide_id": "S01",
+      "title": "RiskON Orchestra",
+      "purpose": "Frame the product promise in one memorable sentence.",
+      "source_label": "RiskON 2026 synthetic local demonstration",
+      "speaker_key_message": "Many agents investigate. Evidence decides. Humans approve.",
+      "timing_profile_visibility": {"3_MIN": true, "5_MIN": true, "7_MIN": true},
+      "subtitle_lines": ["Many agents investigate.", "Evidence decides.", "Humans approve."],
+      "supporting_line": "A risk-adaptive suitability assistant that answers, clarifies, abstains, routes and evolves safely.",
+      "footer": "Synthetic local demonstration — no real client or Bank data"
+    },
+    {
+      "slide_id": "S02",
+      "title": "Finding the page is not the same as finding the answer",
+      "purpose": "Make the business problem concrete before introducing the solution.",
+      "source_label": "RiskON Challenge Guidance, slides 4 and 7",
+      "speaker_key_message": "The challenge is not retrieval alone. It is deciding when the evidence permits an answer.",
+      "timing_profile_visibility": {"3_MIN": true, "5_MIN": true, "7_MIN": true},
+      "cards": [
+        {"label": "Front Office", "body": "Time is lost searching across fragmented guidance."},
+        {"label": "Experts", "body": "Repetitive documented questions crowd out complex cases."},
+        {"label": "The Bank", "body": "A plausible but unsupported answer is more dangerous than no answer."}
+      ],
+      "bottom_message": "The challenge is not retrieval alone. It is deciding when the evidence permits an answer."
+    },
+    {
+      "slide_id": "S03",
+      "title": "One question. Four disciplined outcomes.",
+      "purpose": "Show that the product is a decision system, not only a search box.",
+      "source_label": "Questions & Evaluation Set; RiskON Challenge Guidance, slide 7",
+      "speaker_key_message": "We separate “I need more context” from “the available knowledge cannot answer this.”",
+      "timing_profile_visibility": {"3_MIN": true, "5_MIN": true, "7_MIN": true},
+      "outcomes": [
+        {"label": "ANSWER", "body": "Context complete. Explicit evidence sufficient.", "tone": "green"},
+        {"label": "CLARIFY", "body": "One answer-changing fact is missing.", "tone": "amber"},
+        {"label": "ABSTAIN", "body": "Evidence is absent, conflicting or out of scope.", "tone": "red"},
+        {"label": "ROUTE", "body": "Human judgment is required; select the right support function.", "tone": "navy"}
+      ],
+      "bottom_message": "We separate “I need more context” from “the available knowledge cannot answer this.”"
+    },
+    {
+      "slide_id": "S04",
+      "title": "Risk-adaptive orchestration — not agent majority voting",
+      "purpose": "Explain the bounded architecture and its safety rule.",
+      "source_label": "RiskON bonus areas: multi-agent architecture, adaptive retrieval, self-verification and explainability",
+      "speaker_key_message": "One unresolved material objection blocks an unsafe answer.",
+      "timing_profile_visibility": {"3_MIN": true, "5_MIN": true, "7_MIN": true},
+      "flow": ["Question", "Planner & Hybrid Retrieval", "Risk Gate", "Specialist Workers", "Evidence Ledger", "Skeptic & Counterfactual Sentinel", "Evidence Constitution", "ANSWER / CLARIFY / ABSTAIN"],
+      "workers": ["Evidence Scout", "Scope Sentinel", "Process/Table Scout", "Skeptic", "Counterfactual Sentinel"],
+      "core_rule": "One unresolved material objection blocks an unsafe answer.",
+      "bottom_note": "Easy questions activate zero workers. Only context-sensitive questions use the full Orchestra."
+    },
+    {
+      "slide_id": "S05",
+      "title": "Live demonstration",
+      "purpose": "Hand the audience from the narrative to the frozen local demo.",
+      "source_label": "ER-B frozen local demo",
+      "speaker_key_message": "Do not trust the answer. Try to disprove it.",
+      "timing_profile_visibility": {"3_MIN": true, "5_MIN": true, "7_MIN": true},
+      "steps": ["Answer one explicit question with zero agents", "Challenge a context-sensitive answer from independent angles", "Show how verified expert feedback becomes governed knowledge"],
+      "large_line": "Do not trust the answer. Try to disprove it."
+    },
+    {
+      "slide_id": "S06",
+      "title": "The system learns — but never self-authorises",
+      "purpose": "Show how expert feedback becomes governed knowledge without silent policy drift.",
+      "source_label": "M5B governed evolution and Policy CI outputs",
+      "speaker_key_message": "An expert resolution is evidence for a proposed change, not an automatic change to authoritative knowledge.",
+      "timing_profile_visibility": {"3_MIN": false, "5_MIN": true, "7_MIN": true},
+      "lifecycle": ["ABSTAIN", "Expert Resolution", "Proposed Knowledge Patch", "Policy CI", "Separate Human Approval", "Versioned Knowledge Release", "Active Overlay"],
+      "guardrails": ["11/11 mandatory checks", "45/45 regression gate", "4/4 scope transitions", "No automatic approval", "No automatic activation"],
+      "core_message": "An expert resolution is evidence for a proposed change, not an automatic change to authoritative knowledge."
+    },
+    {
+      "slide_id": "S07",
+      "title": "We evaluate the decisions the system makes — including not answering",
+      "purpose": "Replace marketing claims with evaluator-sourced proof points.",
+      "source_label": "Current local ER-B dashboard and evaluator outputs",
+      "speaker_key_message": "The metrics are read from the current generated evaluator outputs, not typed into the deck source.",
+      "timing_profile_visibility": {"3_MIN": false, "5_MIN": true, "7_MIN": true},
+      "metric_ids": ["m0_m4d_regression", "m5b_governed_evolution", "policy_ci_checks", "counterfactual_transitions", "unsafe_routing", "automatic_approvals", "network_violations"],
+      "metric_labels": ["M0–M4D regression", "Governed-evolution cases", "Policy CI checks", "Counterfactual containment", "Unsafe routing", "Automatic approvals", "Network violations"],
+      "metric_footer": "Current demonstration: synthetic, local and deterministic"
+    },
+    {
+      "slide_id": "S08",
+      "title": "More self-service for routine questions. More expert time for the cases that matter.",
+      "purpose": "Close the main story with practical value for the operating model.",
+      "source_label": "RiskON Challenge Guidance and prototype outcomes",
+      "speaker_key_message": "RiskON knows why it may answer, why it must not, and how the organisation can safely learn.",
+      "timing_profile_visibility": {"3_MIN": true, "5_MIN": true, "7_MIN": true},
+      "pillars": [
+        {"label": "Front Office", "body": "Faster evidence-backed guidance at the point of need."},
+        {"label": "Risk & Compliance", "body": "Fewer repetitive questions; richer case capsules for complex cases."},
+        {"label": "The organisation", "body": "Visible knowledge gaps and controlled improvement over time."}
+      ],
+      "final_statement": "RiskON does not simply know the answer or know who knows. It knows why it may answer, why it must not, and how the organisation can safely learn."
+    },
+    {
+      "slide_id": "S09",
+      "title": "Role first. Person second.",
+      "purpose": "Explain expert routing without inventing a person-level answer.",
+      "source_label": "Synthetic support model and M3 routing contract",
+      "speaker_key_message": "Hard authority and scope constraints override speed or popularity.",
+      "timing_profile_visibility": {"3_MIN": false, "5_MIN": false, "7_MIN": true},
+      "route_flow": ["Self-service Wiki", "Suitability Champion", "Business Front Support", "BRM Suitability Lead", "Legal / Compliance / Deep Expert"],
+      "factors": ["mandate", "expertise", "jurisdiction", "region", "system", "availability", "network"],
+      "hard_constraint_note": "Hard authority and scope constraints override speed or popularity."
+    },
+    {
+      "slide_id": "S10",
+      "title": "Local first by design",
+      "purpose": "Make the confidentiality and no-egress boundary visible.",
+      "source_label": "Local-only runtime and confidentiality boundary",
+      "speaker_key_message": "The current demonstration keeps event data, evaluator outputs and presentation artifacts local and synthetic.",
+      "timing_profile_visibility": {"3_MIN": false, "5_MIN": false, "7_MIN": true},
+      "controls": ["No external API", "No external telemetry", "No network egress", "No real employee data", "No real client data", "Append-only audit", "Fail-closed worker errors"],
+      "footer": "Real event data remains outside the repository and inside ignored local storage."
+    },
+    {
+      "slide_id": "S11",
+      "title": "Designed for the event package we have not yet seen",
+      "purpose": "Show how the real event corpus will be handled without changing the decision kernel.",
+      "source_label": "ER-A event intake contract and challenge package description",
+      "speaker_key_message": "Event-specific structure changes an adapter, not the answer, verification or routing architecture.",
+      "timing_profile_visibility": {"3_MIN": false, "5_MIN": false, "7_MIN": true},
+      "intake_flow": ["Read-only source folder", "Manifest validation", "HTML/table/asset inventory", "Compatibility smoke test", "Existing RiskON pipeline"],
+      "statuses": ["READY", "READY_WITH_WARNINGS", "BLOCKED"],
+      "message": "Event-specific structure changes an adapter, not the answer, verification or routing architecture."
+    },
+    {
+      "slide_id": "S12",
+      "title": "What this prototype proves — and what it does not",
+      "purpose": "Set honest limits before questions and protect trust.",
+      "source_label": "Observed prototype boundary and event-day acceptance contract",
+      "speaker_key_message": "The orchestration and worker isolation are real; the current backend is deterministic and model-agnostic.",
+      "timing_profile_visibility": {"3_MIN": false, "5_MIN": false, "7_MIN": true},
+      "proves": ["Evidence-gated decisions", "Context-aware retrieval", "Bounded multi-worker orchestration", "Safe expert routing", "Governed knowledge evolution", "Local event-corpus intake"],
+      "does_not_prove": ["Accuracy on the unseen event corpus", "Production access control", "Real employee-directory integration", "Reliable interpretation of every image-only source", "Calibrated probabilistic confidence", "Production latency and scale"],
+      "critical_wording": ["The orchestration and worker isolation are real.", "The current worker backend is deterministic for reproducibility and confidential-data safety.", "It is model-agnostic, but this demo does not claim a model-driven autonomous swarm."]
+    }
+  ]
+}

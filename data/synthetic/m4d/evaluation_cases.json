@@ -1,0 +1,106 @@
+{
+  "schema_version": "1.0",
+  "milestone": "M4D_UNIFIED_ORCHESTRA_RUNTIME",
+  "cases": [
+    {
+      "id": "M4D-041",
+      "title": "Automatic fast path",
+      "query": "What is the Synthetic Stability Marker?",
+      "input_context": {},
+      "expected_baseline": {"decision": "ANSWER", "reason_codes": []},
+      "expected_risk_signals": [],
+      "expected_profile": "FAST_PATH",
+      "expected_agent_roles": [],
+      "expected_final": {
+        "decision": "ANSWER",
+        "reason_codes": [],
+        "required_claim_ids": ["stability_marker_definition"],
+        "route": null,
+        "case_capsule_required": false,
+        "open_material_objection_count": 0
+      },
+      "expected_counterfactuals": []
+    },
+    {
+      "id": "M4D-042",
+      "title": "Automatic clarification short circuit",
+      "query": "Can a delegated operator use ARC?",
+      "input_context": {},
+      "expected_baseline": {"decision": "CLARIFY", "reason_codes": ["AMBIGUOUS_ACRONYM"]},
+      "expected_risk_signals": ["BASELINE_CLARIFY", "AMBIGUOUS_ACRONYM"],
+      "expected_profile": "SHORT_CIRCUIT_CLARIFY",
+      "expected_agent_roles": [],
+      "expected_final": {
+        "decision": "CLARIFY",
+        "reason_codes": ["AMBIGUOUS_ACRONYM"],
+        "clarifying_question": "Do you mean Advisory Review Code or Account Routing Console?",
+        "required_claim_ids": [],
+        "route": null,
+        "case_capsule_required": false,
+        "open_material_objection_count": 0
+      },
+      "expected_counterfactuals": []
+    },
+    {
+      "id": "M4D-043",
+      "title": "Automatic human first",
+      "query": "Where can I submit the Synthetic Atlas exception request?",
+      "input_context": {},
+      "expected_baseline": {"decision": "ABSTAIN", "reason_codes": ["UNRESOLVED_REQUIRED_REFERENCE"]},
+      "expected_risk_signals": ["UNRESOLVED_REQUIRED_REFERENCE"],
+      "expected_profile": "HUMAN_FIRST",
+      "expected_agent_roles": [],
+      "expected_final": {
+        "decision": "ABSTAIN",
+        "reason_codes": ["UNRESOLVED_REQUIRED_REFERENCE"],
+        "required_claim_ids": [],
+        "route": {"support_function": "BUSINESS_FRONT_SUPPORT"},
+        "case_capsule_required": true,
+        "open_material_objection_count": 0
+      },
+      "expected_counterfactuals": []
+    },
+    {
+      "id": "M4D-044",
+      "title": "Automatic dual check for critical control",
+      "query": "An active recommendation triggered the Synthetic Atlas Control. Can I proceed if the client accepts the risk?",
+      "input_context": {},
+      "expected_baseline": {"decision": "ANSWER", "reason_codes": []},
+      "expected_risk_signals": ["CRITICAL_CONTROL_RISK"],
+      "expected_profile": "DUAL_CHECK",
+      "expected_agent_roles": ["EVIDENCE_SCOUT", "SKEPTIC"],
+      "expected_final": {
+        "decision": "ANSWER",
+        "reason_codes": [],
+        "required_claim_ids": ["atlas_do_not_proceed", "atlas_client_acceptance_no_override"],
+        "route": null,
+        "case_capsule_required": false,
+        "open_material_objection_count": 0
+      },
+      "expected_counterfactuals": []
+    },
+    {
+      "id": "M4D-045",
+      "title": "Automatic full orchestra with local counterfactuals",
+      "query": "Does Control Meridian apply to Service Basic in Region Beta?",
+      "input_context": {"region": "REGION_BETA", "service_model": "SERVICE_BASIC"},
+      "expected_baseline": {"decision": "ANSWER", "reason_codes": []},
+      "expected_risk_signals": ["SCOPE_SENSITIVE", "SERVICE_MODEL_SENSITIVE", "COUNTERFACTUAL_REQUIRED"],
+      "expected_profile": "FULL_ORCHESTRA",
+      "expected_agent_roles": ["EVIDENCE_SCOUT", "SCOPE_SENTINEL", "COUNTERFACTUAL_SENTINEL"],
+      "expected_final": {
+        "decision": "ANSWER",
+        "reason_codes": [],
+        "required_claim_ids": ["meridian_applies_beta_basic"],
+        "route": null,
+        "case_capsule_required": false,
+        "open_material_objection_count": 0
+      },
+      "expected_counterfactuals": [
+        {"variant_id": "M4D-045-region-alpha", "dimension": "region", "before": "REGION_BETA", "after": "REGION_ALPHA", "decision": "ABSTAIN", "reason_codes": ["SCOPE_MISMATCH"]},
+        {"variant_id": "M4D-045-service-plus", "dimension": "service_model", "before": "SERVICE_BASIC", "after": "SERVICE_PLUS", "decision": "ABSTAIN", "reason_codes": ["SCOPE_MISMATCH"]},
+        {"variant_id": "M4D-045-region-removed", "dimension": "region", "before": "REGION_BETA", "after": null, "decision": "CLARIFY", "reason_codes": ["MISSING_REQUIRED_CONTEXT"]}
+      ]
+    }
+  ]
+}

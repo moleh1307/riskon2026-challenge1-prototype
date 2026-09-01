@@ -1,0 +1,31 @@
+{
+  "patch_id": "M5A-048-PATCH",
+  "operation": "ADD",
+  "status": "REJECTED",
+  "source_resolution_id": "M5A-048-RESOLUTION",
+  "claims": [
+    {
+      "claim_id": "atlas_client_acceptance_overrides",
+      "text": "Client acceptance overrides the Synthetic Atlas Control.",
+      "evidence_refs": ["local://synthetic-m5a/policy_ci_policy.json#atlas-critical-control"],
+      "critical": true
+    }
+  ],
+  "scope": {
+    "regions": ["REGION_BETA"],
+    "jurisdictions": [],
+    "service_models": ["SERVICE_BASIC"],
+    "solicitation_types": [],
+    "workflow_stages": [],
+    "client_classifications": [],
+    "systems": ["SYNTHETIC_ATLAS_CONTROL"]
+  },
+  "authoritative_evidence_refs": ["local://synthetic-m5a/policy_ci_policy.json#atlas-critical-control"],
+  "risk_level": "CRITICAL",
+  "effective_from": "2026-08-01T00:00:00Z",
+  "effective_to": null,
+  "supersedes_patch_id": null,
+  "knowledge_owner_role_id": "SYN-ROLE-KNOWLEDGE-OWNER-001",
+  "policy_ci_report_ref": "local://synthetic-m5a/policy_ci_policy.json#M5A-048-policy-ci",
+  "approval_ref": "local://synthetic-m5a/approvals/M5A-048.rejection.json"
+}

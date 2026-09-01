@@ -1,0 +1,75 @@
+{
+  "fixture_schema_version": "1.0",
+  "fixture_origin": "SYNTHETIC_ORCHESTRA_BASELINE_V1",
+  "case_id": "M4-035",
+  "planned_verified_run": {
+    "query_plan": {
+      "plan_id": "m4-fixture-M4-035",
+      "original_query": "Does the scoped rule apply to Region Beta with Service Basic?",
+      "normalised_query": "Does the scoped rule apply to Region Beta with Service Basic?",
+      "intent": "APPLICABILITY",
+      "canonical_terms": ["scoped rule", "region beta", "service basic"],
+      "required_context_fields": ["region", "service_model"],
+      "missing_context_fields": [],
+      "subqueries": [],
+      "retrieval_channels": ["EXACT", "WORD_TFIDF", "CHAR_TFIDF"],
+      "retrieval_skipped": false
+    },
+    "retrieval_diagnostics": {"entries": []},
+    "verified_run": {
+      "result": {
+        "trace_id": "m4-fixture-M4-035",
+        "decision": "ANSWER",
+        "answer": "The synthetic suitability rule applies to REGION_BETA with SERVICE_BASIC.",
+        "clarifying_question": null,
+        "reason_codes": [],
+        "evidence": [
+          {
+            "section_id": "service_model_counterfactuals.html::section-02",
+            "source_ref": "local://synthetic-m4/service_model_counterfactuals.html#section-scoped-rule",
+            "title": "Service model counterfactuals",
+            "heading_path": ["Scoped rule"],
+            "score": 1.0,
+            "excerpt": "The synthetic suitability rule applies only to REGION_BETA with SERVICE_BASIC.",
+            "table_rows": []
+          }
+        ],
+        "route": null,
+        "answer_confidence": 0.88,
+        "routing_confidence": 0.0,
+        "confidence_kind": "DETERMINISTIC_GATE_PLACEHOLDER",
+        "detected_context": {
+          "region": "REGION_BETA",
+          "channel": "ADVISORY",
+          "workflow_stage": "SUITABILITY_REVIEW",
+          "need_type": "COMPLEX_CASE",
+          "missing_context": []
+        },
+        "missing_context": [],
+        "retrieved_sections": [
+          {
+            "section_id": "service_model_counterfactuals.html::section-02",
+            "source_ref": "local://synthetic-m4/service_model_counterfactuals.html#section-scoped-rule",
+            "title": "Service model counterfactuals",
+            "heading_path": ["Scoped rule"],
+            "score": 1.0,
+            "excerpt": "The synthetic suitability rule applies only to REGION_BETA with SERVICE_BASIC.",
+            "table_rows": []
+          }
+        ]
+      },
+      "verification": {
+        "status": "SUFFICIENT",
+        "reason_codes": [],
+        "supported_claim_ids": ["service_model_scope_rule"],
+        "unsupported_claim_ids": [],
+        "missing_required_claim_ids": [],
+        "scope_mismatches": [],
+        "unresolved_required_references": [],
+        "unsupported_modalities": [],
+        "evidence_refs": ["local://synthetic-m4/service_model_counterfactuals.html#section-scoped-rule"],
+        "explanation": "The synthetic baseline has direct local support for the declared scope."
+      }
+    }
+  }
+}

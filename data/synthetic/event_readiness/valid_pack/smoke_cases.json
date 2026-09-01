@@ -1,0 +1,35 @@
+{
+  "schema_version": "1.0",
+  "cases": [
+    {
+      "id": "ER-001",
+      "query": "How should a delegated operator handle a missing record?",
+      "input_context": {},
+      "expected_decision": "ANSWER",
+      "expected_answer_contains": ["check the record", "escalate when it is missing"],
+      "expected_table_rows": [],
+      "require_local_evidence": true
+    },
+    {
+      "id": "ER-002",
+      "query": "What triggers session alerts?",
+      "input_context": {},
+      "expected_decision": "CLARIFY",
+      "expected_answer_contains": [],
+      "expected_table_rows": [],
+      "require_local_evidence": false
+    },
+    {
+      "id": "ER-003",
+      "query": "Which session alerts are active for Advisory Location Alpha and a Premium mandate?",
+      "input_context": {"location": "ALPHA", "mandate": "PREMIUM"},
+      "expected_decision": "ANSWER",
+      "expected_answer_contains": ["Interactive session", "Overnight monitoring"],
+      "expected_table_rows": [
+        ["Interactive session", "Active", "Manual review"],
+        ["Overnight monitoring", "Active", "Escalation check"]
+      ],
+      "require_local_evidence": true
+    }
+  ]
+}

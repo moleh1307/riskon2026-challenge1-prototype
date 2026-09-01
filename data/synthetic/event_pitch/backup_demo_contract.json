@@ -1,0 +1,16 @@
+{
+  "schema_version": "1.0",
+  "standalone": true,
+  "source_bundle": "data/generated/event_demo/demo_bundle.json",
+  "independent_of": ["Python runtime", "CLI", "terminal", "live pipeline", "generated evaluator execution", "network", "server"],
+  "controls": ["ArrowLeft", "ArrowRight", "Space", "Home", "End"],
+  "scenes": [
+    {"scene_id": "SCENE-1", "title": "FAST_PATH", "story_id": "ERB-001", "required_fields": ["decision", "activation_profile", "answer", "evidence"]},
+    {"scene_id": "SCENE-2", "title": "Full Orchestra task graph", "story_id": "ERB-003", "required_fields": ["agent_roles", "orchestra_activity", "decision"]},
+    {"scene_id": "SCENE-3", "title": "Three counterfactual transitions", "story_id": "ERB-003", "required_fields": ["counterfactuals"]},
+    {"scene_id": "SCENE-4", "title": "Safe abstention and expert route", "story_id": "ERB-004", "required_fields": ["decision", "route", "case_capsule_id"]},
+    {"scene_id": "SCENE-5", "title": "Policy CI lifecycle", "story_id": "ERB-005", "required_fields": ["governance"]},
+    {"scene_id": "SCENE-6", "title": "Evaluation metrics", "story_id": "DASHBOARD", "required_fields": ["metrics", "security"]}
+  ],
+  "fallback_sentence": "I will switch to our deterministic offline replay. It contains the same frozen run objects and audit outputs."
+}

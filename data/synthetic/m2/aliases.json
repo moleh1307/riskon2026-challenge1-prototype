@@ -1,0 +1,22 @@
+{
+  "schema_version": "1.0",
+  "aliases": [
+    {
+      "canonical": "emitter density alert",
+      "variants": ["emmiter density alert"],
+      "kind": "DECLARED_TYPO"
+    },
+    {
+      "canonical": "advisory review code",
+      "variants": ["ARC"],
+      "kind": "DECLARED_ACRONYM"
+    },
+    {
+      "canonical": "client tier election process",
+      "variants": [
+        "move a customer from standard protection to the elected tier"
+      ],
+      "kind": "DECLARED_SYNONYM"
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "schema_version": "1.0",
+  "relations": [
+    {
+      "left_claim_id": "atlas_client_acceptance_overrides",
+      "right_claim_id": "meridian_beta_basic_applies",
+      "relation": "CONTRADICTS",
+      "critical": true,
+      "evidence_refs": ["local://synthetic-m5a/policy_ci_policy.json#atlas-critical-control"]
+    }
+  ]
+}

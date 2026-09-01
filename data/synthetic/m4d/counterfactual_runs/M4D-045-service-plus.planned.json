@@ -1,0 +1,406 @@
+{
+  "fixture_schema_version": "1.0",
+  "fixture_origin": "SYNTHETIC_M4D_COUNTERFACTUAL_BASELINE_V1",
+  "baseline_case_id": "M4D-045",
+  "variant_id": "M4D-045-service-plus",
+  "query_input": {
+    "query": "Does Control Meridian apply to Service Basic in Region Beta?",
+    "context": {
+      "region": "REGION_BETA",
+      "service_model": "SERVICE_PLUS"
+    },
+    "trace_id": null
+  },
+  "context_delta": {
+    "dimension": "service_model",
+    "before": "SERVICE_BASIC",
+    "after": "SERVICE_PLUS"
+  },
+  "planned_verified_run": {
+    "query_plan": {
+      "plan_id": "plan-44152d7b45595bd9",
+      "original_query": "Does Control Meridian apply to Service Basic in Region Beta?",
+      "normalised_query": "Does Control Meridian apply to Service Basic in Region Beta?",
+      "intent": "APPLICABILITY",
+      "canonical_terms": [
+        "service basic",
+        "region beta",
+        "control meridian"
+      ],
+      "required_context_fields": [
+        "region",
+        "service_model"
+      ],
+      "missing_context_fields": [],
+      "subqueries": [],
+      "retrieval_channels": [
+        "EXACT",
+        "WORD_TFIDF",
+        "CHAR_TFIDF"
+      ],
+      "retrieval_skipped": false
+    },
+    "retrieval_diagnostics": {
+      "entries": [
+        {
+          "plan_id": "plan-44152d7b45595bd9",
+          "subquery": "Does Control Meridian apply to Service Basic in Region Beta?",
+          "channel": "CHAR_TFIDF",
+          "candidate_ref": "local://synthetic-m4d/meridian_region_beta.html#section-control-meridian-region-beta",
+          "channel_rank": 2,
+          "raw_score": 0.6088061899352801,
+          "rrf_contribution": 0.012096774193548387,
+          "final_rank": 1,
+          "included": true,
+          "exclusion_reason": null
+        },
+        {
+          "plan_id": "plan-44152d7b45595bd9",
+          "subquery": "Does Control Meridian apply to Service Basic in Region Beta?",
+          "channel": "EXACT",
+          "candidate_ref": "local://synthetic-m4d/meridian_region_beta.html#section-control-meridian-region-beta",
+          "channel_rank": 2,
+          "raw_score": 5.0,
+          "rrf_contribution": 0.03225806451612903,
+          "final_rank": 1,
+          "included": true,
+          "exclusion_reason": null
+        },
+        {
+          "plan_id": "plan-44152d7b45595bd9",
+          "subquery": "Does Control Meridian apply to Service Basic in Region Beta?",
+          "channel": "WORD_TFIDF",
+          "candidate_ref": "local://synthetic-m4d/meridian_region_beta.html#section-control-meridian-region-beta",
+          "channel_rank": 1,
+          "raw_score": 0.7806956996244178,
+          "rrf_contribution": 0.01639344262295082,
+          "final_rank": 1,
+          "included": true,
+          "exclusion_reason": null
+        },
+        {
+          "plan_id": "plan-44152d7b45595bd9",
+          "subquery": "Does Control Meridian apply to Service Basic in Region Beta?",
+          "channel": "CHAR_TFIDF",
+          "candidate_ref": "local://synthetic-m4d/meridian_region_alpha.html#section-control-meridian-region-alpha",
+          "channel_rank": 4,
+          "raw_score": 0.48337160692153397,
+          "rrf_contribution": 0.01171875,
+          "final_rank": 2,
+          "included": true,
+          "exclusion_reason": null
+        },
+        {
+          "plan_id": "plan-44152d7b45595bd9",
+          "subquery": "Does Control Meridian apply to Service Basic in Region Beta?",
+          "channel": "EXACT",
+          "candidate_ref": "local://synthetic-m4d/meridian_region_alpha.html#section-control-meridian-region-alpha",
+          "channel_rank": 4,
+          "raw_score": 3.75,
+          "rrf_contribution": 0.03125,
+          "final_rank": 2,
+          "included": true,
+          "exclusion_reason": null
+        },
+        {
+          "plan_id": "plan-44152d7b45595bd9",
+          "subquery": "Does Control Meridian apply to Service Basic in Region Beta?",
+          "channel": "WORD_TFIDF",
+          "candidate_ref": "local://synthetic-m4d/meridian_region_alpha.html#section-control-meridian-region-alpha",
+          "channel_rank": 3,
+          "raw_score": 0.4190040692326634,
+          "rrf_contribution": 0.015873015873015872,
+          "final_rank": 2,
+          "included": true,
+          "exclusion_reason": null
+        },
+        {
+          "plan_id": "plan-44152d7b45595bd9",
+          "subquery": "Does Control Meridian apply to Service Basic in Region Beta?",
+          "channel": "CHAR_TFIDF",
+          "candidate_ref": "local://synthetic-m4d/atlas_critical_control.html#section-critical-controls",
+          "channel_rank": 6,
+          "raw_score": 0.17599341131658572,
+          "rrf_contribution": 0.011363636363636364,
+          "final_rank": 3,
+          "included": true,
+          "exclusion_reason": null
+        },
+        {
+          "plan_id": "plan-44152d7b45595bd9",
+          "subquery": "Does Control Meridian apply to Service Basic in Region Beta?",
+          "channel": "EXACT",
+          "candidate_ref": "local://synthetic-m4d/atlas_critical_control.html#section-critical-controls",
+          "channel_rank": 5,
+          "raw_score": 1.5,
+          "rrf_contribution": 0.03076923076923077,
+          "final_rank": 3,
+          "included": true,
+          "exclusion_reason": null
+        },
+        {
+          "plan_id": "plan-44152d7b45595bd9",
+          "subquery": "Does Control Meridian apply to Service Basic in Region Beta?",
+          "channel": "WORD_TFIDF",
+          "candidate_ref": "local://synthetic-m4d/atlas_critical_control.html#section-critical-controls",
+          "channel_rank": 5,
+          "raw_score": 0.1336682752142832,
+          "rrf_contribution": 0.015384615384615385,
+          "final_rank": 3,
+          "included": true,
+          "exclusion_reason": null
+        },
+        {
+          "plan_id": "plan-44152d7b45595bd9",
+          "subquery": "Does Control Meridian apply to Service Basic in Region Beta?",
+          "channel": "CHAR_TFIDF",
+          "candidate_ref": "local://synthetic-m4d/atlas_critical_control.html#section-synthetic-atlas-control",
+          "channel_rank": 5,
+          "raw_score": 0.18300965818385398,
+          "rrf_contribution": 0.011538461538461539,
+          "final_rank": 4,
+          "included": true,
+          "exclusion_reason": null
+        },
+        {
+          "plan_id": "plan-44152d7b45595bd9",
+          "subquery": "Does Control Meridian apply to Service Basic in Region Beta?",
+          "channel": "EXACT",
+          "candidate_ref": "local://synthetic-m4d/atlas_critical_control.html#section-synthetic-atlas-control",
+          "channel_rank": 6,
+          "raw_score": 1.25,
+          "rrf_contribution": 0.030303030303030304,
+          "final_rank": 4,
+          "included": true,
+          "exclusion_reason": null
+        },
+        {
+          "plan_id": "plan-44152d7b45595bd9",
+          "subquery": "Does Control Meridian apply to Service Basic in Region Beta?",
+          "channel": "WORD_TFIDF",
+          "candidate_ref": "local://synthetic-m4d/atlas_critical_control.html#section-synthetic-atlas-control",
+          "channel_rank": 6,
+          "raw_score": 0.09754827962626221,
+          "rrf_contribution": 0.015151515151515152,
+          "final_rank": 4,
+          "included": true,
+          "exclusion_reason": null
+        },
+        {
+          "plan_id": "plan-44152d7b45595bd9",
+          "subquery": "Does Control Meridian apply to Service Basic in Region Beta?",
+          "channel": "CHAR_TFIDF",
+          "candidate_ref": "local://synthetic-m4d/ambiguous_arc_registry.html#section-synthetic-arc-registry",
+          "channel_rank": 7,
+          "raw_score": 0.05267126313992726,
+          "rrf_contribution": 0.011194029850746268,
+          "final_rank": 5,
+          "included": true,
+          "exclusion_reason": null
+        },
+        {
+          "plan_id": "plan-44152d7b45595bd9",
+          "subquery": "Does Control Meridian apply to Service Basic in Region Beta?",
+          "channel": "CHAR_TFIDF",
+          "candidate_ref": "local://synthetic-m4d/ambiguous_arc_registry.html#section-declared-expansions",
+          "channel_rank": 8,
+          "raw_score": 0.04046404546882801,
+          "rrf_contribution": 0.011029411764705883,
+          "final_rank": 6,
+          "included": true,
+          "exclusion_reason": null
+        },
+        {
+          "plan_id": "plan-44152d7b45595bd9",
+          "subquery": "Does Control Meridian apply to Service Basic in Region Beta?",
+          "channel": "CHAR_TFIDF",
+          "candidate_ref": "local://synthetic-m4d/atlas_exception_process.html#section-required-reference",
+          "channel_rank": 9,
+          "raw_score": 0.036132040312480074,
+          "rrf_contribution": 0.010869565217391304,
+          "final_rank": 7,
+          "included": true,
+          "exclusion_reason": null
+        },
+        {
+          "plan_id": "plan-44152d7b45595bd9",
+          "subquery": "Does Control Meridian apply to Service Basic in Region Beta?",
+          "channel": "CHAR_TFIDF",
+          "candidate_ref": "local://synthetic-m4d/atlas_exception_process.html#section-synthetic-atlas-exception-process",
+          "channel_rank": 10,
+          "raw_score": 0.01717778216080019,
+          "rrf_contribution": 0.010714285714285714,
+          "final_rank": 8,
+          "included": true,
+          "exclusion_reason": null
+        },
+        {
+          "plan_id": "plan-44152d7b45595bd9",
+          "subquery": "Does Control Meridian apply to Service Basic in Region Beta?",
+          "channel": "CHAR_TFIDF",
+          "candidate_ref": "local://synthetic-m4d/stability_marker_definition.html#section-definition",
+          "channel_rank": 11,
+          "raw_score": 0.010447846757893503,
+          "rrf_contribution": 0.01056338028169014,
+          "final_rank": 9,
+          "included": false,
+          "exclusion_reason": "NOT_SELECTED_TOP_K"
+        },
+        {
+          "plan_id": "plan-44152d7b45595bd9",
+          "subquery": "Does Control Meridian apply to Service Basic in Region Beta?",
+          "channel": "CHAR_TFIDF",
+          "candidate_ref": "local://synthetic-m4d/stability_marker_definition.html#section-synthetic-stability-marker",
+          "channel_rank": 12,
+          "raw_score": 0.00390649684195891,
+          "rrf_contribution": 0.010416666666666666,
+          "final_rank": 10,
+          "included": false,
+          "exclusion_reason": "NOT_SELECTED_TOP_K"
+        },
+        {
+          "plan_id": "plan-44152d7b45595bd9",
+          "subquery": "Does Control Meridian apply to Service Basic in Region Beta?",
+          "channel": "CHAR_TFIDF",
+          "candidate_ref": "local://synthetic-m4d/meridian_region_alpha.html#section-applicability",
+          "channel_rank": 3,
+          "raw_score": 0.5726426937684358,
+          "rrf_contribution": 0.0,
+          "final_rank": null,
+          "included": false,
+          "exclusion_reason": "CONTEXT_CONFLICT"
+        },
+        {
+          "plan_id": "plan-44152d7b45595bd9",
+          "subquery": "Does Control Meridian apply to Service Basic in Region Beta?",
+          "channel": "EXACT",
+          "candidate_ref": "local://synthetic-m4d/meridian_region_alpha.html#section-applicability",
+          "channel_rank": 3,
+          "raw_score": 4.5,
+          "rrf_contribution": 0.0,
+          "final_rank": null,
+          "included": false,
+          "exclusion_reason": "CONTEXT_CONFLICT"
+        },
+        {
+          "plan_id": "plan-44152d7b45595bd9",
+          "subquery": "Does Control Meridian apply to Service Basic in Region Beta?",
+          "channel": "WORD_TFIDF",
+          "candidate_ref": "local://synthetic-m4d/meridian_region_alpha.html#section-applicability",
+          "channel_rank": 4,
+          "raw_score": 0.35162644867916065,
+          "rrf_contribution": 0.0,
+          "final_rank": null,
+          "included": false,
+          "exclusion_reason": "CONTEXT_CONFLICT"
+        },
+        {
+          "plan_id": "plan-44152d7b45595bd9",
+          "subquery": "Does Control Meridian apply to Service Basic in Region Beta?",
+          "channel": "CHAR_TFIDF",
+          "candidate_ref": "local://synthetic-m4d/meridian_region_beta.html#section-applicability",
+          "channel_rank": 1,
+          "raw_score": 0.6498830918357079,
+          "rrf_contribution": 0.0,
+          "final_rank": null,
+          "included": false,
+          "exclusion_reason": "CONTEXT_CONFLICT"
+        },
+        {
+          "plan_id": "plan-44152d7b45595bd9",
+          "subquery": "Does Control Meridian apply to Service Basic in Region Beta?",
+          "channel": "EXACT",
+          "candidate_ref": "local://synthetic-m4d/meridian_region_beta.html#section-applicability",
+          "channel_rank": 1,
+          "raw_score": 5.5,
+          "rrf_contribution": 0.0,
+          "final_rank": null,
+          "included": false,
+          "exclusion_reason": "CONTEXT_CONFLICT"
+        },
+        {
+          "plan_id": "plan-44152d7b45595bd9",
+          "subquery": "Does Control Meridian apply to Service Basic in Region Beta?",
+          "channel": "WORD_TFIDF",
+          "candidate_ref": "local://synthetic-m4d/meridian_region_beta.html#section-applicability",
+          "channel_rank": 2,
+          "raw_score": 0.6246303747349711,
+          "rrf_contribution": 0.0,
+          "final_rank": null,
+          "included": false,
+          "exclusion_reason": "CONTEXT_CONFLICT"
+        }
+      ]
+    },
+    "verified_run": {
+      "result": {
+        "trace_id": "a031632a-3357-463c-8876-02c33bef8685",
+        "decision": "ABSTAIN",
+        "answer": null,
+        "clarifying_question": null,
+        "reason_codes": [
+          "SCOPE_MISMATCH"
+        ],
+        "evidence": [
+          {
+            "section_id": "meridian_region_beta.html::section-01",
+            "source_ref": "local://synthetic-m4d/meridian_region_beta.html",
+            "title": "Control Meridian Region Beta",
+            "heading_path": [
+              "Control Meridian Region Beta"
+            ],
+            "score": 1.0,
+            "excerpt": "Control Meridian Region Beta",
+            "table_rows": []
+          }
+        ],
+        "route": {
+          "support_function": "BRM_SUITABILITY_LEAD",
+          "expert_id": "SYN-BRM-BETA-001",
+          "routing_reason": "Structured selector COMPLEX_CASE for REGION_BETA matched Synthetic Beta BRM Lead",
+          "routing_confidence": 1.0
+        },
+        "answer_confidence": 0.0,
+        "routing_confidence": 1.0,
+        "confidence_kind": "DETERMINISTIC_GATE_PLACEHOLDER",
+        "detected_context": {
+          "region": "REGION_BETA",
+          "channel": null,
+          "workflow_stage": null,
+          "need_type": "COMPLEX_CASE",
+          "missing_context": []
+        },
+        "missing_context": [],
+        "retrieved_sections": [
+          {
+            "section_id": "meridian_region_beta.html::section-01",
+            "source_ref": "local://synthetic-m4d/meridian_region_beta.html",
+            "title": "Control Meridian Region Beta",
+            "heading_path": [
+              "Control Meridian Region Beta"
+            ],
+            "score": 1.0,
+            "excerpt": "Control Meridian Region Beta",
+            "table_rows": []
+          }
+        ]
+      },
+      "verification": {
+        "status": "INSUFFICIENT",
+        "reason_codes": [
+          "SCOPE_MISMATCH"
+        ],
+        "supported_claim_ids": [],
+        "unsupported_claim_ids": [],
+        "missing_required_claim_ids": [],
+        "scope_mismatches": [
+          "meridian_applies_beta_basic"
+        ],
+        "unresolved_required_references": [],
+        "unsupported_modalities": [],
+        "evidence_refs": [],
+        "explanation": "The supplied M4D context does not match the explicit source scope."
+      }
+    }
+  }
+}

@@ -1,0 +1,44 @@
+[
+  {
+    "expert_id": "SYN-BFS-001",
+    "display_name": "Synthetic Business Front Support",
+    "support_function": "BUSINESS_FRONT_SUPPORT",
+    "jurisdiction": null,
+    "need_types": ["ROUTINE_PROCESS", "SYSTEM_GUIDANCE"]
+  },
+  {
+    "expert_id": "SYN-BRM-ALPHA-001",
+    "display_name": "Synthetic Alpha BRM Lead",
+    "support_function": "BRM_SUITABILITY_LEAD",
+    "jurisdiction": "REGION_ALPHA",
+    "need_types": ["COMPLEX_CASE", "SCOPE_MISMATCH"]
+  },
+  {
+    "expert_id": "SYN-BRM-BETA-001",
+    "display_name": "Synthetic Beta BRM Lead",
+    "support_function": "BRM_SUITABILITY_LEAD",
+    "jurisdiction": "REGION_BETA",
+    "need_types": ["COMPLEX_CASE", "SCOPE_MISMATCH"]
+  },
+  {
+    "expert_id": "SYN-LEGAL-001",
+    "display_name": "Synthetic Suitability Legal Expert",
+    "support_function": "SUITABILITY_EXPERT_LEGAL",
+    "jurisdiction": null,
+    "need_types": ["POLICY_INTERPRETATION"]
+  },
+  {
+    "expert_id": "SYN-COMPLIANCE-001",
+    "display_name": "Synthetic Suitability Compliance Expert",
+    "support_function": "SUITABILITY_EXPERT_COMPLIANCE",
+    "jurisdiction": null,
+    "need_types": ["APPROVAL_REQUIRED"]
+  },
+  {
+    "expert_id": "SYN-IT-001",
+    "display_name": "Synthetic IT Service Desk",
+    "support_function": "IT_SERVICE_DESK",
+    "jurisdiction": null,
+    "need_types": ["TECHNICAL_FAILURE"]
+  }
+]

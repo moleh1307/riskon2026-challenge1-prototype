@@ -1,0 +1,61 @@
+{
+  "fixture_schema_version": "1.0",
+  "fixture_origin": "SYNTHETIC_COUNTERFACTUAL_RUN_V1",
+  "baseline_plan_id": "m4-fixture-M4-035",
+  "variant_id": "M4-035-CF-03",
+  "context_delta": {
+    "dimension": "region",
+    "before": "REGION_BETA",
+    "after": null
+  },
+  "planned_verified_run": {
+    "query_plan": {
+      "plan_id": "m4-fixture-M4-035",
+      "original_query": "Does the scoped rule apply to Region Beta with Service Basic?",
+      "normalised_query": "Does the scoped rule apply to Region Beta with Service Basic?",
+      "intent": "APPLICABILITY",
+      "canonical_terms": ["scoped rule", "region beta", "service basic"],
+      "required_context_fields": ["region", "service_model"],
+      "missing_context_fields": ["region"],
+      "subqueries": [],
+      "retrieval_channels": ["EXACT", "WORD_TFIDF", "CHAR_TFIDF"],
+      "retrieval_skipped": true
+    },
+    "retrieval_diagnostics": {"entries": []},
+    "verified_run": {
+      "result": {
+        "trace_id": "m4-fixture-M4-035-CF-03",
+        "decision": "CLARIFY",
+        "answer": null,
+        "clarifying_question": "Which region should the scoped rule apply to?",
+        "reason_codes": ["MISSING_REQUIRED_CONTEXT"],
+        "evidence": [],
+        "route": null,
+        "answer_confidence": 0.0,
+        "routing_confidence": 0.0,
+        "confidence_kind": "DETERMINISTIC_GATE_PLACEHOLDER",
+        "detected_context": {
+          "region": null,
+          "channel": "ADVISORY",
+          "workflow_stage": "SUITABILITY_REVIEW",
+          "need_type": "COMPLEX_CASE",
+          "missing_context": ["region"]
+        },
+        "missing_context": ["region"],
+        "retrieved_sections": []
+      },
+      "verification": {
+        "status": "INSUFFICIENT",
+        "reason_codes": ["MISSING_REQUIRED_CONTEXT"],
+        "supported_claim_ids": [],
+        "unsupported_claim_ids": [],
+        "missing_required_claim_ids": ["region"],
+        "scope_mismatches": [],
+        "unresolved_required_references": [],
+        "unsupported_modalities": [],
+        "evidence_refs": [],
+        "explanation": "The required region context was removed, so the answer must be clarified."
+      }
+    }
+  }
+}

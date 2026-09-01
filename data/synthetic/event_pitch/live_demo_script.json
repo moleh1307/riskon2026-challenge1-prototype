@@ -1,0 +1,34 @@
+{
+  "schema_version": "1.0",
+  "duration_seconds": 90,
+  "primary_bundle": "data/generated/event_demo/demo_bundle.json",
+  "primary_surfaces": ["index.html", "dashboard.html"],
+  "terminal_typing_required": false,
+  "steps": [
+    {
+      "step_id": "DEMO-001",
+      "start_second": 0,
+      "end_second": 12,
+      "story_id": "ERB-001",
+      "show": ["FAST_PATH", "ANSWER", "Agents activated: 0"],
+      "say": "A simple, explicit question should remain simple. The system finds sufficient evidence and activates no agents."
+    },
+    {
+      "step_id": "DEMO-002",
+      "start_second": 12,
+      "end_second": 55,
+      "story_id": "ERB-003",
+      "show": ["Evidence Scout", "Scope Sentinel", "Counterfactual Sentinel", "Region Beta → Region Alpha: ANSWER → ABSTAIN", "Service Basic → Service Plus: ANSWER → ABSTAIN", "Region removed: ANSWER → CLARIFY"],
+      "say": "For a scope-sensitive question, the Orchestra investigates from independent angles. It then changes one business fact at a time. The answer is released only because all three expected decision transitions pass."
+    },
+    {
+      "step_id": "DEMO-003",
+      "start_second": 55,
+      "end_second": 90,
+      "story_id": "ERB-005",
+      "show": ["ABSTAIN", "Expert Resolution", "Proposed Knowledge Patch", "Policy CI", "Separate Human Approval", "Versioned Knowledge Release", "Active Overlay"],
+      "say": "When the evidence is missing, the system abstains and creates a case capsule for the right expert. The expert response is not written directly into memory. It becomes a proposed knowledge patch, passes Policy CI and regression tests, receives separate human approval and enters a versioned release. The exact-scope question can then be answered, while neighbouring scopes still abstain or clarify.",
+      "final_sentence": "Many agents investigate. Evidence decides. Humans approve."
+    }
+  ]
+}

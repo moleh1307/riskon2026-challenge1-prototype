@@ -1,0 +1,55 @@
+{
+  "fixture_schema_version": "1.0",
+  "fixture_origin": "SYNTHETIC_ORCHESTRA_BASELINE_V1",
+  "case_id": "M4-033",
+  "planned_verified_run": {
+    "query_plan": {
+      "plan_id": "m4-fixture-M4-033",
+      "original_query": "What does ARC mean in this synthetic workflow?",
+      "normalised_query": "What does ARC mean in this synthetic workflow?",
+      "intent": "REFERENCE_LOOKUP",
+      "canonical_terms": ["arc"],
+      "required_context_fields": [],
+      "missing_context_fields": [],
+      "subqueries": [],
+      "retrieval_channels": [],
+      "retrieval_skipped": true
+    },
+    "retrieval_diagnostics": {"entries": []},
+    "verified_run": {
+      "result": {
+        "trace_id": "m4-fixture-M4-033",
+        "decision": "CLARIFY",
+        "answer": null,
+        "clarifying_question": "Do you mean Advisory Review Code or Account Routing Console?",
+        "reason_codes": ["AMBIGUOUS_ACRONYM"],
+        "evidence": [],
+        "route": null,
+        "answer_confidence": 0.0,
+        "routing_confidence": 0.0,
+        "confidence_kind": "DETERMINISTIC_GATE_PLACEHOLDER",
+        "detected_context": {
+          "region": null,
+          "channel": null,
+          "workflow_stage": "INTAKE",
+          "need_type": "UNKNOWN",
+          "missing_context": []
+        },
+        "missing_context": [],
+        "retrieved_sections": []
+      },
+      "verification": {
+        "status": "INSUFFICIENT",
+        "reason_codes": ["AMBIGUOUS_ACRONYM"],
+        "supported_claim_ids": [],
+        "unsupported_claim_ids": [],
+        "missing_required_claim_ids": [],
+        "scope_mismatches": [],
+        "unresolved_required_references": [],
+        "unsupported_modalities": [],
+        "evidence_refs": [],
+        "explanation": "The frozen synthetic baseline requires one acronym clarification."
+      }
+    }
+  }
+}

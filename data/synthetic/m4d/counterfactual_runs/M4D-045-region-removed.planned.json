@@ -1,0 +1,85 @@
+{
+  "fixture_schema_version": "1.0",
+  "fixture_origin": "SYNTHETIC_M4D_COUNTERFACTUAL_BASELINE_V1",
+  "baseline_case_id": "M4D-045",
+  "variant_id": "M4D-045-region-removed",
+  "query_input": {
+    "query": "Does Control Meridian apply to Service Basic in Region Beta?",
+    "context": {
+      "service_model": "SERVICE_BASIC"
+    },
+    "trace_id": null
+  },
+  "context_delta": {
+    "dimension": "region",
+    "before": "REGION_BETA",
+    "after": null
+  },
+  "planned_verified_run": {
+    "query_plan": {
+      "plan_id": "plan-67f2e7d35226643c",
+      "original_query": "Does Control Meridian apply to Service Basic in Region Beta?",
+      "normalised_query": "Does Control Meridian apply to Service Basic in Region Beta?",
+      "intent": "APPLICABILITY",
+      "canonical_terms": [
+        "service basic",
+        "region beta",
+        "control meridian"
+      ],
+      "required_context_fields": [
+        "region",
+        "service_model"
+      ],
+      "missing_context_fields": [
+        "region"
+      ],
+      "subqueries": [],
+      "retrieval_channels": [],
+      "retrieval_skipped": true
+    },
+    "retrieval_diagnostics": {
+      "entries": []
+    },
+    "verified_run": {
+      "result": {
+        "trace_id": "a4537cc4-ec8a-4ada-9771-d006b3a8046f",
+        "decision": "CLARIFY",
+        "answer": null,
+        "clarifying_question": "Please provide the missing context: region.",
+        "reason_codes": [
+          "MISSING_REQUIRED_CONTEXT"
+        ],
+        "evidence": [],
+        "route": null,
+        "answer_confidence": 0.0,
+        "routing_confidence": 0.0,
+        "confidence_kind": "DETERMINISTIC_GATE_PLACEHOLDER",
+        "detected_context": {
+          "region": null,
+          "channel": null,
+          "workflow_stage": null,
+          "need_type": "COMPLEX_CASE",
+          "missing_context": []
+        },
+        "missing_context": [
+          "region"
+        ],
+        "retrieved_sections": []
+      },
+      "verification": {
+        "status": "INSUFFICIENT",
+        "reason_codes": [
+          "MISSING_REQUIRED_CONTEXT"
+        ],
+        "supported_claim_ids": [],
+        "unsupported_claim_ids": [],
+        "missing_required_claim_ids": [],
+        "scope_mismatches": [],
+        "unresolved_required_references": [],
+        "unsupported_modalities": [],
+        "evidence_refs": [],
+        "explanation": "M4D planned execution short-circuited before retrieval."
+      }
+    }
+  }
+}

@@ -1,0 +1,116 @@
+{
+  "schema_version": "1.0",
+  "milestone": "M5B_GOVERNED_KNOWLEDGE_OVERLAY",
+  "cases": [
+    {
+      "case_id": "M5A-046",
+      "patch_ref": "local://synthetic-m5a/knowledge_patches/M5A-046.patch.json",
+      "queries": [
+        {
+          "snapshot_id": "M5A-046-exact-scope",
+          "query_input": {
+            "query": "Does Control Meridian apply to Service Basic in Region Beta?",
+            "context": {"region": "REGION_BETA", "service_model": "SERVICE_BASIC"}
+          },
+          "expected_decision": "ANSWER",
+          "expected_reason_codes": [],
+          "expected_overlay_claim_ids": ["meridian_beta_basic_applies"]
+        },
+        {
+          "snapshot_id": "M5A-046-alternate-region",
+          "query_input": {
+            "query": "Does Control Meridian apply to Service Basic in Region Alpha?",
+            "context": {"region": "REGION_ALPHA", "service_model": "SERVICE_BASIC"}
+          },
+          "expected_decision": "ABSTAIN",
+          "expected_reason_codes": ["SCOPE_MISMATCH"],
+          "expected_overlay_claim_ids": []
+        },
+        {
+          "snapshot_id": "M5A-046-alternate-service-model",
+          "query_input": {
+            "query": "Does Control Meridian apply to Service Plus in Region Beta?",
+            "context": {"region": "REGION_BETA", "service_model": "SERVICE_PLUS"}
+          },
+          "expected_decision": "ABSTAIN",
+          "expected_reason_codes": ["SCOPE_MISMATCH"],
+          "expected_overlay_claim_ids": []
+        },
+        {
+          "snapshot_id": "M5A-046-required-context-removed",
+          "query_input": {
+            "query": "Does Control Meridian apply to the basic service?",
+            "context": {"service_model": "SERVICE_BASIC"}
+          },
+          "expected_decision": "CLARIFY",
+          "expected_reason_codes": ["MISSING_REQUIRED_CONTEXT"],
+          "expected_overlay_claim_ids": []
+        }
+      ]
+    },
+    {
+      "case_id": "M5A-047",
+      "patch_ref": "local://synthetic-m5a/knowledge_patches/M5A-047.patch.json",
+      "queries": [
+        {
+          "snapshot_id": "M5A-047-not-active",
+          "query_input": {
+            "query": "Does Control Meridian apply to Service Basic in Region Beta?",
+            "context": {"region": "REGION_BETA", "service_model": "SERVICE_BASIC"}
+          },
+          "expected_decision": "ABSTAIN",
+          "expected_reason_codes": ["NO_EXPLICIT_SUPPORT"],
+          "expected_overlay_claim_ids": []
+        }
+      ]
+    },
+    {
+      "case_id": "M5A-048",
+      "patch_ref": "local://synthetic-m5a/knowledge_patches/M5A-048.patch.json",
+      "queries": [
+        {
+          "snapshot_id": "M5A-048-rejected",
+          "query_input": {
+            "query": "Can client acceptance override the Synthetic Atlas Control?",
+            "context": {"region": "REGION_BETA", "service_model": "SERVICE_BASIC"}
+          },
+          "expected_decision": "ABSTAIN",
+          "expected_reason_codes": ["NO_EXPLICIT_SUPPORT"],
+          "expected_overlay_claim_ids": []
+        }
+      ]
+    },
+    {
+      "case_id": "M5A-049",
+      "patch_ref": "local://synthetic-m5a/knowledge_patches/M5A-049.patch.json",
+      "queries": [
+        {
+          "snapshot_id": "M5A-049-rejected",
+          "query_input": {
+            "query": "Does Control Meridian apply to Service Basic in Region Beta?",
+            "context": {"region": "REGION_BETA", "service_model": "SERVICE_BASIC"}
+          },
+          "expected_decision": "ABSTAIN",
+          "expected_reason_codes": ["NO_EXPLICIT_SUPPORT"],
+          "expected_overlay_claim_ids": []
+        }
+      ]
+    },
+    {
+      "case_id": "M5A-050",
+      "patch_ref": "local://synthetic-m5a/knowledge_patches/M5A-050.patch.json",
+      "queries": [
+        {
+          "snapshot_id": "M5A-050-expired",
+          "query_input": {
+            "query": "Does Control Meridian apply to Service Basic in Region Beta?",
+            "context": {"region": "REGION_BETA", "service_model": "SERVICE_BASIC"}
+          },
+          "expected_decision": "ABSTAIN",
+          "expected_reason_codes": ["NO_EXPLICIT_SUPPORT"],
+          "expected_overlay_claim_ids": []
+        }
+      ]
+    }
+  ]
+}
