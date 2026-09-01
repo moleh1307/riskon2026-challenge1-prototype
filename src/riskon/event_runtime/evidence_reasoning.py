@@ -27,6 +27,19 @@ from riskon.event_runtime.llm_client import (
     LLMCallRecord,
     LLMPhase,
     Task5LLMConfig,
+    Task6LLMConfig,
+)
+from riskon.event_runtime.policy_atlas import (
+    AtlasRetrievalApplication,
+    PolicyAtlasRouter,
+    apply_atlas_retrieval,
+    load_answerability_graph,
+    load_policy_atlas,
+)
+from riskon.event_runtime.policy_atlas_models import (
+    AnswerabilityGraphDocument,
+    AtlasRoutingResult,
+    PolicyAtlasDocument,
 )
 from riskon.event_runtime.semantic_models import SemanticFailureReason
 from riskon.event_runtime.semantic_retrieval import (
@@ -95,6 +108,7 @@ class EventEvidenceReasoningResult:
     unsupported_released_claims: int
     latency_ms: float
     result: PipelineResult
+    atlas_routing: AtlasRoutingResult | None = None
 
     @property
     def retry_used(self) -> bool:
@@ -202,22 +216,28 @@ class EventEvidenceReasoningRuntime:
         expert_router: ExpertRouter,
         *,
         config: Task5LLMConfig | None = None,
+        policy_atlas: PolicyAtlasDocument | None = None,
+        answerability_graph: AnswerabilityGraphDocument | None = None,
+        atlas_router: PolicyAtlasRouter | None = None,
     ) -> None:
         self.corpus = corpus
         self.semantic_retriever = semantic_retriever
         self.client = client
         self.expert_router = expert_router
         self.config = config or Task5LLMConfig()
+        self.policy_atlas = policy_atlas
+        self.answerability_graph = answerability_graph
+        self.atlas_router = atlas_router
         self._titles_by_source = {section.source_ref: section.title for section in corpus.sections}
 
     def run(self, request: QueryInput) -> EventEvidenceReasoningResult:
         """Run context, bounded evidence analysis, skeptic, and final firewall."""
 
         started = time.perf_counter()
-        initial = self.semantic_retriever.retrieve_initial(request)
+        initial_base = self.semantic_retriever.retrieve_initial(request)
         detected_context = ContextDetector().detect(request)
-        context_output = self._interpret_context(request, initial.plan)
-        context_assessment = self._sanitize_context(request, initial.plan, context_output)
+        context_output = self._interpret_context(request, initial_base.plan)
+        context_assessment = self._sanitize_context(request, initial_base.plan, context_output)
         detected_context = self._detected_context(request, detected_context, context_assessment)
 
         if context_assessment.missing_context_fields:
@@ -225,7 +245,7 @@ class EventEvidenceReasoningRuntime:
             clarification = _clarifying_question(context_assessment)
             result = self._pipeline_result(
                 request,
-                initial.plan,
+                initial_base.plan,
                 detected_context,
                 Decision.CLARIFY,
                 answer=None,
@@ -233,16 +253,16 @@ class EventEvidenceReasoningRuntime:
                 reason_codes=reason_codes,
                 route=None,
                 evidence=(),
-                retrieved_sections=initial.selected_candidates,
+                retrieved_sections=initial_base.selected_candidates,
             )
             return EventEvidenceReasoningResult(
                 request=request,
-                plan=initial.plan,
+                plan=initial_base.plan,
                 detected_context=detected_context,
                 context_output=context_output,
                 context_assessment=context_assessment,
-                initial_retrieval=initial,
-                final_retrieval=initial,
+                initial_retrieval=initial_base,
+                final_retrieval=initial_base,
                 initial_evidence_units=(),
                 final_evidence_units=(),
                 initial_analysis=None,
@@ -255,7 +275,7 @@ class EventEvidenceReasoningRuntime:
                 clarifying_question=clarification,
                 reason_codes=tuple(reason_codes),
                 route=None,
-                primary_source=_primary_source(initial.selected_candidates),
+                primary_source=_primary_source(initial_base.selected_candidates),
                 evidence_refs=(),
                 validation_errors=(),
                 scope_violation_count=0,
@@ -263,20 +283,58 @@ class EventEvidenceReasoningRuntime:
                 unsupported_released_claims=0,
                 latency_ms=_elapsed_ms(started),
                 result=result,
+                atlas_routing=None,
             )
 
+        initial_application = self._apply_atlas(
+            request,
+            initial_base,
+            context_assessment,
+        )
+        initial = initial_application.retrieval
+        initial_atlas = initial_application.atlas
+        if initial_atlas.clarification_fields:
+            return self._atlas_clarification_result(
+                request,
+                initial_retrieval=initial,
+                final_retrieval=initial,
+                detected_context=detected_context,
+                context_output=context_output,
+                context_assessment=context_assessment,
+                atlas=initial_atlas,
+                started=started,
+            )
         initial_units = self._evidence_units(request, initial)
         initial_analysis = self._analyze(request, initial.plan, context_assessment, initial_units)
         final_retrieval = initial
         final_units = initial_units
         final_analysis = initial_analysis
+        final_atlas = initial_atlas
 
         if _needs_router_retry(initial_analysis) and initial_analysis is not None:
-            final_retrieval = self.semantic_retriever.retry_once(
+            retry_base = self.semantic_retriever.retry_once(
                 request,
-                initial,
+                initial_base,
                 _analysis_failure_reason(initial_analysis),
             )
+            retry_application = self._apply_atlas(request, retry_base, context_assessment)
+            final_retrieval = retry_application.retrieval
+            final_atlas = retry_application.atlas
+            if final_atlas.clarification_fields:
+                retry_units = self._evidence_units(request, final_retrieval)
+                return self._atlas_clarification_result(
+                    request,
+                    initial_retrieval=initial,
+                    final_retrieval=final_retrieval,
+                    detected_context=detected_context,
+                    context_output=context_output,
+                    context_assessment=context_assessment,
+                    atlas=final_atlas,
+                    initial_units=initial_units,
+                    final_units=retry_units,
+                    initial_analysis=initial_analysis,
+                    started=started,
+                )
             final_units = self._evidence_units(request, final_retrieval)
             final_analysis = self._analyze(
                 request,
@@ -300,6 +358,9 @@ class EventEvidenceReasoningRuntime:
                 validated_claims,
                 final_units,
                 nearby_units,
+                expected_control_hints=(
+                    final_atlas.expected_control_hints if final_atlas is not None else ()
+                ),
             )
             if validated_claims
             else None
@@ -370,6 +431,100 @@ class EventEvidenceReasoningRuntime:
             unsupported_released_claims=released_unsupported,
             latency_ms=_elapsed_ms(started),
             result=result,
+            atlas_routing=final_atlas,
+        )
+
+    def _apply_atlas(
+        self,
+        request: QueryInput,
+        retrieval: SemanticRetrievalOutcome,
+        context: ContextAssessment,
+    ) -> AtlasRetrievalApplication:
+        if self.atlas_router is None:
+            return AtlasRetrievalApplication(
+                retrieval=retrieval,
+                atlas=AtlasRoutingResult(),
+            )
+        return apply_atlas_retrieval(
+            self.semantic_retriever,
+            retrieval,
+            request,
+            context.explicitly_supplied_context,
+            self.atlas_router,
+            missing_context_fields=context.missing_context_fields,
+        )
+
+    def _atlas_clarification_result(
+        self,
+        request: QueryInput,
+        *,
+        initial_retrieval: SemanticRetrievalOutcome,
+        final_retrieval: SemanticRetrievalOutcome,
+        detected_context: DetectedContext,
+        context_output: ContextInterpreterOutput,
+        context_assessment: ContextAssessment,
+        atlas: AtlasRoutingResult,
+        started: float,
+        initial_units: Sequence[EvidenceUnit] = (),
+        final_units: Sequence[EvidenceUnit] = (),
+        initial_analysis: EvidenceAnalysisOutput | None = None,
+        final_analysis: EvidenceAnalysisOutput | None = None,
+    ) -> EventEvidenceReasoningResult:
+        fields = list(
+            dict.fromkeys([*context_assessment.missing_context_fields, *atlas.clarification_fields])
+        )[:16]
+        assessment = context_assessment.model_copy(
+            update={
+                "missing_context_fields": fields,
+                "answer_changing_context_fields": list(
+                    dict.fromkeys([*context_assessment.answer_changing_context_fields, *fields])
+                ),
+            }
+        )
+        detected = self._detected_context(request, detected_context, assessment)
+        reason_codes = _context_reason_codes(assessment)
+        clarification = _clarifying_question(assessment)
+        result = self._pipeline_result(
+            request,
+            final_retrieval.plan,
+            detected,
+            Decision.CLARIFY,
+            answer=None,
+            clarifying_question=clarification,
+            reason_codes=reason_codes,
+            route=None,
+            evidence=(),
+            retrieved_sections=final_retrieval.selected_candidates,
+        )
+        return EventEvidenceReasoningResult(
+            request=request,
+            plan=final_retrieval.plan,
+            detected_context=detected,
+            context_output=context_output,
+            context_assessment=assessment,
+            initial_retrieval=initial_retrieval,
+            final_retrieval=final_retrieval,
+            initial_evidence_units=tuple(initial_units),
+            final_evidence_units=tuple(final_units),
+            initial_analysis=initial_analysis,
+            final_analysis=final_analysis,
+            support_validation=SupportValidation(),
+            validated_claims=(),
+            skeptic=None,
+            decision=Decision.CLARIFY,
+            answer=None,
+            clarifying_question=clarification,
+            reason_codes=tuple(reason_codes),
+            route=None,
+            primary_source=_primary_source(final_retrieval.selected_candidates),
+            evidence_refs=(),
+            validation_errors=(),
+            scope_violation_count=0,
+            critical_control_omission_count=0,
+            unsupported_released_claims=0,
+            latency_ms=_elapsed_ms(started),
+            result=result,
+            atlas_routing=atlas,
         )
 
     def _interpret_context(
@@ -548,6 +703,7 @@ class EventEvidenceReasoningRuntime:
         claims: Sequence[ValidatedClaim],
         evidence_units: Sequence[EvidenceUnit],
         nearby_units: Sequence[EvidenceUnit],
+        expected_control_hints: Sequence[str] = (),
     ) -> SkepticOutput:
         output, _call = self.client.request_json(
             "skeptic",
@@ -593,6 +749,7 @@ class EventEvidenceReasoningRuntime:
                     "nearby_challenge_evidence": [
                         unit.model_dump(mode="json") for unit in nearby_units
                     ],
+                    "expected_control_hints": list(expected_control_hints),
                 },
                 ensure_ascii=False,
                 separators=(",", ":"),
@@ -610,7 +767,10 @@ class EventEvidenceReasoningRuntime:
         """Select at most eight original provenance units within the character budget."""
 
         candidates = list(retrieval.selected_candidates)
+        allowed_sources = set(retrieval.hybrid_page_refs) if self.atlas_router is not None else None
         for candidate in retrieval.deterministic_result.selected_candidates:
+            if allowed_sources is not None and candidate.source_ref not in allowed_sources:
+                continue
             if candidate.candidate_ref not in {item.candidate_ref for item in candidates}:
                 candidates.append(candidate)
         if not candidates:
@@ -961,9 +1121,15 @@ class EventEvidenceReasoningRuntime:
 def build_event_evidence_reasoning_runtime(
     event_config: Any,
     *,
-    config: Task5LLMConfig | None = None,
+    config: Task5LLMConfig | Task6LLMConfig | None = None,
+    client: EvidenceReasoningClient | None = None,
+    semantic_retriever: SemanticEventRetriever | None = None,
+    policy_atlas: PolicyAtlasDocument | None = None,
+    answerability_graph: AnswerabilityGraphDocument | None = None,
+    atlas_router: PolicyAtlasRouter | None = None,
+    use_policy_atlas: bool = False,
 ) -> EventEvidenceReasoningRuntime:
-    """Build Task 5 from the frozen event retriever and current Page Card cache."""
+    """Build the bounded event reasoning runtime, optionally with Task 6 Atlas routing."""
 
     from riskon.config import load_milestone5b_config
     from riskon.event_runtime.factory import build_event_retrieval_components
@@ -974,14 +1140,33 @@ def build_event_evidence_reasoning_runtime(
     components = build_event_retrieval_components(event_config)
     task_config = config or Task5LLMConfig()
     cards = load_page_cards(components.corpus, event_config)
-    client = EventOpenAIClient(config=task_config)
-    router = PageCardRouter(cards.cards, client, config=task_config)
-    semantic = SemanticEventRetriever(
-        components.planner,
-        components.retriever,
-        router,
-        config=task_config,
+    active_client = client or EventOpenAIClient(config=task_config)
+    if semantic_retriever is None:
+        router = PageCardRouter(cards.cards, active_client, config=task_config)
+        semantic_retriever = SemanticEventRetriever(
+            components.planner,
+            components.retriever,
+            router,
+            config=task_config,
+        )
+    atlas_requested = (
+        use_policy_atlas or policy_atlas is not None or answerability_graph is not None
     )
+    if atlas_requested:
+        if policy_atlas is None:
+            policy_atlas = load_policy_atlas(components.corpus, event_config)
+        if answerability_graph is None:
+            answerability_graph = load_answerability_graph(policy_atlas, event_config)
+        if atlas_router is None:
+            atlas_config = (
+                task_config if isinstance(task_config, Task6LLMConfig) else Task6LLMConfig()
+            )
+            atlas_router = PolicyAtlasRouter(
+                policy_atlas,
+                answerability_graph,
+                active_client,
+                config=atlas_config,
+            )
     base_config = load_milestone5b_config(event_config.pipeline_config)
     m0_config = base_config.base.base.base.base.base.base.base.base
     expert_router = ExpertRouter.from_files(
@@ -990,10 +1175,13 @@ def build_event_evidence_reasoning_runtime(
     )
     return EventEvidenceReasoningRuntime(
         components.corpus,
-        semantic,
-        client,
+        semantic_retriever,
+        active_client,
         expert_router,
         config=task_config,
+        policy_atlas=policy_atlas,
+        answerability_graph=answerability_graph,
+        atlas_router=atlas_router,
     )
 
 

@@ -13,8 +13,10 @@ from pydantic import BaseModel, ConfigDict, Field
 
 LLMPhase = Literal[
     "page_card",
+    "policy_atlas",
     "title_router",
     "router_retry",
+    "eligibility",
     "context_interpreter",
     "claim_builder",
     "skeptic",
@@ -23,10 +25,14 @@ ReasoningEffort = Literal["none", "low", "medium"]
 
 PAGE_CARD_MODEL: str = "gpt-5.6-luna"
 PAGE_CARD_REASONING: ReasoningEffort = "none"
+POLICY_ATLAS_MODEL: str = "gpt-5.6-luna"
+POLICY_ATLAS_REASONING: ReasoningEffort = "low"
 TITLE_ROUTER_MODEL: str = "gpt-5.6-terra"
 TITLE_ROUTER_REASONING: ReasoningEffort = "low"
 ROUTER_RETRY_MODEL: str = "gpt-5.6-terra"
 ROUTER_RETRY_REASONING: ReasoningEffort = "medium"
+ELIGIBILITY_MODEL: str = "gpt-5.6-terra"
+ELIGIBILITY_REASONING: ReasoningEffort = "medium"
 
 CONTEXT_INTERPRETER_MODEL: str = "gpt-5.6-luna"
 CONTEXT_INTERPRETER_REASONING: ReasoningEffort = "low"
@@ -59,6 +65,15 @@ class Task5LLMConfig(Task4LLMConfig):
     max_claims: int = Field(default=8, ge=1, le=8)
 
 
+class Task6LLMConfig(Task5LLMConfig):
+    """Bounded Task 6 settings; the model policy remains fixed above."""
+
+    policy_atlas_excerpt_chars: int = Field(default=3500, ge=800, le=5000)
+    policy_atlas_workers: int = Field(default=8, ge=1, le=8)
+    atlas_candidate_limit: int = Field(default=10, ge=1, le=10)
+    atlas_neighbor_limit: int = Field(default=6, ge=0, le=8)
+
+
 @dataclass(frozen=True)
 class LLMCallRecord:
     """Safe API accounting record; it contains no prompt, response, or secret."""
@@ -77,8 +92,10 @@ class LLMUsage:
     """Aggregate call and token accounting for one bounded event run."""
 
     page_card_calls: int = 0
+    policy_atlas_calls: int = 0
     title_router_calls: int = 0
     router_retry_calls: int = 0
+    eligibility_calls: int = 0
     context_interpreter_calls: int = 0
     claim_builder_calls: int = 0
     skeptic_calls: int = 0
@@ -94,10 +111,14 @@ class LLMUsage:
         with self._lock:
             if call.phase == "page_card":
                 self.page_card_calls += 1
+            elif call.phase == "policy_atlas":
+                self.policy_atlas_calls += 1
             elif call.phase == "title_router":
                 self.title_router_calls += 1
             elif call.phase == "router_retry":
                 self.router_retry_calls += 1
+            elif call.phase == "eligibility":
+                self.eligibility_calls += 1
             elif call.phase == "context_interpreter":
                 self.context_interpreter_calls += 1
             elif call.phase == "claim_builder":
@@ -116,8 +137,10 @@ class LLMUsage:
         with self._lock:
             return (
                 self.page_card_calls
+                + self.policy_atlas_calls
                 + self.title_router_calls
                 + self.router_retry_calls
+                + self.eligibility_calls
                 + self.context_interpreter_calls
                 + self.claim_builder_calls
                 + self.skeptic_calls
@@ -140,8 +163,10 @@ class EventOpenAIClient:
 
     _specs: dict[LLMPhase, tuple[str, ReasoningEffort, int]] = {
         "page_card": (PAGE_CARD_MODEL, PAGE_CARD_REASONING, 500),
+        "policy_atlas": (POLICY_ATLAS_MODEL, POLICY_ATLAS_REASONING, 1800),
         "title_router": (TITLE_ROUTER_MODEL, TITLE_ROUTER_REASONING, 900),
         "router_retry": (ROUTER_RETRY_MODEL, ROUTER_RETRY_REASONING, 900),
+        "eligibility": (ELIGIBILITY_MODEL, ELIGIBILITY_REASONING, 2600),
         "context_interpreter": (CONTEXT_INTERPRETER_MODEL, CONTEXT_INTERPRETER_REASONING, 900),
         "claim_builder": (CLAIM_BUILDER_MODEL, CLAIM_BUILDER_REASONING, 5000),
         "skeptic": (SKEPTIC_MODEL, SKEPTIC_REASONING, 1600),
@@ -186,8 +211,10 @@ class EventOpenAIClient:
         model, reasoning_effort, max_output_tokens = self._specs[phase]
         schema_name = {
             "page_card": "riskon_page_card",
+            "policy_atlas": "riskon_policy_atlas_fingerprint",
             "title_router": "riskon_title_router",
             "router_retry": "riskon_title_router_retry",
+            "eligibility": "riskon_contrastive_eligibility",
             "context_interpreter": "riskon_context_interpreter",
             "claim_builder": "riskon_evidence_claim_builder",
             "skeptic": "riskon_evidence_skeptic",
