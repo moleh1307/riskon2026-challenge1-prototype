@@ -2,17 +2,76 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
+from typing import cast
+
 from riskon.config import load_milestone5b_config
-from riskon.event_intake import CorpusIntakeRequest, EventCorpusAdapter
+from riskon.event_intake import (
+    CorpusIntakeReport,
+    CorpusIntakeRequest,
+    EventCorpusAdapter,
+)
 from riskon.event_intake.preparation import prepare_corpus
+from riskon.event_runtime.aliases import (
+    EventAliasRegistry,
+    build_event_alias_registry,
+    write_event_alias_registry,
+)
 from riskon.event_runtime.config import EventRuntimeConfig
 from riskon.event_runtime.corpus_loader import load_event_corpus
+from riskon.event_runtime.query_planner import EventQueryPlanner
 from riskon.event_runtime.reporting import write_intake_artifacts
-from riskon.hybrid_retrieval import HybridRetriever
+from riskon.event_runtime.retrieval import EventHybridRetriever
 from riskon.orchestra.counterfactual_runner import LocalPlannedPipelineCounterfactualRunner
 from riskon.orchestra.runtime_audit import UnifiedRuntimeAuditLogger
+from riskon.orchestra.source_safety import LocalCorpus
 from riskon.pipeline import M4DRiskonPipeline, M5BRiskonPipeline
+from riskon.query_planning import M4DQueryPlanner
 from riskon.verification import VerificationEngine
+
+
+@dataclass(frozen=True)
+class EventRetrievalComponents:
+    """Read-only event corpus, planner, and retriever assembled without orchestration."""
+
+    corpus: LocalCorpus
+    report: CorpusIntakeReport
+    aliases: EventAliasRegistry
+    planner: EventQueryPlanner
+    retriever: EventHybridRetriever
+
+
+def build_event_retrieval_components(
+    event_config: EventRuntimeConfig,
+) -> EventRetrievalComponents:
+    """Build only the event retrieval stack, without invoking M4D runtime execution."""
+
+    base_config = load_milestone5b_config(event_config.pipeline_config)
+    adapter = EventCorpusAdapter.from_project_root(event_config.project_root)
+    corpus, report = load_event_corpus(event_config, adapter)
+    aliases = build_event_alias_registry(corpus.sections)
+    write_event_alias_registry(aliases, event_config.alias_registry)
+
+    m2_config = base_config.base.base.base.base.base.base
+    planner = EventQueryPlanner.from_aliases(
+        aliases.aliases,
+        page_titles=[section.title for section in corpus.sections],
+        config=m2_config.query_planning,
+    )
+    retriever = EventHybridRetriever(
+        list(corpus.sections),
+        corpus.provenance,
+        m2_config.retrieval,
+        aliases=aliases.aliases,
+        title_boost_enabled=True,
+    )
+    return EventRetrievalComponents(
+        corpus=corpus,
+        report=report,
+        aliases=aliases,
+        planner=planner,
+        retriever=retriever,
+    )
 
 
 class EventRuntimeFactory:
@@ -24,8 +83,9 @@ class EventRuntimeFactory:
 
         base_config = load_milestone5b_config(event_config.pipeline_config)
         pipeline = M5BRiskonPipeline.from_milestone5b_config(base_config)
-        adapter = EventCorpusAdapter.from_project_root(event_config.project_root)
-        corpus, report = load_event_corpus(event_config, adapter)
+        components = build_event_retrieval_components(event_config)
+        corpus = components.corpus
+        report = components.report
         request = CorpusIntakeRequest(
             source_root=event_config.source_root,
             manifest_path=event_config.manifest,
@@ -36,13 +96,11 @@ class EventRuntimeFactory:
         write_intake_artifacts(report, prepared, request, request.output_root)
 
         m4d_config = base_config.base
-        m2_config = m4d_config.base.base.base.base.base
         m1_config = m4d_config.base.base.base.base.base.base
         pipeline._m4d_corpus = corpus
         pipeline._m4d_provenance = corpus.provenance
-        pipeline._m4d_retriever = HybridRetriever(
-            list(corpus.sections), corpus.provenance, m2_config.retrieval
-        )
+        pipeline._m4d_planner = cast(M4DQueryPlanner, components.planner)
+        pipeline._m4d_retriever = components.retriever
         pipeline._verification_engine = VerificationEngine(
             corpus.provenance,
             pipeline.router,

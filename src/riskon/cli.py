@@ -33,7 +33,9 @@ from riskon.evaluation import (
     M4CEvaluator,
     M4DEvaluator,
 )
+from riskon.event_eval.hybrid_retrieval_probe import run_hybrid_retrieval_probe
 from riskon.event_eval.reporting import write_evaluation_reports
+from riskon.event_eval.retrieval_probe import run_retrieval_probe
 from riskon.event_eval.runner import EventEvaluationRunner
 from riskon.event_intake import (
     CorpusIntakeReport,
@@ -966,6 +968,22 @@ def build_parser() -> argparse.ArgumentParser:
     event_evaluate_parser.add_argument("--output", type=Path, required=True)
     event_evaluate_parser.add_argument("--profiles", default="deterministic")
 
+    event_retrieval_parser = subparsers.add_parser(
+        "event-retrieval-evaluate",
+        help="measure event planning and retrieval without terminal execution",
+    )
+    event_retrieval_parser.add_argument("--runtime-config", type=Path, required=True)
+    event_retrieval_parser.add_argument("--cases", type=Path, required=True)
+    event_retrieval_parser.add_argument("--output", type=Path, required=True)
+
+    event_hybrid_retrieval_parser = subparsers.add_parser(
+        "event-hybrid-retrieval-evaluate",
+        help="measure bounded deterministic-plus-LLM event retrieval",
+    )
+    event_hybrid_retrieval_parser.add_argument("--runtime-config", type=Path, required=True)
+    event_hybrid_retrieval_parser.add_argument("--cases", type=Path, required=True)
+    event_hybrid_retrieval_parser.add_argument("--output", type=Path, required=True)
+
     inspect_parser = subparsers.add_parser(
         "inspect-corpus",
         help="inspect an external event HTML corpus without mutating or fetching it",
@@ -1077,6 +1095,10 @@ def main(argv: Sequence[str] | None = None) -> int:
         return run_event_query(args.config, args.question, args.context_json)
     if args.command == "event-evaluate":
         return run_event_evaluation(args.runtime_config, args.cases, args.output, args.profiles)
+    if args.command == "event-retrieval-evaluate":
+        return run_retrieval_probe(args.runtime_config, args.cases, args.output)
+    if args.command == "event-hybrid-retrieval-evaluate":
+        return run_hybrid_retrieval_probe(args.runtime_config, args.cases, args.output)
     if args.command == "inspect-corpus":
         try:
             mapping = _event_column_mapping(args)

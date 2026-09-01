@@ -12,13 +12,24 @@ from riskon.event_intake import (
 )
 from riskon.event_runtime.config import EventRuntimeConfig
 from riskon.ingestion import KnowledgeIngestor
-from riskon.models import ManifestEntry
+from riskon.models import ManifestEntry, Section
 from riskon.orchestra.source_safety import LocalCorpus
 from riskon.provenance import ProvenanceIndex
 
 
 class EventRuntimeCorpusError(ValueError):
     """Raised when a real event corpus cannot enter the runtime."""
+
+
+def ingest_event_sections(entries: list[ManifestEntry]) -> list[Section]:
+    """Ingest event HTML while making the manifest title canonical."""
+
+    ingested = KnowledgeIngestor().ingest(entries)
+    titles = {entry.filename: entry.title for entry in entries}
+    return [
+        section.model_copy(update={"title": titles.get(section.filename, section.title)})
+        for section in ingested
+    ]
 
 
 def load_event_corpus(
@@ -49,7 +60,7 @@ def load_event_corpus(
         )
         for row in report.manifest.rows
     ]
-    sections = KnowledgeIngestor().ingest(entries)
+    sections = ingest_event_sections(entries)
     if not sections:
         raise EventRuntimeCorpusError("Event corpus contains no ingestible HTML sections")
     provenance = ProvenanceIndex(
