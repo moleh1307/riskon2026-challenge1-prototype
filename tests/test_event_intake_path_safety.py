@@ -26,17 +26,40 @@ def test_output_inside_source_root_blocks_before_writing(tmp_path: Path) -> None
     assert any(issue.code == "OUTPUT_INSIDE_SOURCE_ROOT" for issue in report.blocking_issues)
 
 
-def test_manifest_outside_source_root_blocks(tmp_path: Path) -> None:
-    source = EVENT_ROOT / "valid_pack"
+def test_external_manifest_file_is_allowed(tmp_path: Path) -> None:
+    source = tmp_path / "source"
+    source.mkdir()
+    (source / "one.html").write_text("<h1>One</h1>", encoding="utf-8")
+    manifest = tmp_path / "manifest.xlsx"
+    write_workbook(manifest, ("filename", "title"), [("one.html", "One")])
     request = CorpusIntakeRequest(
         source_root=source,
-        manifest_path=tmp_path / "manifest.xlsx",
+        manifest_path=manifest,
         output_root=tmp_path / "out",
     )
 
     assessment = assess_paths(request)
 
-    assert any(issue.code == "MANIFEST_OUTSIDE_SOURCE_ROOT" for issue in assessment.issues)
+    assert not any(issue.code == "MANIFEST_OUTSIDE_SOURCE_ROOT" for issue in assessment.issues)
+
+
+def test_external_manifest_symlink_is_blocked(tmp_path: Path) -> None:
+    source = tmp_path / "source"
+    source.mkdir()
+    (source / "one.html").write_text("<h1>One</h1>", encoding="utf-8")
+    manifest = tmp_path / "manifest.xlsx"
+    write_workbook(manifest, ("filename", "title"), [("one.html", "One")])
+    symlink = tmp_path / "manifest-link.xlsx"
+    symlink.symlink_to(manifest)
+    request = CorpusIntakeRequest(
+        source_root=source,
+        manifest_path=symlink,
+        output_root=tmp_path / "out",
+    )
+
+    assessment = assess_paths(request)
+
+    assert any(issue.code == "SYMLINK_ESCAPE" for issue in assessment.issues)
 
 
 def test_missing_source_root_is_blocked(tmp_path: Path) -> None:

@@ -48,10 +48,10 @@ runtime.
 
 ER-A accepts a repo-external event package as a read-only source root. The
 package may contain HTML, local assets, and an XLSX filename/title manifest;
-the manifest must remain below the declared source root and output must remain
-outside it. Source and manifest symlinks are resolved before use and any root
-escape blocks intake. The event path is supplied at invocation time and is not
-hard-coded into production configuration.
+the manifest may be supplied as an explicit external read-only file, while
+output must remain outside the HTML source root. Source symlinks are resolved
+before use and any root escape blocks intake. The event paths are supplied at
+invocation time and are not hard-coded into production configuration.
 
 The adapter opens only non-macro XLSX data with `read_only=True` and
 `data_only=True`, using the frozen alias registry or an explicit logical-column

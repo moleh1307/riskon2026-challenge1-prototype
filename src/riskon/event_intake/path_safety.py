@@ -49,6 +49,7 @@ def assess_paths(request: CorpusIntakeRequest) -> PathAssessment:
     """Validate source, manifest, output, and symlink boundaries."""
 
     root = resolve_path(request.source_root)
+    manifest_input = _absolute_lexical_path(request.manifest_path)
     manifest = resolve_path(request.manifest_path)
     output = resolve_path(request.output_root)
     issues: list[CorpusIssue] = []
@@ -81,15 +82,6 @@ def assess_paths(request: CorpusIntakeRequest) -> PathAssessment:
             )
         )
 
-    if not manifest.is_relative_to(root):
-        issues.append(
-            CorpusIssue(
-                code="MANIFEST_OUTSIDE_SOURCE_ROOT",
-                severity=IssueSeverity.ERROR,
-                detail="The manifest must be located below the declared source root.",
-            )
-        )
-
     files: list[Path] = []
     html_files: list[Path] = []
     for current_root, directories, filenames in os.walk(root, topdown=True, followlinks=False):
@@ -109,12 +101,12 @@ def assess_paths(request: CorpusIntakeRequest) -> PathAssessment:
             if candidate.suffix.lower() in {".html", ".htm"} and candidate.is_file():
                 html_files.append(candidate)
 
-    if manifest.is_symlink() and not _check_symlink(manifest, root, issues):
+    if manifest_input.is_symlink() and not _check_symlink(manifest_input, root, issues):
         issues.append(
             CorpusIssue(
                 code="MANIFEST_NOT_FOUND",
                 severity=IssueSeverity.ERROR,
-                detail="The manifest symlink does not resolve inside the source root.",
+                detail="The manifest symlink does not resolve inside the declared boundary.",
             )
         )
 
@@ -135,15 +127,27 @@ def _check_symlink(path: Path, root: Path, issues: list[CorpusIssue]) -> bool:
     target = path.resolve(strict=False)
     if target.is_relative_to(root):
         return True
+    relative = (
+        path.relative_to(root).as_posix() if path.is_relative_to(root) else "<external-manifest>"
+    )
     issues.append(
         CorpusIssue(
             code="SYMLINK_ESCAPE",
             severity=IssueSeverity.ERROR,
-            relative_path=relative_path(path, root),
+            relative_path=relative,
             detail="A source symlink resolves outside the declared root.",
         )
     )
     return False
+
+
+def _absolute_lexical_path(path: Path) -> Path:
+    """Make a path absolute without resolving symlinks."""
+
+    candidate = path.expanduser()
+    if not candidate.is_absolute():
+        candidate = Path.cwd() / candidate
+    return candidate.absolute()
 
 
 def snapshot_source(root: Path) -> SourceSnapshot:
