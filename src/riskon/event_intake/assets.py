@@ -33,8 +33,16 @@ def scan_assets(
     """Inventory image/SVG-like references and never open external URLs."""
 
     occurrences: list[str] = []
-    for tag in soup.find_all(["img", "source", "object", "image"]):
+    for tag in soup.find_all(["img", "source", "object", "image", "ac:image"]):
         if not isinstance(tag, Tag):
+            continue
+        if tag.name.casefold() == "ac:image":
+            attachment = tag.find("ri:attachment")
+            raw = str(attachment.get("ri:filename", "")).strip() if attachment else ""
+            if raw:
+                raw = f"attachment/{raw}"
+            if raw:
+                occurrences.append(raw)
             continue
         attribute = "data" if tag.name == "object" else "src"
         raw = str(tag.get(attribute, "")).strip()

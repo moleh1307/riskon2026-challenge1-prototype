@@ -124,18 +124,24 @@ class ExistingM1Adjudicator:
                 routing_confidence=0.0,
             )
         else:
+            reason_codes = list(baseline.verified_run.result.reason_codes)
+            if not reason_codes:
+                reason_codes = [ReasonCode.NO_EXPLICIT_SUPPORT]
+            route = baseline.verified_run.result.route
+            if route is None:
+                route = self.verifier.router.route(
+                    baseline.verified_run.result.detected_context,
+                    reason_codes,
+                )
             data.update(
                 decision=Decision.ABSTAIN,
                 answer=None,
                 clarifying_question=None,
+                reason_codes=reason_codes,
                 evidence=evidence,
-                route=baseline.verified_run.result.route,
+                route=route,
                 answer_confidence=0.0,
-                routing_confidence=(
-                    baseline.verified_run.result.route.routing_confidence
-                    if baseline.verified_run.result.route is not None
-                    else 0.0
-                ),
+                routing_confidence=route.routing_confidence,
             )
         provisional = PipelineResult.model_validate(data)
         request = QueryInput(

@@ -7,10 +7,12 @@ from openpyxl import load_workbook
 
 from riskon.ingestion import (
     IngestionError,
+    KnowledgeIngestor,
     ManifestLoader,
     load_synthetic_sections,
     manifest_row_count,
 )
+from riskon.models import ManifestEntry
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 DATA_ROOT = PROJECT_ROOT / "data" / "synthetic"
@@ -69,6 +71,43 @@ def test_ingestion_preserves_headings_lists_tables_links_and_image_refs() -> Non
     assert platform.images[0].src == "../assets/mock_flow.svg"
     assert platform.images[0].alt == "Synthetic escalation flow diagram"
     assert "Question" not in platform.text
+
+
+def test_ingestion_flattens_confluence_wrappers_and_custom_images(tmp_path: Path) -> None:
+    source = tmp_path / "wrapped.html"
+    source.write_text(
+        """
+        <ac:layout><ac:layout-section><ac:layout-cell>
+          <h1>Wrapped page</h1>
+          <p>Introductory text.</p>
+          <h2>Procedure</h2>
+          <ul><li>First step</li><li>Second step</li></ul>
+          <table><tr><th>Control</th><th>Status</th></tr>
+          <tr><td>Review</td><td>Required</td></tr></table>
+          <p><ac:image><ri:attachment ri:filename="flow.png" /></ac:image></p>
+        </ac:layout-cell></ac:layout-section></ac:layout>
+        """,
+        encoding="utf-8",
+    )
+    sections = KnowledgeIngestor().ingest(
+        [
+            ManifestEntry(
+                filename="wrapped.html",
+                title="Wrapped page",
+                url="local://event-wiki/wrapped.html",
+                source_path=str(source),
+            )
+        ]
+    )
+
+    assert [section.heading_path for section in sections] == [
+        ["Wrapped page"],
+        ["Wrapped page", "Procedure"],
+    ]
+    procedure = sections[1]
+    assert procedure.lists[0].items == ["First step", "Second step"]
+    assert procedure.tables[0].rows == [["Review", "Required"]]
+    assert procedure.images[0].src == "attachment/flow.png"
 
 
 def _write_manifest(path: Path, rows: list[tuple[str, str, str]]) -> None:

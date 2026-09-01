@@ -1,0 +1,19 @@
+[base]
+pipeline_config = "config/milestone5b.toml"
+
+[event_corpus]
+source_root = ""
+manifest = ""
+column_mapping = {}
+url_prefix = "local://event-wiki/"
+generated_root = "data/generated/event_runtime"
+
+[event_runtime]
+alias_registry = "data/generated/event_runtime/event_aliases.json"
+routing_profile = "default"
+overlay_enabled = false
+
+[security]
+event_data_copy_enabled = false
+network_enabled = false
+external_api_enabled = false

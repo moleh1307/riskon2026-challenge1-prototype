@@ -223,6 +223,28 @@ reasoning, absolute paths, URLs, credentials, and real Bank content. The
 runtime is deterministic and does not add an LLM, model adapter, API, UI,
 deployment, recursive orchestration, or agent-to-agent citation path.
 
+## Event runtime
+
+The event-day adapter replaces only the M4D corpus at runtime; it does not
+create a second answer engine:
+
+```text
+repo-external read-only HTML + XLSX manifest
+  → ER-A descriptor validation
+  → existing M2 planner and HybridRetriever
+  → existing M1 VerificationEngine
+  → existing M4D Orchestra
+  → existing M3 routing profiles
+```
+
+`EventRuntimeFactory.build()` keeps the event source outside the repository,
+uses `local://event-wiki/` provenance, and writes only ignored descriptor and
+audit artifacts. The event config rejects overlays, network access, and
+external APIs. Event workers receive the event-backed `LocalCorpus`; synthetic
+M4D evidence references are not admitted. `event-query` is the additive CLI
+surface and returns only the decision, bounded answer/clarification fields,
+local evidence references, route, activation profile, and worker counters.
+
 ## M5B governed knowledge overlay
 
 M5B is an additive governance boundary over the working M4D runtime. It does

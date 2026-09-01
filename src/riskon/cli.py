@@ -46,6 +46,9 @@ from riskon.event_intake.reporting import (
     write_inspection_reports,
     write_prepared_corpus,
 )
+from riskon.event_runtime.config import load_event_runtime_config
+from riskon.event_runtime.corpus_loader import EventRuntimeCorpusError
+from riskon.event_runtime.reporting import query_result_payload
 from riskon.m5b_evaluation import M5BEvaluator
 from riskon.models import PipelineResult, QueryInput
 from riskon.orchestra.errors import OrchestraFailClosedError
@@ -868,6 +871,28 @@ def run_query(config_path: Path, query: str, context_json: str | None) -> int:
     return 0
 
 
+def run_event_query(config_path: Path, question: str, context_json: str | None) -> int:
+    """Run one question through the external event corpus runtime."""
+
+    try:
+        context = json.loads(context_json) if context_json else {}
+        if not isinstance(context, dict) or not all(
+            isinstance(key, str) and isinstance(value, str) for key, value in context.items()
+        ):
+            raise ValueError("--context must be a JSON object of strings")
+        event_config = load_event_runtime_config(config_path)
+        pipeline = RiskonPipeline.from_event_runtime_config(event_config)
+        run = pipeline.run_orchestrated(QueryInput(query=question, context=context))
+    except OrchestraFailClosedError as exc:
+        print(exc.safe_message, file=sys.stderr)
+        return 1
+    except (EventRuntimeCorpusError, ValueError, FileNotFoundError, OSError) as exc:
+        print(f"Event query FAIL: {exc}", file=sys.stderr)
+        return 1
+    print(json.dumps(query_result_payload(run), indent=2, sort_keys=True))
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     """Build the CLI parser."""
 
@@ -881,6 +906,14 @@ def build_parser() -> argparse.ArgumentParser:
     run_parser.add_argument("--config", type=Path, required=True)
     run_parser.add_argument("query")
     run_parser.add_argument("--context", dest="context_json")
+
+    event_query_parser = subparsers.add_parser(
+        "event-query",
+        help="run one question through the read-only external event corpus",
+    )
+    event_query_parser.add_argument("--config", type=Path, required=True)
+    event_query_parser.add_argument("--question", required=True)
+    event_query_parser.add_argument("--context", dest="context_json")
 
     inspect_parser = subparsers.add_parser(
         "inspect-corpus",
@@ -989,6 +1022,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     if args.command == "evaluate":
         return evaluate(args.config)
+    if args.command == "event-query":
+        return run_event_query(args.config, args.question, args.context_json)
     if args.command == "inspect-corpus":
         try:
             mapping = _event_column_mapping(args)

@@ -80,6 +80,22 @@ event organisers. The 26 August Q&A is therefore non-blocking for M2/M3
 synthetic evaluation but still controls any later event-data, real routing, or
 deployment milestone.
 
+## Event runtime boundary
+
+The event runtime reads the ER-A-approved HTML source root and external XLSX
+manifest directly from operator-supplied paths. It never copies those inputs
+into the repository and never writes inside the source root. The event corpus
+is held in memory as the M4D `LocalCorpus`; generated intake descriptors and
+structured audit rows remain under ignored `data/generated/event_runtime/`.
+
+All event evidence uses `local://event-wiki/` references. Absolute paths,
+HTTP/HTTPS URLs, synthetic M4D references, source instructions, and credentials
+are excluded from the query payload. The runtime reuses the frozen M2/M1/M3/M4D
+components and keeps overlays, network access, external APIs, and recursive
+execution disabled. A missing or incomplete structured routing context can
+leave a safe `ABSTAIN` unable to produce an M3 expert route; the CLI reports
+that configuration failure rather than inventing a route.
+
 ## M4A boundary
 
 M4A reads only the frozen M4 activation policy, case set, and local upstream

@@ -214,6 +214,26 @@ For non-standard workbook headers, pass an explicit mapping such as
 adapter accepts only the frozen `filename`/`title` aliases (with optional
 `url`) or an explicit mapping; it never guesses an unknown schema.
 
+## Event runtime
+
+After ER-A inspection, create the ignored local config at
+`data/private/event_runtime.toml` from
+[`config/event_runtime.template.toml`](config/event_runtime.template.toml).
+The HTML corpus and manifest remain outside the repository. Run one question
+through the unified event-backed M4D/M3 runtime with:
+
+```bash
+uv run riskon event-query \
+  --config data/private/event_runtime.toml \
+  --question "Is it mandatory for a Power of Attorney holder to have a K&E document?" \
+  --context '{"need_type":"COMPLEX_CASE"}'
+```
+
+The output is a safe JSON summary containing the decision, local evidence
+references, route, activation profile, and worker counters. It does not print
+raw HTML or absolute source paths. A structured context may be required for
+M3 routing; the runtime will abstain or fail closed instead of guessing.
+
 The committed synthetic packs exercise the complete status contract:
 
 ```text
