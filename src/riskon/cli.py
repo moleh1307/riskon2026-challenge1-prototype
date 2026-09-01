@@ -33,6 +33,8 @@ from riskon.evaluation import (
     M4CEvaluator,
     M4DEvaluator,
 )
+from riskon.event_eval.reporting import write_evaluation_reports
+from riskon.event_eval.runner import EventEvaluationRunner
 from riskon.event_intake import (
     CorpusIntakeReport,
     CorpusIntakeRequest,
@@ -893,6 +895,46 @@ def run_event_query(config_path: Path, question: str, context_json: str | None) 
     return 0
 
 
+def run_event_evaluation(
+    runtime_config_path: Path,
+    cases_path: Path,
+    output_root: Path,
+    profiles: str,
+) -> int:
+    """Run the deterministic 17-case event baseline and write review artifacts."""
+
+    if profiles.strip() != "deterministic":
+        print("Event evaluation FAIL: only the deterministic profile is implemented in Task 3.")
+        return 2
+    try:
+        event_config = load_event_runtime_config(runtime_config_path)
+        document = EventEvaluationRunner(event_config).run(cases_path)
+        paths = write_evaluation_reports(document, output_root)
+    except (ValueError, FileNotFoundError, OSError, TypeError) as exc:
+        print(f"Event evaluation FAIL: {exc}", file=sys.stderr)
+        return 1
+
+    metrics = document.metrics
+    total = metrics.cases_executed
+    gate_passed = (
+        total == 17
+        and metrics.runtime_error_count == 0
+        and metrics.source_hit_at_5 >= 15
+        and metrics.source_hit_at_10 == total
+        and metrics.citation_validity == 1.0
+    )
+    status = "PASS" if gate_passed else "HOLD"
+    print(
+        f"Event baseline {status}: {total}/17 executed; "
+        f"source hit@5 {metrics.source_hit_at_5}/{total}; "
+        f"hit@10 {metrics.source_hit_at_10}/{total}; "
+        f"citation {metrics.citation_validity:.1%}; "
+        f"runtime errors {metrics.runtime_error_count}; "
+        f"reports {paths['evaluation']}."
+    )
+    return 0 if gate_passed else 1
+
+
 def build_parser() -> argparse.ArgumentParser:
     """Build the CLI parser."""
 
@@ -914,6 +956,15 @@ def build_parser() -> argparse.ArgumentParser:
     event_query_parser.add_argument("--config", type=Path, required=True)
     event_query_parser.add_argument("--question", required=True)
     event_query_parser.add_argument("--context", dest="context_json")
+
+    event_evaluate_parser = subparsers.add_parser(
+        "event-evaluate",
+        help="evaluate the 17 real event questions against the deterministic runtime",
+    )
+    event_evaluate_parser.add_argument("--runtime-config", type=Path, required=True)
+    event_evaluate_parser.add_argument("--cases", type=Path, required=True)
+    event_evaluate_parser.add_argument("--output", type=Path, required=True)
+    event_evaluate_parser.add_argument("--profiles", default="deterministic")
 
     inspect_parser = subparsers.add_parser(
         "inspect-corpus",
@@ -1024,6 +1075,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         return evaluate(args.config)
     if args.command == "event-query":
         return run_event_query(args.config, args.question, args.context_json)
+    if args.command == "event-evaluate":
+        return run_event_evaluation(args.runtime_config, args.cases, args.output, args.profiles)
     if args.command == "inspect-corpus":
         try:
             mapping = _event_column_mapping(args)
