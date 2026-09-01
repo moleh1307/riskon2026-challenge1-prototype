@@ -7,7 +7,7 @@ import re
 import time
 from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Any, Protocol
+from typing import Any, Protocol, cast
 
 from riskon.context import ContextDetector
 from riskon.event_runtime.evidence_reasoning_models import (
@@ -28,6 +28,7 @@ from riskon.event_runtime.llm_client import (
     LLMPhase,
     Task5LLMConfig,
     Task6LLMConfig,
+    Task7LLMConfig,
 )
 from riskon.event_runtime.policy_atlas import (
     AtlasRetrievalApplication,
@@ -45,6 +46,14 @@ from riskon.event_runtime.semantic_models import SemanticFailureReason
 from riskon.event_runtime.semantic_retrieval import (
     SemanticEventRetriever,
     SemanticRetrievalOutcome,
+)
+from riskon.event_runtime.visual_scout import (
+    VisualAnalysis,
+    VisualAssetCandidate,
+    VisualScoutClient,
+    run_visual_scout,
+    select_visual_assets,
+    should_run_visual_scout,
 )
 from riskon.hybrid_retrieval import RetrievalCandidate
 from riskon.models import (
@@ -109,6 +118,7 @@ class EventEvidenceReasoningResult:
     latency_ms: float
     result: PipelineResult
     atlas_routing: AtlasRoutingResult | None = None
+    visual_analysis: VisualAnalysis | None = None
 
     @property
     def retry_used(self) -> bool:
@@ -219,6 +229,7 @@ class EventEvidenceReasoningRuntime:
         policy_atlas: PolicyAtlasDocument | None = None,
         answerability_graph: AnswerabilityGraphDocument | None = None,
         atlas_router: PolicyAtlasRouter | None = None,
+        skip_atlas_when_retrieval_strong: bool = False,
     ) -> None:
         self.corpus = corpus
         self.semantic_retriever = semantic_retriever
@@ -228,6 +239,7 @@ class EventEvidenceReasoningRuntime:
         self.policy_atlas = policy_atlas
         self.answerability_graph = answerability_graph
         self.atlas_router = atlas_router
+        self.skip_atlas_when_retrieval_strong = skip_atlas_when_retrieval_strong
         self._titles_by_source = {section.source_ref: section.title for section in corpus.sections}
 
     def run(self, request: QueryInput) -> EventEvidenceReasoningResult:
@@ -343,11 +355,46 @@ class EventEvidenceReasoningRuntime:
                 final_units,
             )
 
+        visual_analysis: VisualAnalysis | None = None
+        visual_assets = select_visual_assets(
+            self.corpus,
+            final_retrieval,
+            max_images=2,
+            max_pages=getattr(self.config, "visual_max_pages", 10),
+            max_asset_bytes=getattr(self.config, "visual_max_asset_bytes", 4_000_000),
+        )
+        if should_run_visual_scout(final_analysis, final_units):
+            if visual_assets:
+                required_visual_refs = tuple(
+                    dict.fromkeys(
+                        ref
+                        for asset in visual_assets
+                        for ref in (*asset.nearby_evidence_refs, asset.asset_evidence_ref)
+                    )
+                )
+                final_units = self._evidence_units(
+                    request,
+                    final_retrieval,
+                    required_refs=required_visual_refs,
+                )
+                visual_analysis = self._run_visual_scout(request, visual_assets)
+                if visual_analysis.usable:
+                    final_analysis = self._analyze(
+                        request,
+                        final_retrieval.plan,
+                        context_assessment,
+                        final_units,
+                        visual_analysis=visual_analysis,
+                    )
+            else:
+                visual_analysis = VisualAnalysis(failure_reason="NO_LOCAL_VISUAL_ASSET")
+
         validation = self._validate_claims(
             request,
             context_assessment,
             final_analysis,
             final_units,
+            visual_analysis=visual_analysis,
         )
         validated_claims = tuple(_validated_claim(claim) for claim in validation.valid_claims)
         nearby_units = self._nearby_evidence_units(request, final_retrieval, final_units)
@@ -361,6 +408,7 @@ class EventEvidenceReasoningRuntime:
                 expected_control_hints=(
                     final_atlas.expected_control_hints if final_atlas is not None else ()
                 ),
+                visual_analysis=visual_analysis,
             )
             if validated_claims
             else None
@@ -432,6 +480,7 @@ class EventEvidenceReasoningRuntime:
             latency_ms=_elapsed_ms(started),
             result=result,
             atlas_routing=final_atlas,
+            visual_analysis=visual_analysis,
         )
 
     def _apply_atlas(
@@ -441,6 +490,11 @@ class EventEvidenceReasoningRuntime:
         context: ContextAssessment,
     ) -> AtlasRetrievalApplication:
         if self.atlas_router is None:
+            return AtlasRetrievalApplication(
+                retrieval=retrieval,
+                atlas=AtlasRoutingResult(),
+            )
+        if self.skip_atlas_when_retrieval_strong and _retrieval_is_strong(retrieval):
             return AtlasRetrievalApplication(
                 retrieval=retrieval,
                 atlas=AtlasRoutingResult(),
@@ -640,6 +694,8 @@ class EventEvidenceReasoningRuntime:
         plan: QueryPlan,
         context: ContextAssessment,
         units: Sequence[EvidenceUnit],
+        *,
+        visual_analysis: VisualAnalysis | None = None,
     ) -> EvidenceAnalysisOutput:
         output, _call = self.client.request_json(
             "claim_builder",
@@ -654,6 +710,11 @@ class EventEvidenceReasoningRuntime:
                 "including source whitespace and punctuation; never normalize or merge separate "
                 "fragments into a synthetic span. If a rule and its exception are on different "
                 "lines of one section, use separate supporting-span objects with the same ref. "
+                "When verified_visual_support is supplied, a visual fact may be copied exactly "
+                "from its verified answer-relevant fact string and must cite its asset ref plus "
+                "all supplied nearby evidence refs; this is the only exception to the literal "
+                "original-text span rule. Treat visual support as admissible only when it is "
+                "marked independently verified and sufficient. "
                 "Include MUST, MUST NOT, CANNOT, REQUIRED, and similar controls "
                 "when they govern the answer. If direct support, scope, page, or a required "
                 "visual is missing, return the appropriate sufficiency value and no speculative "
@@ -670,7 +731,11 @@ class EventEvidenceReasoningRuntime:
                 "MUST NOT, "
                 "CANNOT, REQUIRED, or equivalent control and include each applicable control in a "
                 "critical_control claim with its literal span. Do not decide ANSWER, CLARIFY, or "
-                "ABSTAIN. Return only schema."
+                "ABSTAIN. When the question uses a different acronym, desk name, or role label "
+                "than the source, preserve the source's exact spelling; never silently copy or "
+                "normalize the question's label. For procedures, include applicable prerequisites, "
+                "prohibitions, and required documentation alongside the action. Prefer narrow "
+                "source-worded claims over broad paraphrases. Return only schema."
             ),
             user_prompt=json.dumps(
                 {
@@ -682,6 +747,7 @@ class EventEvidenceReasoningRuntime:
                         "canonical_terms": plan.canonical_terms,
                     },
                     "evidence_units": [unit.model_dump(mode="json") for unit in units],
+                    "verified_visual_support": _visual_prompt_payload(visual_analysis),
                     "limits": {
                         "max_evidence_units": self.config.max_evidence_units,
                         "max_evidence_chars": self.config.max_evidence_chars,
@@ -696,6 +762,27 @@ class EventEvidenceReasoningRuntime:
             return output
         return EvidenceAnalysisOutput.model_validate(output)
 
+    def _run_visual_scout(
+        self,
+        request: QueryInput,
+        assets: Sequence[VisualAssetCandidate],
+    ) -> VisualAnalysis:
+        """Run the optional visual path only when the client exposes it."""
+
+        method = getattr(self.client, "request_multimodal_json", None)
+        if not callable(method):
+            return VisualAnalysis(
+                candidate_refs=tuple(asset.asset_evidence_ref for asset in assets),
+                failure_reason="VISUAL_CLIENT_UNAVAILABLE",
+            )
+        config_threshold = getattr(self.config, "visual_confidence_threshold", 0.75)
+        return run_visual_scout(
+            cast(VisualScoutClient, self.client),
+            request.query,
+            assets,
+            confidence_threshold=config_threshold,
+        )
+
     def _run_skeptic(
         self,
         request: QueryInput,
@@ -704,6 +791,7 @@ class EventEvidenceReasoningRuntime:
         evidence_units: Sequence[EvidenceUnit],
         nearby_units: Sequence[EvidenceUnit],
         expected_control_hints: Sequence[str] = (),
+        visual_analysis: VisualAnalysis | None = None,
     ) -> SkepticOutput:
         output, _call = self.client.request_json(
             "skeptic",
@@ -749,6 +837,7 @@ class EventEvidenceReasoningRuntime:
                     "nearby_challenge_evidence": [
                         unit.model_dump(mode="json") for unit in nearby_units
                     ],
+                    "verified_visual_support": _visual_prompt_payload(visual_analysis),
                     "expected_control_hints": list(expected_control_hints),
                 },
                 ensure_ascii=False,
@@ -763,6 +852,8 @@ class EventEvidenceReasoningRuntime:
         self,
         request: QueryInput,
         retrieval: SemanticRetrievalOutcome,
+        *,
+        required_refs: Sequence[str] = (),
     ) -> list[EvidenceUnit]:
         """Select at most eight original provenance units within the character budget."""
 
@@ -775,12 +866,16 @@ class EventEvidenceReasoningRuntime:
                 candidates.append(candidate)
         if not candidates:
             candidates = list(retrieval.ranked_candidates[: self.config.max_evidence_units])
+        candidates = self._expand_evidence_candidates(
+            request, retrieval, candidates, allowed_sources
+        )
         query_terms = _evidence_query_terms(request, retrieval.plan)
         table_priority = any(
             term in query_terms
             for term in {"alert", "alerts", "advisory", "mandate", "service", "configuration"}
         )
         possible: list[tuple[float, int, str, ProvenanceUnit]] = []
+        required_ref_set = set(required_refs)
         for candidate_rank, candidate in enumerate(candidates, start=1):
             for unit in self._units_for_candidate(candidate):
                 if unit.kind == "attachment":
@@ -788,8 +883,10 @@ class EventEvidenceReasoningRuntime:
                 score = _unit_support_score(unit, query_terms)
                 if table_priority and unit.kind == "table_row":
                     score += 5.0
-                if score >= 2.0 and _control_phrases(unit.text):
+                if _control_phrases(unit.text) and score >= 1.0:
                     score += 2.0
+                if unit.ref in required_ref_set:
+                    score += 100.0
                 possible.append((score, candidate_rank, unit.ref, unit))
         possible.sort(key=lambda item: (-item[0], item[1], item[2]))
 
@@ -820,7 +917,13 @@ class EventEvidenceReasoningRuntime:
         selected_refs = {unit.evidence_ref for unit in selected}
         nearby: list[EvidenceUnit] = []
         query_terms = _evidence_query_terms(request, retrieval.plan)
-        for candidate in retrieval.ranked_candidates:
+        candidates = self._expand_evidence_candidates(
+            request,
+            retrieval,
+            list(retrieval.ranked_candidates),
+            set(retrieval.hybrid_page_refs) if self.atlas_router is not None else None,
+        )
+        for candidate in candidates:
             units = self._units_for_candidate(candidate)
             units.sort(key=lambda unit: (-_unit_support_score(unit, query_terms), unit.ref))
             for unit in units:
@@ -854,6 +957,86 @@ class EventEvidenceReasoningRuntime:
         ]
         return [*atomic, *section_extras]
 
+    def _expand_evidence_candidates(
+        self,
+        request: QueryInput,
+        retrieval: SemanticRetrievalOutcome,
+        candidates: Sequence[RetrievalCandidate],
+        allowed_sources: set[str] | None,
+    ) -> list[RetrievalCandidate]:
+        """Add bounded adjacent sections and validated local-link targets."""
+
+        deterministic_retriever = getattr(self.semantic_retriever, "deterministic_retriever", None)
+        if deterministic_retriever is None:
+            return list(dict.fromkeys(candidates))
+        all_candidates = deterministic_retriever.candidates
+        by_ref = {candidate.candidate_ref: candidate for candidate in all_candidates}
+        by_source: dict[str, list[RetrievalCandidate]] = {}
+        for candidate in all_candidates:
+            by_source.setdefault(candidate.source_ref, []).append(candidate)
+        source_sections = {section.section_id: section for section in self.corpus.sections}
+        section_indexes: dict[str, int] = {}
+        sections_by_source: dict[str, list[Any]] = {}
+        for section in self.corpus.sections:
+            page_sections = sections_by_source.setdefault(section.source_ref, [])
+            section_indexes[section.section_id] = len(page_sections)
+            page_sections.append(section)
+        context = self.semantic_retriever.planner.context_values(request, retrieval.plan)
+        result: list[RetrievalCandidate] = []
+        seen: set[str] = set()
+
+        def add(candidate: RetrievalCandidate) -> None:
+            if candidate.candidate_ref in seen or candidate.is_attachment:
+                return
+            if allowed_sources is not None and candidate.source_ref not in allowed_sources:
+                return
+            if deterministic_retriever._context_conflict(
+                candidate,
+                retrieval.plan,
+                context,
+                retrieval.plan.normalised_query,
+            ):
+                return
+            seen.add(candidate.candidate_ref)
+            result.append(candidate)
+
+        for candidate in candidates:
+            add(candidate)
+
+        for seed in tuple(result):
+            if seed.section_id is not None:
+                seed_section = source_sections.get(seed.section_id)
+                if seed_section is not None:
+                    page_sections = sections_by_source.get(seed_section.source_ref, [])
+                    index = section_indexes.get(seed_section.section_id)
+                    if index is not None:
+                        for distance in (1, 2):
+                            for neighbour_index in (index - distance, index + distance):
+                                if not 0 <= neighbour_index < len(page_sections):
+                                    continue
+                                neighbour = page_sections[neighbour_index]
+                                neighbour_ref = deterministic_retriever.provenance.section_ref(
+                                    neighbour
+                                )
+                                neighbour_candidate = by_ref.get(neighbour_ref)
+                                if neighbour_candidate is not None:
+                                    add(neighbour_candidate)
+
+                    for link in seed_section.links:
+                        target_ref = self.corpus.provenance.resolve_link(seed_section, link.href)
+                        if target_ref is None:
+                            continue
+                        target_source = target_ref.split("#", 1)[0]
+                        for linked_candidate in by_source.get(target_source, ()):
+                            add(linked_candidate)
+                            if len(result) >= self.config.max_evidence_units * 3:
+                                break
+                        if len(result) >= self.config.max_evidence_units * 3:
+                            break
+            if len(result) >= self.config.max_evidence_units * 3:
+                break
+        return result
+
     def _evidence_unit(
         self,
         unit: ProvenanceUnit,
@@ -881,10 +1064,16 @@ class EventEvidenceReasoningRuntime:
         context: ContextAssessment,
         analysis: EvidenceAnalysisOutput | None,
         units: Sequence[EvidenceUnit],
+        *,
+        visual_analysis: VisualAnalysis | None = None,
     ) -> SupportValidation:
         if analysis is None:
             return SupportValidation()
         units_by_ref = {unit.evidence_ref: unit for unit in units}
+        visual_by_ref = {
+            support.asset_evidence_ref: support
+            for support in (visual_analysis.usable_supports if visual_analysis else ())
+        }
         valid: list[EvidenceClaim] = []
         rejected: list[str] = []
         errors: list[str] = []
@@ -906,10 +1095,21 @@ class EventEvidenceReasoningRuntime:
                 if unit is None or unit.kind == "attachment" or ref not in units_by_ref:
                     claim_errors.append(f"unresolved or unsubmitted evidence_ref: {ref}")
                     broken_refs += 1
-                elif unit.kind == "asset" and not unit.text.strip():
-                    claim_errors.append(f"visual-only evidence cannot support text claim: {ref}")
                 else:
-                    resolved_units.append(unit)
+                    if unit.kind == "asset":
+                        support = visual_by_ref.get(ref)
+                        if support is None:
+                            claim_errors.append(f"visual evidence is not verified: {ref}")
+                        elif not set(support.nearby_evidence_refs).issubset(
+                            units_by_ref
+                        ) or not set(support.nearby_evidence_refs).issubset(refs):
+                            claim_errors.append(
+                                f"visual nearby context is not submitted locally: {ref}"
+                            )
+                        else:
+                            resolved_units.append(unit)
+                    else:
+                        resolved_units.append(unit)
 
             spans = list(claim.supporting_spans)
             literal_spans: list[str] = []
@@ -925,7 +1125,14 @@ class EventEvidenceReasoningRuntime:
                 if unit is None or unit.kind == "attachment":
                     claim_errors.append(f"supporting span ref does not resolve locally: {span_ref}")
                     continue
-                if supporting.span not in unit.text:
+                if unit.kind == "asset":
+                    support = visual_by_ref.get(span_ref)
+                    if support is None or supporting.span not in support.fact_text:
+                        claim_errors.append(
+                            f"visual supporting span is not an exact verified fact: {span_ref}"
+                        )
+                        continue
+                elif supporting.span not in unit.text:
                     claim_errors.append(f"supporting span is not literal in {span_ref}")
                     continue
                 span_refs.add(span_ref)
@@ -1121,7 +1328,7 @@ class EventEvidenceReasoningRuntime:
 def build_event_evidence_reasoning_runtime(
     event_config: Any,
     *,
-    config: Task5LLMConfig | Task6LLMConfig | None = None,
+    config: Task5LLMConfig | Task6LLMConfig | Task7LLMConfig | None = None,
     client: EvidenceReasoningClient | None = None,
     semantic_retriever: SemanticEventRetriever | None = None,
     policy_atlas: PolicyAtlasDocument | None = None,
@@ -1182,6 +1389,9 @@ def build_event_evidence_reasoning_runtime(
         policy_atlas=policy_atlas,
         answerability_graph=answerability_graph,
         atlas_router=atlas_router,
+        skip_atlas_when_retrieval_strong=(
+            isinstance(task_config, Task7LLMConfig) and task_config.skip_atlas_when_retrieval_strong
+        ),
     )
 
 
@@ -1191,6 +1401,14 @@ def _needs_router_retry(analysis: EvidenceAnalysisOutput | None) -> bool:
         EvidenceSufficiencyStatus.WRONG_PAGE,
         EvidenceSufficiencyStatus.WRONG_SCOPE,
     }
+
+
+def _retrieval_is_strong(retrieval: SemanticRetrievalOutcome) -> bool:
+    """Recognise a deterministic/semantic hit that needs no Atlas eligibility call."""
+
+    return retrieval.sufficiency.status.value == "SUFFICIENT" and bool(
+        retrieval.selected_candidates
+    )
 
 
 def _analysis_failure_reason(analysis: EvidenceAnalysisOutput) -> SemanticFailureReason:
@@ -1275,7 +1493,10 @@ def _deterministic_answer_changing_fields(query: str) -> list[str]:
         and "order" in lowered
         and any(phrase in lowered for phrase in ("unblock", "enter", "purchase"))
     ):
-        fields.append("system")
+        # A named system does not identify which block/workflow rule applies. Require the
+        # operational stage before offering unblock guidance, while preserving explicit system
+        # context when the user supplied it.
+        fields.extend(("system", "workflow_stage"))
     if any(phrase in lowered for phrase in ("update", "change")) and (
         "k&e" in lowered or "knowledge and experience" in lowered
     ):
@@ -1457,15 +1678,17 @@ def _critical_control_omissions(
     claims: Sequence[ValidatedClaim],
     query_terms: set[str],
 ) -> int:
-    del query_terms
     claim_refs = {ref for claim in claims for ref in claim.evidence_refs}
     controlled_units = [
         unit
         for unit in units
         if (
             unit.kind not in {"asset", "section"}
-            and unit.evidence_ref in claim_refs
             and _control_phrases(unit.text)
+            and (
+                unit.evidence_ref in claim_refs
+                or _unit_support_score_from_text(unit.text, query_terms) >= 2.0
+            )
         )
     ]
     if not controlled_units:
@@ -1473,10 +1696,9 @@ def _critical_control_omissions(
     omissions = 0
     for unit in controlled_units:
         relevant_claims = [claim for claim in claims if unit.evidence_ref in claim.evidence_refs]
-        covered = " ".join(
-            claim.text + " " + " ".join(span.span for span in claim.supporting_spans)
-            for claim in relevant_claims
-        ).casefold()
+        # Supporting spans prove provenance, but they must not mask a control that the Claim
+        # Builder silently dropped from the released claim text.
+        covered = " ".join(claim.text for claim in relevant_claims).casefold()
         if any(term not in covered for term in _control_phrases(unit.text)):
             omissions += 1
     return omissions
@@ -1517,6 +1739,28 @@ def _primary_source_from_units(
 
 def _clip_errors(errors: Sequence[str]) -> list[str]:
     return [" ".join(error.split())[:500] for error in list(dict.fromkeys(errors))[:32]]
+
+
+def _visual_prompt_payload(visual_analysis: VisualAnalysis | None) -> list[dict[str, object]]:
+    """Expose only bounded, verified visual facts to the reasoning prompts."""
+
+    if visual_analysis is None:
+        return []
+    return [
+        {
+            "asset_evidence_ref": support.asset_evidence_ref,
+            "source_ref": support.source_ref,
+            "nearby_evidence_refs": list(support.nearby_evidence_refs),
+            "visual_observations": list(support.visual_observations),
+            "answer_relevant_facts": list(support.answer_relevant_facts),
+            "uncertainty": support.uncertainty,
+            "confidence": support.confidence,
+            "visual_sufficient": support.visual_sufficient,
+            "independently_verified": support.verified,
+            "verification_agrees": support.verification_agrees,
+        }
+        for support in visual_analysis.usable_supports
+    ]
 
 
 def _elapsed_ms(started: float) -> float:

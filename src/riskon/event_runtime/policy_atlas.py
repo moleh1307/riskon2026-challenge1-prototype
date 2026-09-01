@@ -594,7 +594,7 @@ def apply_atlas_retrieval(
     *,
     missing_context_fields: Sequence[str] = (),
 ) -> AtlasRetrievalApplication:
-    """Reorder/expand source candidates using Atlas eligibility and graph neighbors."""
+    """Keep primary retrieval order while applying bounded Atlas hints and exclusions."""
 
     candidate_refs = _retrieval_page_refs(retrieval)
     atlas = atlas_router.evaluate(
@@ -604,7 +604,14 @@ def apply_atlas_retrieval(
         candidate_refs,
         missing_context_fields=missing_context_fields,
     )
-    page_refs = list(atlas.ranked_page_refs)
+    excluded = set(atlas.excluded_page_refs)
+    baseline_page_refs = [ref for ref in retrieval.hybrid_page_refs if ref not in excluded]
+    page_refs = list(baseline_page_refs)
+    page_refs.extend(
+        ref
+        for ref in atlas.ranked_page_refs
+        if ref not in excluded and ref not in set(baseline_page_refs)
+    )
     page_set = set(page_refs)
     candidate_pool: dict[str, RetrievalCandidate] = {}
     base_order: dict[str, int] = {}
@@ -616,24 +623,31 @@ def apply_atlas_retrieval(
         candidate_pool[candidate.candidate_ref] = candidate
         base_order[candidate.candidate_ref] = index
     deterministic_context = semantic_retriever.planner.context_values(request, retrieval.plan)
-    page_order = {source_ref: index for index, source_ref in enumerate(page_refs)}
-    ranked = sorted(
-        (
-            candidate
-            for candidate in candidate_pool.values()
-            if not semantic_retriever.deterministic_retriever._context_conflict(
-                candidate,
-                retrieval.plan,
-                deterministic_context,
-                retrieval.plan.normalised_query,
-            )
-        ),
-        key=lambda candidate: (
-            page_order.get(candidate.source_ref, 10**9),
-            base_order[candidate.candidate_ref],
-            candidate.candidate_ref,
-        ),
+    eligible_candidates = [
+        candidate
+        for candidate in candidate_pool.values()
+        if not semantic_retriever.deterministic_retriever._context_conflict(
+            candidate,
+            retrieval.plan,
+            deterministic_context,
+            retrieval.plan.normalised_query,
+        )
+    ]
+    baseline_candidate_refs = {candidate.candidate_ref for candidate in retrieval.ranked_candidates}
+    baseline_candidates = [
+        candidate
+        for candidate in eligible_candidates
+        if candidate.candidate_ref in baseline_candidate_refs
+    ]
+    hinted_candidates = [
+        candidate
+        for candidate in eligible_candidates
+        if candidate.candidate_ref not in baseline_candidate_refs
+    ]
+    hinted_candidates.sort(
+        key=lambda candidate: (base_order[candidate.candidate_ref], candidate.candidate_ref)
     )
+    ranked = [*baseline_candidates, *hinted_candidates]
     ranked = ranked[: max(20, semantic_retriever.deterministic_retriever.config.top_k)]
     selected = ranked[: semantic_retriever.deterministic_retriever.config.top_k]
     if not ranked:

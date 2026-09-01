@@ -10,6 +10,7 @@ from typing import Any
 from riskon.event_runtime.corpus_loader import ingest_event_sections
 from riskon.event_runtime.evidence_reasoning import (
     EventEvidenceReasoningRuntime,
+    _critical_control_omissions,
     _validated_claim,
 )
 from riskon.event_runtime.evidence_reasoning_models import (
@@ -27,6 +28,7 @@ from riskon.event_runtime.evidence_reasoning_models import (
     EvidenceUnit,
     SkepticOutput,
     SupportingSpan,
+    ValidatedClaim,
 )
 from riskon.event_runtime.llm_client import (
     PAGE_CARD_MODEL,
@@ -357,6 +359,50 @@ def test_firewall_releases_only_validated_claim_text(tmp_path: Path) -> None:
     assert decision is Decision.ANSWER
     assert answer == "The policy requires a signed form for target 0."
     assert "cryptocurrency" not in (answer or "")
+
+
+def test_critical_control_recall_does_not_hide_controls_in_supporting_spans() -> None:
+    unit = EvidenceUnit(
+        evidence_ref="local://event-wiki/alerts.html#section-resolution:sentence-1",
+        kind="sentence",
+        source_ref="local://event-wiki/alerts.html",
+        title="Alerts",
+        filename="alerts.html",
+        text="RM must not proceed while the alert is shown.",
+    )
+    claim = ValidatedClaim(
+        claim_id="summary",
+        text="The RM reviews the alert.",
+        evidence_refs=[unit.evidence_ref],
+        supporting_spans=[SupportingSpan(evidence_ref=unit.evidence_ref, span=unit.text)],
+        critical_control=False,
+        applicable_scope={},
+    )
+
+    assert _critical_control_omissions([unit], [claim], {"alert", "proceed"}) == 1
+
+
+def test_blocked_order_requires_workflow_stage_even_when_system_is_named(tmp_path: Path) -> None:
+    runtime = _runtime(_corpus(tmp_path))
+    assessment = runtime._sanitize_context(
+        QueryInput(
+            query=(
+                "I am blocked for entering a purchase order in Wealth Navigator, "
+                "how can I unblock it?"
+            ),
+            context={"system": "Wealth Navigator"},
+        ),
+        SimpleNamespace(required_context_fields=[], missing_context_fields=[]),
+        ContextInterpreterOutput(
+            intent="REFERENCE_LOOKUP",
+            explicitly_supplied_context=[],
+            answer_changing_context_fields=[],
+            missing_context_fields=[],
+            ambiguity_acronym_flags=[],
+        ),
+    )
+
+    assert "workflow_stage" in assessment.missing_context_fields
 
 
 __all__ = []

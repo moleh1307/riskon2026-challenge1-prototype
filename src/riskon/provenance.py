@@ -55,6 +55,7 @@ class ProvenanceIndex:
         self.attachment_root = attachment_root.resolve() if attachment_root else None
         self.units: dict[str, ProvenanceUnit] = {}
         self._addresses: dict[str, _SectionAddress] = {}
+        self._asset_refs_by_key: dict[tuple[str, str], str] = {}
         self._link_prefix = self._infer_prefix(sections)
         self._build()
         self._build_attachments()
@@ -150,6 +151,7 @@ class ProvenanceIndex:
                     asset_numbers[key] = next_number
                 asset_number = asset_numbers[key]
                 ref = f"{section.source_ref}#asset-{asset_number}"
+                self._asset_refs_by_key[key] = ref
                 if ref not in self.units:
                     self.units[ref] = ProvenanceUnit(
                         ref=ref,
@@ -221,6 +223,11 @@ class ProvenanceIndex:
 
     def resolve(self, ref: str) -> ProvenanceUnit | None:
         return self.units.get(ref)
+
+    def asset_ref_for_image(self, source_ref: str, image_src: str) -> str | None:
+        """Return the stable provenance ref for one ingested local image reference."""
+
+        return self._asset_refs_by_key.get((source_ref, image_src))
 
     def resolve_link(self, section: Section, href: str) -> str | None:
         """Resolve a relative link to a local ref, without accepting URLs or traversal."""

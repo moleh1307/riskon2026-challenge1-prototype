@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import os
 import time
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 from threading import Lock
 from typing import Any, Literal, TypeVar
@@ -20,6 +21,8 @@ LLMPhase = Literal[
     "context_interpreter",
     "claim_builder",
     "skeptic",
+    "visual_scout",
+    "visual_verification",
 ]
 ReasoningEffort = Literal["none", "low", "medium"]
 
@@ -40,6 +43,8 @@ CLAIM_BUILDER_MODEL: str = "gpt-5.6-terra"
 CLAIM_BUILDER_REASONING: ReasoningEffort = "medium"
 SKEPTIC_MODEL: str = "gpt-5.6-terra"
 SKEPTIC_REASONING: ReasoningEffort = "medium"
+VISUAL_SCOUT_MODEL: str = "gpt-5.6-sol"
+VISUAL_SCOUT_REASONING: ReasoningEffort = "medium"
 
 
 class Task4LLMConfig(BaseModel):
@@ -74,6 +79,15 @@ class Task6LLMConfig(Task5LLMConfig):
     atlas_neighbor_limit: int = Field(default=6, ge=0, le=8)
 
 
+class Task7LLMConfig(Task6LLMConfig):
+    """Bounded Task 7 settings; the visual model policy remains fixed above."""
+
+    visual_max_asset_bytes: int = Field(default=4_000_000, ge=1024, le=8_000_000)
+    visual_confidence_threshold: float = Field(default=0.75, ge=0.5, le=1.0)
+    visual_max_pages: int = Field(default=10, ge=1, le=10)
+    skip_atlas_when_retrieval_strong: bool = True
+
+
 @dataclass(frozen=True)
 class LLMCallRecord:
     """Safe API accounting record; it contains no prompt, response, or secret."""
@@ -99,6 +113,8 @@ class LLMUsage:
     context_interpreter_calls: int = 0
     claim_builder_calls: int = 0
     skeptic_calls: int = 0
+    visual_scout_calls: int = 0
+    visual_verification_calls: int = 0
     input_tokens: int = 0
     output_tokens: int = 0
     cached_input_tokens: int = 0
@@ -123,8 +139,12 @@ class LLMUsage:
                 self.context_interpreter_calls += 1
             elif call.phase == "claim_builder":
                 self.claim_builder_calls += 1
-            else:
+            elif call.phase == "skeptic":
                 self.skeptic_calls += 1
+            elif call.phase == "visual_scout":
+                self.visual_scout_calls += 1
+            else:
+                self.visual_verification_calls += 1
             self.input_tokens += call.input_tokens
             self.output_tokens += call.output_tokens
             self.cached_input_tokens += call.cached_input_tokens
@@ -144,6 +164,8 @@ class LLMUsage:
                 + self.context_interpreter_calls
                 + self.claim_builder_calls
                 + self.skeptic_calls
+                + self.visual_scout_calls
+                + self.visual_verification_calls
             )
 
 
@@ -170,6 +192,10 @@ class EventOpenAIClient:
         "context_interpreter": (CONTEXT_INTERPRETER_MODEL, CONTEXT_INTERPRETER_REASONING, 900),
         "claim_builder": (CLAIM_BUILDER_MODEL, CLAIM_BUILDER_REASONING, 5000),
         "skeptic": (SKEPTIC_MODEL, SKEPTIC_REASONING, 1600),
+    }
+    _visual_specs: dict[LLMPhase, tuple[str, ReasoningEffort, int]] = {
+        "visual_scout": (VISUAL_SCOUT_MODEL, VISUAL_SCOUT_REASONING, 2200),
+        "visual_verification": (VISUAL_SCOUT_MODEL, VISUAL_SCOUT_REASONING, 1600),
     }
 
     def __init__(
@@ -208,7 +234,54 @@ class EventOpenAIClient:
     ) -> tuple[_ModelT, LLMCallRecord]:
         """Request one strictly structured JSON object from the fixed policy model."""
 
-        model, reasoning_effort, max_output_tokens = self._specs[phase]
+        return self._request_structured(
+            phase,
+            response_model,
+            developer_prompt=developer_prompt,
+            user_content=user_prompt,
+        )
+
+    def request_multimodal_json(
+        self,
+        phase: LLMPhase,
+        response_model: type[_ModelT],
+        *,
+        developer_prompt: str,
+        user_prompt: str,
+        image_data_urls: Sequence[str],
+    ) -> tuple[_ModelT, LLMCallRecord]:
+        """Request structured JSON with a bounded set of inline local images."""
+
+        if phase not in {"visual_scout", "visual_verification"}:
+            raise SemanticLLMError("Multimodal requests are restricted to visual phases")
+        if not 1 <= len(image_data_urls) <= 2:
+            raise SemanticLLMError("A visual request must contain one or two images")
+        user_content: list[dict[str, Any]] = [
+            {"type": "input_text", "text": user_prompt},
+            *[
+                {"type": "input_image", "image_url": data_url, "detail": "high"}
+                for data_url in image_data_urls
+            ],
+        ]
+        return self._request_structured(
+            phase,
+            response_model,
+            developer_prompt=developer_prompt,
+            user_content=user_content,
+        )
+
+    def _request_structured(
+        self,
+        phase: LLMPhase,
+        response_model: type[_ModelT],
+        *,
+        developer_prompt: str,
+        user_content: str | list[dict[str, Any]],
+    ) -> tuple[_ModelT, LLMCallRecord]:
+        """Run and account for one fixed-policy structured Responses call."""
+
+        specs = self._visual_specs if phase in self._visual_specs else self._specs
+        model, reasoning_effort, max_output_tokens = specs[phase]
         schema_name = {
             "page_card": "riskon_page_card",
             "policy_atlas": "riskon_policy_atlas_fingerprint",
@@ -218,6 +291,8 @@ class EventOpenAIClient:
             "context_interpreter": "riskon_context_interpreter",
             "claim_builder": "riskon_evidence_claim_builder",
             "skeptic": "riskon_evidence_skeptic",
+            "visual_scout": "riskon_visual_scout",
+            "visual_verification": "riskon_visual_verification",
         }[phase]
         started = time.perf_counter()
         try:
@@ -226,7 +301,7 @@ class EventOpenAIClient:
                 reasoning={"effort": reasoning_effort},
                 input=[
                     {"role": "developer", "content": developer_prompt},
-                    {"role": "user", "content": user_prompt},
+                    {"role": "user", "content": user_content},
                 ],
                 text={
                     "format": {

@@ -34,6 +34,7 @@ from riskon.evaluation import (
     M4DEvaluator,
 )
 from riskon.event_eval.evidence_reasoning_probe import run_evidence_reasoning_probe
+from riskon.event_eval.final_stabilization_probe import run_final_stabilization
 from riskon.event_eval.hybrid_retrieval_probe import run_hybrid_retrieval_probe
 from riskon.event_eval.policy_atlas_probe import run_policy_atlas_probe
 from riskon.event_eval.reporting import write_evaluation_reports
@@ -1002,6 +1003,14 @@ def build_parser() -> argparse.ArgumentParser:
     event_policy_atlas_parser.add_argument("--cases", type=Path, required=True)
     event_policy_atlas_parser.add_argument("--output", type=Path, required=True)
 
+    event_final_parser = subparsers.add_parser(
+        "event-final-evaluate",
+        help="run the final Task 7 visual and end-to-end stabilization evaluation",
+    )
+    event_final_parser.add_argument("--runtime-config", type=Path, required=True)
+    event_final_parser.add_argument("--cases", type=Path, required=True)
+    event_final_parser.add_argument("--output", type=Path, required=True)
+
     inspect_parser = subparsers.add_parser(
         "inspect-corpus",
         help="inspect an external event HTML corpus without mutating or fetching it",
@@ -1121,6 +1130,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         return run_evidence_reasoning_probe(args.runtime_config, args.cases, args.output)
     if args.command == "event-policy-atlas-evaluate":
         return run_policy_atlas_probe(args.runtime_config, args.cases, args.output)
+    if args.command == "event-final-evaluate":
+        return run_final_stabilization(args.runtime_config, args.cases, args.output)
     if args.command == "inspect-corpus":
         try:
             mapping = _event_column_mapping(args)
