@@ -33,6 +33,7 @@ from riskon.evaluation import (
     M4CEvaluator,
     M4DEvaluator,
 )
+from riskon.event_eval.evidence_reasoning_probe import run_evidence_reasoning_probe
 from riskon.event_eval.hybrid_retrieval_probe import run_hybrid_retrieval_probe
 from riskon.event_eval.reporting import write_evaluation_reports
 from riskon.event_eval.retrieval_probe import run_retrieval_probe
@@ -984,6 +985,14 @@ def build_parser() -> argparse.ArgumentParser:
     event_hybrid_retrieval_parser.add_argument("--cases", type=Path, required=True)
     event_hybrid_retrieval_parser.add_argument("--output", type=Path, required=True)
 
+    event_evidence_reasoning_parser = subparsers.add_parser(
+        "event-evidence-reasoning-evaluate",
+        help="evaluate bounded Task 5 evidence reasoning over the event corpus",
+    )
+    event_evidence_reasoning_parser.add_argument("--runtime-config", type=Path, required=True)
+    event_evidence_reasoning_parser.add_argument("--cases", type=Path, required=True)
+    event_evidence_reasoning_parser.add_argument("--output", type=Path, required=True)
+
     inspect_parser = subparsers.add_parser(
         "inspect-corpus",
         help="inspect an external event HTML corpus without mutating or fetching it",
@@ -1099,6 +1108,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         return run_retrieval_probe(args.runtime_config, args.cases, args.output)
     if args.command == "event-hybrid-retrieval-evaluate":
         return run_hybrid_retrieval_probe(args.runtime_config, args.cases, args.output)
+    if args.command == "event-evidence-reasoning-evaluate":
+        return run_evidence_reasoning_probe(args.runtime_config, args.cases, args.output)
     if args.command == "inspect-corpus":
         try:
             mapping = _event_column_mapping(args)

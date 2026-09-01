@@ -76,6 +76,17 @@ class SemanticEventRetriever:
     def retrieve(self, request: QueryInput) -> SemanticRetrievalOutcome:
         """Run deterministic retrieval, one initial route, and at most one retry."""
 
+        initial = self.retrieve_initial(request)
+        if (
+            initial.sufficiency.status is SufficiencyStatus.RETRY
+            and initial.sufficiency.reason is not None
+        ):
+            return self.retry_once(request, initial, initial.sufficiency.reason)
+        return initial
+
+    def retrieve_initial(self, request: QueryInput) -> SemanticRetrievalOutcome:
+        """Run deterministic retrieval and the initial title route without retrying."""
+
         started = time.perf_counter()
         plan = self.planner.plan(request)
         context = self.planner.context_values(request, plan)
@@ -106,45 +117,6 @@ class SemanticEventRetriever:
             raw_candidates,
         )
 
-        retry_router: RouterResult | None = None
-        retry_count = 0
-        if sufficiency.status is SufficiencyStatus.RETRY and sufficiency.reason is not None:
-            retry_router = self.router.route(
-                request,
-                plan,
-                deterministic_page_refs,
-                previous_attempted_refs=tuple(
-                    dict.fromkeys(
-                        [
-                            *hybrid_page_refs,
-                            *initial_router.attempted_page_refs,
-                        ]
-                    )
-                ),
-                failure_reason=sufficiency.reason,
-            )
-            routes.append(retry_router)
-            retry_count = 1
-            page_scores = _merge_page_scores(deterministic_scores, routes)
-            hybrid_page_refs = tuple(
-                item.source_ref for item in page_scores[: self.config.max_selected_pages]
-            )
-            ranked_candidates, selected_candidates, raw_candidates = self._retrieve_sections(
-                request,
-                plan,
-                context,
-                hybrid_page_refs,
-                deterministic_result,
-            )
-            sufficiency = self._check_sufficiency(
-                request,
-                plan,
-                hybrid_page_refs,
-                ranked_candidates,
-                selected_candidates,
-                raw_candidates,
-            )
-
         return SemanticRetrievalOutcome(
             plan=plan,
             deterministic_result=deterministic_result,
@@ -153,10 +125,72 @@ class SemanticEventRetriever:
             deterministic_page_refs=tuple(deterministic_page_refs),
             hybrid_page_refs=hybrid_page_refs,
             initial_router=initial_router,
+            retry_router=None,
+            sufficiency=sufficiency,
+            retry_count=0,
+            latency_ms=_elapsed_ms(started),
+        )
+
+    def retry_once(
+        self,
+        request: QueryInput,
+        initial: SemanticRetrievalOutcome,
+        failure_reason: SemanticFailureReason,
+    ) -> SemanticRetrievalOutcome:
+        """Run exactly one alternative-page route and rebuild section candidates."""
+
+        started = time.perf_counter()
+        retry_router = self.router.route(
+            request,
+            initial.plan,
+            initial.deterministic_page_refs,
+            previous_attempted_refs=tuple(
+                dict.fromkeys(
+                    [
+                        *initial.hybrid_page_refs,
+                        *initial.initial_router.attempted_page_refs,
+                    ]
+                )
+            ),
+            failure_reason=failure_reason,
+        )
+        routes = [initial.initial_router, retry_router]
+        deterministic_scores, _deterministic_page_refs = _deterministic_page_scores(
+            initial.deterministic_result,
+            self.deterministic_retriever,
+        )
+        page_scores = _merge_page_scores(deterministic_scores, routes)
+        hybrid_page_refs = tuple(
+            item.source_ref for item in page_scores[: self.config.max_selected_pages]
+        )
+        context = self.planner.context_values(request, initial.plan)
+        ranked_candidates, selected_candidates, raw_candidates = self._retrieve_sections(
+            request,
+            initial.plan,
+            context,
+            hybrid_page_refs,
+            initial.deterministic_result,
+        )
+        sufficiency = self._check_sufficiency(
+            request,
+            initial.plan,
+            hybrid_page_refs,
+            ranked_candidates,
+            selected_candidates,
+            raw_candidates,
+        )
+        return SemanticRetrievalOutcome(
+            plan=initial.plan,
+            deterministic_result=initial.deterministic_result,
+            ranked_candidates=tuple(ranked_candidates),
+            selected_candidates=tuple(selected_candidates),
+            deterministic_page_refs=initial.deterministic_page_refs,
+            hybrid_page_refs=hybrid_page_refs,
+            initial_router=initial.initial_router,
             retry_router=retry_router,
             sufficiency=sufficiency,
-            retry_count=retry_count,
-            latency_ms=_elapsed_ms(started),
+            retry_count=1,
+            latency_ms=round(initial.latency_ms + _elapsed_ms(started), 3),
         )
 
     def _retrieve_sections(

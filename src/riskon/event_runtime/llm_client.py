@@ -1,4 +1,4 @@
-"""Bounded OpenAI Responses API client for Task 4 metadata and routing."""
+"""Bounded OpenAI Responses API client for event metadata and reasoning."""
 
 from __future__ import annotations
 
@@ -11,7 +11,14 @@ from typing import Any, Literal, TypeVar
 
 from pydantic import BaseModel, ConfigDict, Field
 
-LLMPhase = Literal["page_card", "title_router", "router_retry"]
+LLMPhase = Literal[
+    "page_card",
+    "title_router",
+    "router_retry",
+    "context_interpreter",
+    "claim_builder",
+    "skeptic",
+]
 ReasoningEffort = Literal["none", "low", "medium"]
 
 PAGE_CARD_MODEL: str = "gpt-5.6-luna"
@@ -20,6 +27,13 @@ TITLE_ROUTER_MODEL: str = "gpt-5.6-terra"
 TITLE_ROUTER_REASONING: ReasoningEffort = "low"
 ROUTER_RETRY_MODEL: str = "gpt-5.6-terra"
 ROUTER_RETRY_REASONING: ReasoningEffort = "medium"
+
+CONTEXT_INTERPRETER_MODEL: str = "gpt-5.6-luna"
+CONTEXT_INTERPRETER_REASONING: ReasoningEffort = "low"
+CLAIM_BUILDER_MODEL: str = "gpt-5.6-terra"
+CLAIM_BUILDER_REASONING: ReasoningEffort = "medium"
+SKEPTIC_MODEL: str = "gpt-5.6-terra"
+SKEPTIC_REASONING: ReasoningEffort = "medium"
 
 
 class Task4LLMConfig(BaseModel):
@@ -34,6 +48,15 @@ class Task4LLMConfig(BaseModel):
     max_selected_pages: int = Field(default=10, ge=1, le=10)
     page_card_workers: int = Field(default=8, ge=1, le=8)
     request_timeout_seconds: float = Field(default=60.0, gt=0.0, le=120.0)
+
+
+class Task5LLMConfig(Task4LLMConfig):
+    """Bounded Task 5 settings; the model policy remains fixed in this module."""
+
+    max_evidence_units: int = Field(default=8, ge=1, le=8)
+    max_evidence_chars: int = Field(default=12_000, ge=1000, le=12_000)
+    max_nearby_units: int = Field(default=2, ge=0, le=2)
+    max_claims: int = Field(default=8, ge=1, le=8)
 
 
 @dataclass(frozen=True)
@@ -51,11 +74,14 @@ class LLMCallRecord:
 
 @dataclass
 class LLMUsage:
-    """Aggregate call and token accounting for one Task 4 run."""
+    """Aggregate call and token accounting for one bounded event run."""
 
     page_card_calls: int = 0
     title_router_calls: int = 0
     router_retry_calls: int = 0
+    context_interpreter_calls: int = 0
+    claim_builder_calls: int = 0
+    skeptic_calls: int = 0
     input_tokens: int = 0
     output_tokens: int = 0
     cached_input_tokens: int = 0
@@ -70,8 +96,14 @@ class LLMUsage:
                 self.page_card_calls += 1
             elif call.phase == "title_router":
                 self.title_router_calls += 1
-            else:
+            elif call.phase == "router_retry":
                 self.router_retry_calls += 1
+            elif call.phase == "context_interpreter":
+                self.context_interpreter_calls += 1
+            elif call.phase == "claim_builder":
+                self.claim_builder_calls += 1
+            else:
+                self.skeptic_calls += 1
             self.input_tokens += call.input_tokens
             self.output_tokens += call.output_tokens
             self.cached_input_tokens += call.cached_input_tokens
@@ -82,7 +114,14 @@ class LLMUsage:
         """Return total external LLM calls."""
 
         with self._lock:
-            return self.page_card_calls + self.title_router_calls + self.router_retry_calls
+            return (
+                self.page_card_calls
+                + self.title_router_calls
+                + self.router_retry_calls
+                + self.context_interpreter_calls
+                + self.claim_builder_calls
+                + self.skeptic_calls
+            )
 
 
 class SemanticLLMError(RuntimeError):
@@ -97,12 +136,15 @@ _ModelT = TypeVar("_ModelT", bound=BaseModel)
 
 
 class EventOpenAIClient:
-    """Minimal Responses API adapter with fixed Task 4 model routing."""
+    """Minimal Responses API adapter with fixed Task 4 and Task 5 routing."""
 
     _specs: dict[LLMPhase, tuple[str, ReasoningEffort, int]] = {
         "page_card": (PAGE_CARD_MODEL, PAGE_CARD_REASONING, 500),
         "title_router": (TITLE_ROUTER_MODEL, TITLE_ROUTER_REASONING, 900),
         "router_retry": (ROUTER_RETRY_MODEL, ROUTER_RETRY_REASONING, 900),
+        "context_interpreter": (CONTEXT_INTERPRETER_MODEL, CONTEXT_INTERPRETER_REASONING, 900),
+        "claim_builder": (CLAIM_BUILDER_MODEL, CLAIM_BUILDER_REASONING, 5000),
+        "skeptic": (SKEPTIC_MODEL, SKEPTIC_REASONING, 1600),
     }
 
     def __init__(
@@ -146,6 +188,9 @@ class EventOpenAIClient:
             "page_card": "riskon_page_card",
             "title_router": "riskon_title_router",
             "router_retry": "riskon_title_router_retry",
+            "context_interpreter": "riskon_context_interpreter",
+            "claim_builder": "riskon_evidence_claim_builder",
+            "skeptic": "riskon_evidence_skeptic",
         }[phase]
         started = time.perf_counter()
         try:
@@ -175,7 +220,7 @@ class EventOpenAIClient:
             parsed = response_model.model_validate(payload)
         except Exception as exc:
             raise SemanticLLMError(
-                f"Task 4 {phase} structured request failed: {type(exc).__name__}"
+                f"Structured event {phase} request failed: {type(exc).__name__}"
             ) from exc
 
         call = LLMCallRecord(

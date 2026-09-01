@@ -149,6 +149,31 @@ def build_page_cards(
     )
 
 
+def load_page_cards(
+    corpus: LocalCorpus,
+    event_config: EventRuntimeConfig,
+) -> PageCardDocument:
+    """Load only a complete, current Page Card cache; never generate cards here."""
+
+    path = page_card_path(event_config).expanduser().resolve()
+    document = _load_cache(path)
+    if document is None:
+        raise PageCardCacheError(f"Page Card cache is missing: {path}")
+    if not document.complete:
+        raise PageCardCacheError("Page Card cache is incomplete")
+    if document.model != PAGE_CARD_MODEL:
+        raise PageCardCacheError("Page Card cache model does not match the fixed policy")
+
+    pages = _event_pages(corpus)
+    expected = {(page.source_ref, page.filename, page.title, page.source_hash) for page in pages}
+    actual = {
+        (card.source_ref, card.filename, card.title, card.source_hash) for card in document.cards
+    }
+    if actual != expected or len(document.cards) != len(pages):
+        raise PageCardCacheError("Page Card cache does not match the current event source hashes")
+    return document
+
+
 def _generate_card(
     client: PageCardClient,
     page: _EventPage,
