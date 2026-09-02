@@ -26,6 +26,10 @@ class ProvenanceUnit(BaseModel):
     claim_id: str | None = None
     claim_text: str | None = None
     scope: dict[str, str] = Field(default_factory=dict)
+    # True only for rows reconstructed from Confluence storage-format markup.  These rows
+    # remain ordinary local table evidence; the marker lets event reporting distinguish
+    # structured HTML from raster-image support.
+    structured: bool = False
 
 
 @dataclass(frozen=True)
@@ -33,6 +37,7 @@ class _SectionAddress:
     section_ref: str
     sentence_refs: tuple[str, ...]
     table_row_refs: tuple[str, ...]
+    structural_row_refs: tuple[str, ...]
     asset_refs: tuple[str, ...]
 
 
@@ -142,6 +147,32 @@ class ProvenanceIndex:
                     )
                     table_row_refs.append(ref)
 
+            structural_row_refs: list[str] = []
+            for structured_table in section.structured_tables:
+                if structured_table.quarantined:
+                    continue
+                for record in structured_table.records:
+                    ref = (
+                        f"{section_ref}:structured-table-{structured_table.table_index + 1}:"
+                        f"row-{record.provenance.row + 1}:col-{record.provenance.col + 1}"
+                    )
+                    scope = dict(section.scope)
+                    scope.update(_structural_scope(record.dimensions))
+                    self.units[ref] = ProvenanceUnit(
+                        ref=ref,
+                        kind="table_row",
+                        source_ref=section.source_ref,
+                        filename=section.filename,
+                        section_id=section.section_id,
+                        text=record.evidence_text(),
+                        heading_path=section.heading_path,
+                        headers=list(record.headers),
+                        row=record.source_row(),
+                        scope=scope,
+                        structured=True,
+                    )
+                    structural_row_refs.append(ref)
+
             asset_refs: list[str] = []
             for image in section.images:
                 key = (section.source_ref, image.src)
@@ -171,6 +202,7 @@ class ProvenanceIndex:
                 section_ref=section_ref,
                 sentence_refs=tuple(sentence_refs),
                 table_row_refs=tuple(table_row_refs),
+                structural_row_refs=tuple(structural_row_refs),
                 asset_refs=tuple(dict.fromkeys(asset_refs)),
             )
 
@@ -202,6 +234,7 @@ class ProvenanceIndex:
             address.section_ref,
             *address.sentence_refs,
             *address.table_row_refs,
+            *address.structural_row_refs,
             *address.asset_refs,
         ]
         return list(dict.fromkeys(refs))
@@ -217,6 +250,7 @@ class ProvenanceIndex:
             address.section_ref,
             *address.sentence_refs,
             *address.table_row_refs,
+            *address.structural_row_refs,
             *address.asset_refs,
         ]
         return [self.units[ref] for ref in refs]
@@ -281,3 +315,14 @@ class ProvenanceIndex:
             if claim_text == paragraph and sentence == ProvenanceIndex._sentences(claim_text)[0]:
                 return claim_id
         return None
+
+
+def _structural_scope(dimensions: dict[str, str]) -> dict[str, str]:
+    """Expose explicit matrix row labels to retrieval context filtering."""
+
+    result: dict[str, str] = {}
+    for label, value in dimensions.items():
+        key = re.sub(r"[^a-z0-9]+", "_", label.casefold()).strip("_")
+        if key and value.strip():
+            result[key] = re.sub(r"[^A-Za-z0-9]+", "_", value.upper()).strip("_")
+    return result

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from pathlib import Path
 from urllib.parse import quote
 
 from riskon.event_intake import (
@@ -11,6 +12,10 @@ from riskon.event_intake import (
     EventCorpusAdapter,
 )
 from riskon.event_runtime.config import EventRuntimeConfig
+from riskon.event_structure.adapter import (
+    attach_structural_tables,
+    build_structural_event_corpus,
+)
 from riskon.ingestion import KnowledgeIngestor
 from riskon.models import ManifestEntry, Section
 from riskon.orchestra.source_safety import LocalCorpus
@@ -63,6 +68,11 @@ def load_event_corpus(
     sections = ingest_event_sections(entries)
     if not sections:
         raise EventRuntimeCorpusError("Event corpus contains no ingestible HTML sections")
+    structural = build_structural_event_corpus(
+        entries,
+        available_attachments=_available_attachment_names(config.source_root),
+    )
+    sections = attach_structural_tables(sections, structural)
     provenance = ProvenanceIndex(
         sections,
         knowledge_root=config.source_root,
@@ -73,6 +83,19 @@ def load_event_corpus(
             sections=tuple(sections),
             provenance=provenance,
             knowledge_root=config.source_root.resolve(),
+            structural=structural,
         ),
         report,
     )
+
+
+def _available_attachment_names(source_root: Path) -> set[str]:
+    """Return delivered non-HTML filenames without crawling outside the event root."""
+
+    if not source_root.is_dir():
+        return set()
+    return {
+        path.name
+        for path in source_root.rglob("*")
+        if path.is_file() and path.suffix.casefold() not in {".html", ".htm"}
+    }

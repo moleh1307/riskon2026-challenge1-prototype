@@ -5,6 +5,8 @@ from typing import Self
 
 from pydantic import BaseModel, ConfigDict, Field, PrivateAttr, model_validator
 
+from riskon.event_structure.models import StructuralTableData
+
 
 class Decision(StrEnum):
     """Top-level response decision."""
@@ -39,6 +41,7 @@ class ReasonCode(StrEnum):
     AMBIGUOUS_ACRONYM = "AMBIGUOUS_ACRONYM"
     NO_EXPLICIT_SUPPORT = "NO_EXPLICIT_SUPPORT"
     UNRESOLVED_REQUIRED_REFERENCE = "UNRESOLVED_REQUIRED_REFERENCE"
+    SOURCE_PACKAGE_ASSET_UNAVAILABLE = "SOURCE_PACKAGE_ASSET_UNAVAILABLE"
     UNSUPPORTED_MODALITY = "UNSUPPORTED_MODALITY"
     UNSUPPORTED_CLAIM = "UNSUPPORTED_CLAIM"
 
@@ -141,6 +144,13 @@ class Section(BaseModel):
     scope: dict[str, str] = Field(default_factory=dict)
     intents: list[str] = Field(default_factory=list)
     claims: dict[str, str] = Field(default_factory=dict)
+    # Structural Confluence data is an additive runtime sidecar.  It is excluded from
+    # legacy pipeline serialisations so M0-M8 contracts remain byte-compatible.
+    structured_tables: list[StructuralTableData] = Field(
+        default_factory=list,
+        exclude=True,
+        repr=False,
+    )
 
 
 class RetrievalHit(BaseModel):

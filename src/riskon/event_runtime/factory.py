@@ -15,6 +15,7 @@ from riskon.event_intake.preparation import prepare_corpus
 from riskon.event_runtime.aliases import (
     EventAliasRegistry,
     build_event_alias_registry,
+    merge_verified_glossary_aliases,
     write_event_alias_registry,
 )
 from riskon.event_runtime.config import EventRuntimeConfig
@@ -50,6 +51,16 @@ def build_event_retrieval_components(
     adapter = EventCorpusAdapter.from_project_root(event_config.project_root)
     corpus, report = load_event_corpus(event_config, adapter)
     aliases = build_event_alias_registry(corpus.sections)
+    if corpus.structural is not None:
+        source_refs_by_page = {
+            section.filename.rsplit("/", 1)[-1].rsplit(".", 1)[0]: section.source_ref
+            for section in corpus.sections
+        }
+        aliases = merge_verified_glossary_aliases(
+            aliases,
+            corpus.structural.glossary,
+            source_refs_by_page,
+        )
     write_event_alias_registry(aliases, event_config.alias_registry)
 
     m2_config = base_config.base.base.base.base.base.base
@@ -63,6 +74,7 @@ def build_event_retrieval_components(
         corpus.provenance,
         m2_config.retrieval,
         aliases=aliases.aliases,
+        reference_graph=(corpus.structural.reference_graph if corpus.structural else None),
         title_boost_enabled=True,
     )
     return EventRetrievalComponents(

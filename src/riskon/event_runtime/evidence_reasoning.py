@@ -390,7 +390,11 @@ class EventEvidenceReasoningRuntime:
                     )
             else:
                 visual_analysis = VisualAnalysis(
-                    failure_reason="SOURCE_PACKAGE_VISUAL_ASSET_UNAVAILABLE"
+                    failure_reason=(
+                        "SOURCE_PACKAGE_ASSET_UNAVAILABLE"
+                        if self._source_package_asset_unavailable(final_retrieval)
+                        else "SOURCE_PACKAGE_VISUAL_ASSET_UNAVAILABLE"
+                    )
                 )
 
         validation = self._validate_claims(
@@ -510,6 +514,27 @@ class EventEvidenceReasoningRuntime:
             context.explicitly_supplied_context,
             self.atlas_router,
             missing_context_fields=context.missing_context_fields,
+        )
+
+    def _source_package_asset_unavailable(
+        self,
+        retrieval: SemanticRetrievalOutcome,
+    ) -> bool:
+        """Return whether selected event pages declare a missing binary dependency."""
+
+        structural = self.corpus.structural
+        if structural is None:
+            return False
+        selected_sources = {candidate.source_ref for candidate in retrieval.selected_candidates}
+        page_ids = {
+            section.filename.rsplit("/", 1)[-1].rsplit(".", 1)[0]
+            for section in self.corpus.sections
+            if section.source_ref in selected_sources
+        }
+        return any(
+            gap.kind == "missing_attachment"
+            for page_id in page_ids
+            for gap in structural.gaps_for_page(page_id)
         )
 
     def _atlas_clarification_result(
@@ -1087,6 +1112,7 @@ class EventEvidenceReasoningRuntime:
             row=list(unit.row),
             scope=dict(unit.scope),
             contains_visual=unit.kind == "asset",
+            structured_html=unit.structured,
             truncated=truncated,
         )
 
@@ -1272,7 +1298,10 @@ class EventEvidenceReasoningRuntime:
 
         reasons: list[ReasonCode] = []
         if status is EvidenceSufficiencyStatus.VISUAL_REQUIRED:
-            reasons.append(ReasonCode.UNSUPPORTED_MODALITY)
+            if self._source_package_asset_unavailable(retrieval):
+                reasons.append(ReasonCode.SOURCE_PACKAGE_ASSET_UNAVAILABLE)
+            else:
+                reasons.append(ReasonCode.UNSUPPORTED_MODALITY)
         elif status in {
             EvidenceSufficiencyStatus.NO_DIRECT_SUPPORT,
             EvidenceSufficiencyStatus.WRONG_PAGE,

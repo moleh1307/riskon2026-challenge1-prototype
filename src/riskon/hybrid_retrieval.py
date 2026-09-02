@@ -226,7 +226,7 @@ class HybridRetriever:
             address = self.provenance.section_address(section.section_id)
             if address is None:
                 continue
-            for row_ref in address.table_row_refs:
+            for row_ref in (*address.table_row_refs, *address.structural_row_refs):
                 unit = self.provenance.resolve(row_ref)
                 if unit is None:
                     continue

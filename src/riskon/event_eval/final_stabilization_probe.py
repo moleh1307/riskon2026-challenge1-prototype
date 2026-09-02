@@ -595,6 +595,11 @@ def _remaining_failure(result: EventEvidenceReasoningResult) -> str | None:
 
 
 def _visual_status(result: EventEvidenceReasoningResult) -> str | None:
+    if any(
+        unit.structured_html and unit.evidence_ref in set(result.evidence_refs)
+        for unit in result.final_evidence_units
+    ):
+        return "STRUCTURED_HTML"
     visual = result.visual_analysis
     if visual is None:
         return "NOT_TRIGGERED"
@@ -611,6 +616,10 @@ def _modality(result: EventEvidenceReasoningResult) -> str:
             for support in (result.visual_analysis.supports if result.visual_analysis else ())
         }
     kinds = {unit.kind for unit in result.final_evidence_units if unit.evidence_ref in refs}
+    if any(
+        unit.structured_html and unit.evidence_ref in refs for unit in result.final_evidence_units
+    ):
+        return "STRUCTURED_HTML"
     labels: list[str] = []
     if kinds.intersection({"sentence", "section"}):
         labels.append("text")

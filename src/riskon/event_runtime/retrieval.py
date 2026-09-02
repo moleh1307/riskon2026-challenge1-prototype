@@ -8,6 +8,7 @@ from collections.abc import Sequence
 
 from riskon.config import M2RetrievalConfig
 from riskon.event_runtime.aliases import EventAlias
+from riskon.event_structure.references import ReferenceGraph
 from riskon.hybrid_retrieval import HybridRetriever, RetrievalCandidate
 from riskon.models import RetrievalChannel, Section
 from riskon.provenance import ProvenanceIndex
@@ -69,6 +70,7 @@ class EventHybridRetriever(HybridRetriever):
         config: M2RetrievalConfig,
         *,
         aliases: Sequence[EventAlias] = (),
+        reference_graph: ReferenceGraph | None = None,
         title_boost_enabled: bool = False,
         document_diversity_enabled: bool = False,
     ) -> None:
@@ -90,7 +92,7 @@ class EventHybridRetriever(HybridRetriever):
             )
             for section in sections
         }
-        self._parent_sources_by_target = _build_parent_sources(sections)
+        self._parent_sources_by_target = _build_parent_sources(sections, reference_graph)
         super().__init__(sections, provenance, config)
         self._source_anchor_refs = {
             source_ref: min(
@@ -284,7 +286,10 @@ def _singularise(value: str) -> str:
     return value
 
 
-def _build_parent_sources(sections: Sequence[Section]) -> dict[str, set[str]]:
+def _build_parent_sources(
+    sections: Sequence[Section],
+    reference_graph: ReferenceGraph | None = None,
+) -> dict[str, set[str]]:
     parents: dict[str, set[str]] = defaultdict(set)
     for section in sections:
         for link in section.links:
@@ -292,6 +297,16 @@ def _build_parent_sources(sections: Sequence[Section]) -> dict[str, set[str]]:
             if match:
                 target = f"local://event-wiki/{match.group(1)}.html"
                 parents[target].add(section.source_ref)
+    if reference_graph is not None:
+        source_by_page = {
+            section.filename.rsplit("/", 1)[-1].rsplit(".", 1)[0]: section.source_ref
+            for section in sections
+        }
+        for source_page, target_page in reference_graph.edges:
+            source_ref = source_by_page.get(source_page)
+            target_ref = source_by_page.get(target_page)
+            if source_ref is not None and target_ref is not None:
+                parents[target_ref].add(source_ref)
     return dict(parents)
 
 

@@ -145,6 +145,7 @@ class EvidenceUnit(BaseModel):
     row: list[str] = Field(default_factory=list, max_length=32)
     scope: dict[str, str] = Field(default_factory=dict)
     contains_visual: bool = False
+    structured_html: bool = False
     truncated: bool = False
 
 

@@ -10,6 +10,7 @@ from typing import Any
 from bs4 import BeautifulSoup, Comment, Tag
 from pydantic import BaseModel, ConfigDict, Field
 
+from riskon.event_structure.adapter import StructuralEventCorpus
 from riskon.ingestion import load_sections_from_manifest
 from riskon.models import Section
 from riskon.provenance import ProvenanceIndex, ProvenanceUnit
@@ -22,6 +23,7 @@ class LocalCorpus:
     sections: tuple[Section, ...]
     provenance: ProvenanceIndex
     knowledge_root: Path
+    structural: StructuralEventCorpus | None = None
 
     def resolve(self, reference: str) -> ProvenanceUnit | None:
         """Resolve one local evidence reference."""

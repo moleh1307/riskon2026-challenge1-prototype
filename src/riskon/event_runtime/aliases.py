@@ -11,6 +11,7 @@ from pathlib import Path
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
+from riskon.event_structure.acronyms import Glossary
 from riskon.models import Section
 
 
@@ -148,6 +149,43 @@ def write_event_alias_registry(registry: EventAliasRegistry, path: Path) -> Path
         encoding="utf-8",
     )
     return resolved
+
+
+def merge_verified_glossary_aliases(
+    registry: EventAliasRegistry,
+    glossary: Glossary,
+    source_refs_by_page: dict[str, str],
+) -> EventAliasRegistry:
+    """Add only unique, verified structural expansions to the existing alias registry.
+
+    Colliding acronyms are deliberately omitted.  The structural glossary remains
+    available on ``LocalCorpus.structural`` so callers can surface the ambiguity instead
+    of silently selecting one expansion.
+    """
+
+    aliases = list(registry.aliases)
+    existing = {
+        (alias.canonical.casefold(), alias.source_ref, variant.casefold())
+        for alias in aliases
+        for variant in alias.variants
+    }
+    for entry in glossary.unique_verified():
+        source_ref = source_refs_by_page.get(entry.pages[0], "") if entry.pages else ""
+        if not source_ref:
+            continue
+        key = (entry.expansion.casefold(), source_ref, entry.acronym.casefold())
+        if key in existing:
+            continue
+        aliases.append(
+            EventAlias(
+                canonical=entry.expansion,
+                variants=[entry.acronym],
+                source_ref=source_ref,
+                extraction_rule="STRUCTURAL_VERIFIED_GLOSSARY",
+            )
+        )
+        existing.add(key)
+    return registry.model_copy(update={"aliases": aliases})
 
 
 def _collect_matches(
