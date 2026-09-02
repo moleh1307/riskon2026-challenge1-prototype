@@ -32,9 +32,36 @@ def test_ui_is_served_with_canonical_contract_labels() -> None:
     assert "RiskON Assistant" in page
     assert 'fetch("/v1/ask"' in page
     assert 'fetch("/v1/feedback"' in page
+    assert 'href="/memory"' in page
     assert 'id="department"' in page
     assert "res.decision" in page
     assert "evidence_refs" in page
+
+
+def test_memory_page_and_view_are_read_only_and_redacted(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    store = InternalMemoryStore(tmp_path / "memory")
+    store.record_turn(
+        conversation_id="private-conversation",
+        department="Compliance",
+        question="Which alerts apply?",
+        decision="ANSWER",
+    )
+    monkeypatch.setattr(api.state, "memory", store)
+
+    page = api.memory_page()
+    response = api.memory_view()
+
+    assert "Memory summary" in page
+    assert 'fetch("/v1/memory"' in page
+    payload = response.model_dump_json()
+    assert "private-conversation" not in payload
+    assert "Which alerts apply?" not in payload
+    assert response.items == []
+    assert response.count == 0
+    assert response.capacity == 64
 
 
 def test_health_reports_runtime_readiness_without_source_paths(

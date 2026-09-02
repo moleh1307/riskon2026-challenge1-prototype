@@ -25,6 +25,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from riskon.api.memory_ui import MEMORY_HTML
 from riskon.api.ui import INDEX_HTML
 from riskon.event_runtime.config import load_event_runtime_config
 from riskon.event_runtime.corpus_loader import EventRuntimeCorpusError
@@ -32,6 +33,7 @@ from riskon.event_runtime.internal_memory import (
     FeedbackRating,
     InternalMemoryStore,
     MemoryAgent,
+    MemorySnapshot,
     normalize_department,
 )
 from riskon.event_runtime.models import EventQueryPayload
@@ -112,6 +114,28 @@ class FeedbackResponse(BaseModel):
     accepted: bool
     feedback_id: str = Field(min_length=1, max_length=120)
     action: str = Field(min_length=1, max_length=32)
+
+
+class MemoryItemResponse(BaseModel):
+    """One short shared-memory paragraph; identifiers and source content stay private."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    summary: str
+    departments: list[str]
+    updated_at: str
+
+
+class MemoryResponse(BaseModel):
+    """Safe read-only shared-memory summary used by the Memory page."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    summary: str
+    items: list[MemoryItemResponse]
+    count: int = Field(ge=0)
+    capacity: int = Field(ge=0)
+    updated_at: str | None
 
 
 class HealthResponse(BaseModel):
@@ -204,6 +228,46 @@ def index() -> str:
     """Serve Gabriel's adapted chat UI from the same origin as the API."""
 
     return INDEX_HTML
+
+
+@app.get("/memory", response_class=HTMLResponse, include_in_schema=False)
+def memory_page() -> str:
+    """Serve the redacted, read-only memory view from the same origin."""
+
+    return MEMORY_HTML
+
+
+def _memory_response(snapshot: MemorySnapshot) -> MemoryResponse:
+    """Expose only compact shared memory, never operational chat state or feedback."""
+
+    items = [
+        MemoryItemResponse(
+            summary=item.summary,
+            departments=item.departments,
+            updated_at=item.updated_at.isoformat(),
+        )
+        for item in snapshot.shared_memory
+    ]
+    latest = max((item.updated_at for item in snapshot.shared_memory), default=None)
+
+    return MemoryResponse(
+        summary=(
+            "No durable shared memory has been saved yet."
+            if not items
+            else "A small set of reusable context is shared across the assistant."
+        ),
+        items=items,
+        count=len(items),
+        capacity=snapshot.shared_memory_capacity,
+        updated_at=latest.isoformat() if latest is not None else None,
+    )
+
+
+@app.get("/v1/memory", response_model=MemoryResponse, tags=["assistant"])
+def memory_view() -> MemoryResponse:
+    """Return only bounded shared memory; never return raw Q&A, feedback, or evidence."""
+
+    return _memory_response(_memory_store().snapshot())
 
 
 @app.get("/v1/health", response_model=HealthResponse, tags=["ops"])

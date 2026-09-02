@@ -153,6 +153,19 @@ class FeedbackRecord(BaseModel):
     created_at: datetime
 
 
+class MemorySnapshot(BaseModel):
+    """Read-only view of the bounded memory store for the local UI."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    shared_memory: list[SharedMemoryEntry] = Field(default_factory=list)
+    conversations: list[ConversationMemory] = Field(default_factory=list)
+    feedback: list[FeedbackRecord] = Field(default_factory=list)
+    shared_memory_capacity: int = Field(ge=0)
+    conversation_capacity: int = Field(ge=0)
+    feedback_capacity: int = Field(ge=0)
+
+
 class MemoryLLMClient(Protocol):
     """Minimal optional adapter for a fixed-policy structured memory model."""
 
@@ -344,6 +357,29 @@ class InternalMemoryStore:
         return self.relevant_context(question, conversation_id, department).model_dump_json(
             exclude_none=True
         )
+
+    def snapshot(self) -> MemorySnapshot:
+        """Return a stable, read-only snapshot without recording a new lookup."""
+
+        with self._lock:
+            memories = sorted(
+                self._memories.values(),
+                key=lambda item: (item.importance, item.updated_at, item.memory_id),
+                reverse=True,
+            )
+            conversations = sorted(
+                self._conversations.values(),
+                key=lambda item: (item.updated_at, item.conversation_id),
+                reverse=True,
+            )
+            return MemorySnapshot(
+                shared_memory=[item.model_copy(deep=True) for item in memories],
+                conversations=[item.model_copy(deep=True) for item in conversations],
+                feedback=[item.model_copy(deep=True) for item in self._feedback],
+                shared_memory_capacity=self.max_entries,
+                conversation_capacity=self.max_conversations,
+                feedback_capacity=self.max_feedback,
+            )
 
     def relevant_context(
         self,

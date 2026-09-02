@@ -331,6 +331,12 @@ uv run uvicorn riskon.api.app:app --host 127.0.0.1 --port 3000
 open http://127.0.0.1:3000/
 ```
 
+The `Memory summary` link in the header opens the read-only shared-memory view at
+`http://127.0.0.1:3000/memory`. It reads the bounded `GET /v1/memory` payload;
+only compact shared-memory paragraphs are exposed. Internal identifiers, chat
+context, feedback records, raw questions, answers, citations, and source
+evidence are not exposed to the browser.
+
 To use another local runtime configuration, set
 `RISKON_EVENT_RUNTIME_CONFIG=/absolute/path/to/event_runtime.toml`. The API
 returns only the safe `EventQueryPayload` contract; source files and absolute

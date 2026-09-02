@@ -148,6 +148,16 @@ INDEX_HTML = r"""<!doctype html>
 
     .new-chat:hover { color: var(--ink); }
 
+    .memory-link {
+      padding: 7px 0;
+      color: var(--muted);
+      font-size: 12px;
+      text-decoration: none;
+    }
+
+    .memory-link:hover,
+    .memory-link:focus-visible { color: var(--ink); }
+
     main {
       display: flex;
       flex-direction: column;
@@ -598,6 +608,7 @@ INDEX_HTML = r"""<!doctype html>
           <span class="status-dot" aria-hidden="true"></span>
           <span>Checking runtime</span>
         </div>
+        <a class="memory-link" href="/memory">Memory summary ↗</a>
         <button class="new-chat" id="newChat" type="button">New question</button>
       </div>
     </header>
