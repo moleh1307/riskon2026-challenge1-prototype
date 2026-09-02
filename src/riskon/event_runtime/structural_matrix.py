@@ -17,6 +17,7 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from riskon.event_structure.acronyms import normalise_expansion
 from riskon.event_structure.models import StructuralTableData
 from riskon.event_structure.records import ConfigurationRecord
 from riskon.event_structure.references import Gap
@@ -594,7 +595,9 @@ class StructuralMatrixWorker:
             if requested_region and _is_location_code(entry.acronym, requested_region, query):
                 continue
             if re.search(rf"(?<!\w){re.escape(entry.acronym)}(?!\w)", query, re.I):
-                found[entry.acronym.casefold()][entry.expansion.casefold()] = entry.expansion
+                found[entry.acronym.casefold()].setdefault(
+                    normalise_expansion(entry.expansion), entry.expansion
+                )
         expansions: dict[str, str] = {}
         ambiguities: dict[str, list[str]] = {}
         for key, values in found.items():

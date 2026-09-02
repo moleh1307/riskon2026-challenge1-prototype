@@ -28,10 +28,14 @@ from fastapi.responses import HTMLResponse
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from riskon.api.memory_ui import MEMORY_HTML
-from riskon.api.question_gate import question_gate_message
 from riskon.api.ui import INDEX_HTML
 from riskon.event_runtime.config import load_event_runtime_config
 from riskon.event_runtime.corpus_loader import EventRuntimeCorpusError
+from riskon.event_runtime.evidence_reasoning import (
+    EventEvidenceReasoningResult,
+    EventEvidenceReasoningRuntime,
+    build_event_evidence_reasoning_runtime,
+)
 from riskon.event_runtime.internal_memory import (
     FeedbackRating,
     InternalMemoryStore,
@@ -42,18 +46,24 @@ from riskon.event_runtime.internal_memory import (
 from riskon.event_runtime.models import EventQueryPayload
 from riskon.event_runtime.reporting import query_result_payload
 from riskon.models import QueryInput
-from riskon.orchestra.errors import OrchestraFailClosedError
+from riskon.orchestra.errors import OrchestraConfigurationError, OrchestraFailClosedError
 from riskon.pipeline import M4DRiskonPipeline, RiskonPipeline
 
 API_VERSION = "1.1.0"
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 DEFAULT_EVENT_CONFIG = PROJECT_ROOT / "data/private/event_runtime.toml"
+RUNTIME_CLARIFICATION = (
+    "I could not map that request safely to the Julius Baer material. "
+    "Please rephrase it with the exact client-classification term, service model, "
+    "or process you mean."
+)
 
 
 class _State:
     """Process-local runtime handles populated by the application lifespan."""
 
     pipeline: M4DRiskonPipeline | None = None
+    evidence_runtime: EventEvidenceReasoningRuntime | None = None
     memory: InternalMemoryStore | None = None
     memory_agent: MemoryAgent | None = None
     startup_error: str | None = None
@@ -225,6 +235,66 @@ def _load_event_pipeline() -> M4DRiskonPipeline:
     return RiskonPipeline.from_event_runtime_config(event_config)
 
 
+def _evidence_runtime() -> EventEvidenceReasoningRuntime:
+    """Build the existing bounded evidence runtime only when the M4D path lacks support."""
+
+    if state.evidence_runtime is None:
+        state.evidence_runtime = build_event_evidence_reasoning_runtime(
+            load_event_runtime_config(_event_config_path()),
+            use_policy_atlas=False,
+        )
+    return state.evidence_runtime
+
+
+def _reasoning_payload(reasoned: EventEvidenceReasoningResult) -> EventQueryPayload:
+    """Expose only the reasoning runtime's firewall-approved public result."""
+
+    route = reasoned.route.model_dump(mode="json") if reasoned.route is not None else None
+    evidence_refs = list(
+        dict.fromkeys(
+            [
+                *reasoned.evidence_refs,
+                *(item.source_ref for item in reasoned.result.evidence),
+            ]
+        )
+    )
+    worker_roles = ["CONTEXT_INTERPRETER"]
+    if reasoned.final_analysis is not None:
+        worker_roles.append("EVIDENCE_ANALYST")
+    if reasoned.skeptic is not None:
+        worker_roles.append("SKEPTIC")
+    return EventQueryPayload(
+        decision=reasoned.decision.value,
+        answer=reasoned.answer,
+        clarification=reasoned.clarifying_question,
+        abstention_reason=[reason.value for reason in reasoned.reason_codes],
+        evidence_refs=evidence_refs,
+        route=route,
+        activation_profile=(
+            "STRUCTURED_FAST_PATH"
+            if reasoned.skeptic is None
+            and reasoned.final_analysis is not None
+            and reasoned.final_analysis.evidence_sufficiency.value == "SUFFICIENT"
+            else "EVIDENCE_REASONING"
+        ),
+        worker_roles=worker_roles,
+        worker_execution_count=len(worker_roles),
+    )
+
+
+def _needs_evidence_fallback(run: object) -> bool:
+    """Use Task 5 only when the legacy M4D shell found no substantive claim."""
+
+    final = getattr(run, "final_verified_run", None)
+    result = getattr(final, "result", None)
+    if result is None or getattr(result.decision, "value", "") != "ABSTAIN":
+        return False
+    return any(
+        getattr(reason, "value", "") == "UNSUPPORTED_CLAIM"
+        for reason in getattr(result, "reason_codes", ())
+    )
+
+
 def _memory_store() -> InternalMemoryStore:
     """Return local generated memory without exposing its path over the API."""
 
@@ -248,6 +318,7 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
     """Load the corpus once and make a missing event package visible as not-ready."""
 
     state.pipeline = None
+    state.evidence_runtime = None
     state.memory = None
     state.memory_agent = None
     state.startup_error = None
@@ -262,6 +333,7 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
         yield
     finally:
         state.pipeline = None
+        state.evidence_runtime = None
         state.memory = None
         state.memory_agent = None
 
@@ -382,6 +454,7 @@ def configure_runtime(request: RuntimeConfigRequest) -> RuntimeConfigResponse:
             candidate_pipeline = RiskonPipeline.from_event_runtime_config(candidate_config)
             os.replace(temporary_path, config_path)
             state.pipeline = candidate_pipeline
+            state.evidence_runtime = None
             state.startup_error = None
         finally:
             if temporary_path is not None:
@@ -404,21 +477,6 @@ def ask(request: AskRequest) -> AskResponse:
 
     conversation_id = request.conversation_id or str(uuid4())
     turn_id = str(uuid4())
-    gate_started = time.perf_counter()
-    gate_message = question_gate_message(request.question, state.pipeline)
-    if gate_message is not None:
-        return AskResponse(
-            conversation_id=conversation_id,
-            turn_id=turn_id,
-            took_ms=round((time.perf_counter() - gate_started) * 1000, 1),
-            result=EventQueryPayload(
-                decision="CLARIFY",
-                clarification=gate_message,
-                activation_profile="QUESTION_GATE",
-                worker_execution_count=0,
-            ),
-        )
-
     pipeline = _pipeline()
     memory = _memory_store()
     agent = _memory_agent()
@@ -439,12 +497,39 @@ def ask(request: AskRequest) -> AskResponse:
         )
     except OrchestraFailClosedError as exc:
         raise HTTPException(status_code=409, detail=exc.safe_message) from exc
+    except OrchestraConfigurationError:
+        try:
+            result = _reasoning_payload(
+                _evidence_runtime().run(
+                    QueryInput(query=request.question, context=context, trace_id=turn_id)
+                )
+            )
+        except Exception:
+            result = EventQueryPayload(
+                decision="CLARIFY",
+                clarification=RUNTIME_CLARIFICATION,
+                abstention_reason=["ORCHESTRATION_CONFIGURATION"],
+                activation_profile="RUNTIME_GUARD",
+                worker_execution_count=0,
+            )
     except (EventRuntimeCorpusError, FileNotFoundError, OSError, ValueError) as exc:
         raise HTTPException(
             status_code=503,
             detail="The event runtime could not complete this request safely.",
         ) from exc
-    result = EventQueryPayload.model_validate(query_result_payload(run))
+    else:
+        result = EventQueryPayload.model_validate(query_result_payload(run))
+        if _needs_evidence_fallback(run):
+            try:
+                result = _reasoning_payload(
+                    _evidence_runtime().run(
+                        QueryInput(query=request.question, context=context, trace_id=turn_id)
+                    )
+                )
+            except Exception:
+                # Keep the deterministic M4D result if the optional reasoning fallback
+                # is unavailable or rate-limited; it remains fail-closed.
+                pass
     agent.record_turn(
         memory,
         conversation_id=conversation_id,

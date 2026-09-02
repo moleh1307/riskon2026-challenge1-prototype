@@ -116,6 +116,31 @@ def test_structural_worker_filters_session_rows_and_preserves_error(tmp_path: Pa
     assert all("information" not in claim.claim_text for claim in result.claims)
 
 
+def test_equivalent_k_and_e_expansions_are_not_ambiguous(tmp_path: Path) -> None:
+    entry = _entry(
+        tmp_path,
+        "glossary.html",
+        "Glossary",
+        "<html><body><p>Knowledge &amp; Experience (K&amp;E).</p>"
+        "<p>Knowledge and Experience (K&amp;E).</p></body></html>",
+    )
+    structural = build_structural_event_corpus([entry])
+    sections = attach_structural_tables(ingest_event_sections([entry]), structural)
+    corpus = LocalCorpus(
+        sections=tuple(sections),
+        provenance=ProvenanceIndex(sections, knowledge_root=tmp_path, ref_style="m2"),
+        knowledge_root=tmp_path,
+        structural=structural,
+    )
+
+    expansions, ambiguities = StructuralMatrixWorker(corpus)._acronym_state(
+        QueryInput(query="Is K&E required?", context={})
+    )
+
+    assert expansions == {"K&E": "Knowledge & Experience"}
+    assert ambiguities == {}
+
+
 def test_source_gap_worker_reports_missing_package_asset(tmp_path: Path) -> None:
     entry = _entry(
         tmp_path,

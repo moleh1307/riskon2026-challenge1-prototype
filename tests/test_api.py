@@ -120,22 +120,6 @@ def test_ask_forwards_structured_context_and_safe_payload(
     assert response.result.evidence_refs == ["local://event-wiki/page#table-1"]
 
 
-def test_low_information_question_is_clarified_before_orchestration(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    fake = _FakePipeline(error=AssertionError("question gate should run first"))
-    monkeypatch.setattr(api.state, "pipeline", fake)
-
-    response = api.ask(api.AskRequest(question="What is the 2+2?"))
-
-    assert response.result.decision == "CLARIFY"
-    assert response.result.activation_profile == "QUESTION_GATE"
-    assert response.result.route is None
-    assert response.result.worker_execution_count == 0
-    assert response.result.clarification is not None
-    assert "Julius Baer" in response.result.clarification
-
-
 def test_feedback_is_reviewed_before_a_soft_memory_update(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,

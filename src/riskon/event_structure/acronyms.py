@@ -18,6 +18,12 @@ FILLER_WORDS = frozenset({"and", "of", "the", "for", "to", "in", "on", "&"})
 Anchor = Literal["start", "end"]
 
 
+def normalise_expansion(value: str) -> str:
+    """Return a comparison key that treats ``&`` and ``and`` as equivalent."""
+
+    return " ".join(re.sub(r"\s*&\s*", " and ", value.casefold()).split())
+
+
 def _letters(acronym: str) -> str:
     return "".join(character for character in acronym.upper() if character.isalpha())
 
@@ -74,7 +80,9 @@ class Glossary(BaseModel):
         by_acronym: dict[str, dict[str, str]] = defaultdict(dict)
         for entry in self.entries:
             if entry.verified:
-                by_acronym[entry.acronym].setdefault(entry.expansion.casefold(), entry.expansion)
+                by_acronym[entry.acronym].setdefault(
+                    normalise_expansion(entry.expansion), entry.expansion
+                )
         return {
             acronym: sorted(expansions.values())
             for acronym, expansions in by_acronym.items()
@@ -83,9 +91,17 @@ class Glossary(BaseModel):
 
     def unique_verified(self) -> tuple[AcronymEntry, ...]:
         collisions = set(self.collisions())
-        return tuple(
-            entry for entry in self.entries if entry.verified and entry.acronym not in collisions
-        )
+        seen: set[tuple[str, str]] = set()
+        unique: list[AcronymEntry] = []
+        for entry in self.entries:
+            if not entry.verified or entry.acronym in collisions:
+                continue
+            key = (entry.acronym, normalise_expansion(entry.expansion))
+            if key in seen:
+                continue
+            seen.add(key)
+            unique.append(entry)
+        return tuple(unique)
 
 
 def build_glossary(documents: list[Document]) -> Glossary:
