@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 from enum import StrEnum
-from typing import Literal
+from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 CONTEXT_INTERPRETER_MODEL: str = "gpt-5.6-luna"
 CONTEXT_INTERPRETER_REASONING: Literal["low"] = "low"
@@ -27,6 +27,13 @@ class EvidenceSufficiencyStatus(StrEnum):
 
 # Short public spelling used by callers that treat the field as an enum contract.
 EvidenceSufficiency = EvidenceSufficiencyStatus
+
+
+class EvidenceClaimKind(StrEnum):
+    """Closed kinds of claims that may cross the local evidence boundary."""
+
+    DIRECT = "DIRECT"
+    SOURCE_LIMIT = "SOURCE_LIMIT"
 
 
 class SkepticCategory(StrEnum):
@@ -87,10 +94,20 @@ class EvidenceClaim(BaseModel):
 
     claim_id: str = Field(min_length=1, max_length=80)
     claim_text: str = Field(min_length=1, max_length=1200)
+    claim_kind: EvidenceClaimKind
     evidence_refs: list[str] = Field(min_length=1, max_length=8)
     supporting_spans: list[SupportingSpan] = Field(min_length=1, max_length=8)
     critical_control: bool
     applicable_scope: list[ScopeField] = Field(max_length=16)
+
+    @model_validator(mode="before")
+    @classmethod
+    def _default_claim_kind(cls, value: Any) -> Any:
+        """Keep legacy callers direct while retaining a fully required API schema."""
+
+        if isinstance(value, dict) and "claim_kind" not in value:
+            return {**value, "claim_kind": EvidenceClaimKind.DIRECT}
+        return value
 
     @property
     def text(self) -> str:
@@ -184,6 +201,7 @@ class ValidatedClaim(BaseModel):
 
     claim_id: str = Field(min_length=1, max_length=80)
     text: str = Field(min_length=1, max_length=1200)
+    claim_kind: EvidenceClaimKind = EvidenceClaimKind.DIRECT
     evidence_refs: list[str] = Field(min_length=1, max_length=8)
     supporting_spans: list[SupportingSpan] = Field(min_length=1, max_length=8)
     critical_control: bool = False
@@ -200,6 +218,7 @@ __all__ = [
     "ContextInterpreterOutput",
     "EvidenceAnalysisOutput",
     "EvidenceClaim",
+    "EvidenceClaimKind",
     "EvidenceSufficiency",
     "EvidenceSufficiencyStatus",
     "EvidenceUnit",

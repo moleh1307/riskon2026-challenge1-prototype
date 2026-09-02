@@ -15,6 +15,7 @@ from enum import StrEnum
 from pathlib import Path
 from typing import Any
 
+from bs4 import BeautifulSoup
 from pydantic import BaseModel, ConfigDict, Field
 
 from riskon.event_structure.acronyms import normalise_expansion
@@ -125,8 +126,16 @@ class SourceGapWorker:
         source_refs: Sequence[str],
         *,
         required: bool = True,
+        relevant_evidence_refs: Sequence[str] = (),
     ) -> SourceGapResult:
-        """Return gaps attached to the selected source pages."""
+        """Return only missing assets materially attached to selected evidence sections.
+
+        The gap register is page-level, while a Confluence export can contain several
+        unrelated sections and images on that page.  Callers that already selected evidence
+        units must therefore provide their refs so an asset is matched to the section that
+        actually declares it.  The legacy page-level behavior is retained for callers with no
+        evidence context (for example, a visual-only request with an otherwise empty page).
+        """
 
         structural = self.corpus.structural
         if structural is None or not required:
@@ -149,6 +158,20 @@ class SourceGapWorker:
             for gap in structural.gaps_for_page(page_id)
             if gap.kind == "missing_attachment"
         ]
+        if relevant_evidence_refs:
+            section_ids = {
+                unit.section_id
+                for ref in relevant_evidence_refs
+                if (unit := self.corpus.provenance.resolve(ref)) is not None
+                and unit.section_id is not None
+            }
+            relevant_targets = {
+                target
+                for section in self.corpus.sections
+                if section.section_id in section_ids
+                for target in _section_attachment_targets(self.corpus, section)
+            }
+            gaps = [gap for gap in gaps if Path(gap.target).name in relevant_targets]
         gaps = list(dict.fromkeys(gaps))
         return SourceGapResult(
             required=required,
@@ -159,6 +182,48 @@ class SourceGapWorker:
                 "different from an available asset that the AI cannot interpret."
             ),
         )
+
+
+def _section_attachment_targets(corpus: LocalCorpus, section: Any) -> set[str]:
+    """Read attachment declarations from one original heading-scoped HTML section."""
+
+    root = corpus.knowledge_root
+    if root is None:
+        return set()
+    source_path = (root / section.filename).resolve()
+    if not source_path.is_file() or not source_path.is_relative_to(root.resolve()):
+        return set()
+    match = re.search(r"::section-(\d+)$", section.section_id)
+    if match is None:
+        return set()
+    try:
+        raw = source_path.read_text(encoding="utf-8")
+    except OSError:
+        return set()
+    soup = BeautifulSoup(raw, "html.parser")
+    headings = soup.find_all(re.compile(r"^h[1-6]$", re.IGNORECASE))
+    heading_index = int(match.group(1)) - 1
+    if not 0 <= heading_index < len(headings):
+        return set()
+    heading = headings[heading_index]
+    heading_name = str(heading.name)
+    heading_level = int(heading_name[1:])
+    targets: set[str] = set()
+    for sibling in heading.next_siblings:
+        name = getattr(sibling, "name", None)
+        if isinstance(name, str) and re.fullmatch(r"h[1-6]", name, re.IGNORECASE):
+            if int(name[1:]) <= heading_level:
+                break
+        tags = [sibling, *sibling.find_all(True)] if hasattr(sibling, "find_all") else []
+        for tag in tags:
+            attributes = getattr(tag, "attrs", {})
+            if not isinstance(attributes, dict):
+                continue
+            for key in ("ri:filename", "filename", "src"):
+                value = attributes.get(key)
+                if isinstance(value, str) and value.strip():
+                    targets.add(Path(value.strip()).name)
+    return targets
 
 
 class StructuralMatrixWorker:
@@ -217,6 +282,7 @@ class StructuralMatrixWorker:
             gap_result = self.gap_worker.evaluate(
                 _retrieval_source_refs(retrieval),
                 required=True,
+                relevant_evidence_refs=_retrieval_evidence_refs(retrieval),
             )
             if gap_result.firewall_code is not None:
                 return self._gap_result(gap_result, expansions, ambiguities)
@@ -233,6 +299,7 @@ class StructuralMatrixWorker:
             gap_result = self.gap_worker.evaluate(
                 _retrieval_source_refs(retrieval),
                 required=True,
+                relevant_evidence_refs=_retrieval_evidence_refs(retrieval),
             )
             if gap_result.firewall_code is not None:
                 return self._gap_result(gap_result, expansions, ambiguities)
@@ -351,7 +418,11 @@ class StructuralMatrixWorker:
                 **base,
             )
         if not claims:
-            gap_result = self.gap_worker.evaluate(source_refs, required=True)
+            gap_result = self.gap_worker.evaluate(
+                source_refs,
+                required=True,
+                relevant_evidence_refs=_retrieval_evidence_refs(retrieval),
+            )
             if gap_result.firewall_code is not None:
                 return self._gap_result(gap_result, expansions, ambiguities, **base)
             return StructuralMatrixResult(
@@ -621,6 +692,16 @@ def _retrieval_candidates(retrieval: HybridRetrievalResult | Any) -> tuple[Any, 
 def _retrieval_source_refs(retrieval: HybridRetrievalResult | Any) -> tuple[str, ...]:
     return tuple(
         dict.fromkeys(candidate.source_ref for candidate in _retrieval_candidates(retrieval))
+    )
+
+
+def _retrieval_evidence_refs(retrieval: HybridRetrievalResult | Any) -> tuple[str, ...]:
+    return tuple(
+        dict.fromkeys(
+            ref
+            for candidate in _retrieval_candidates(retrieval)
+            for ref in getattr(candidate, "unit_refs", ())
+        )
     )
 
 

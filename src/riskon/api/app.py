@@ -295,7 +295,12 @@ def _needs_evidence_fallback(run: object) -> bool:
     # local validation and Answer Firewall remain authoritative.
     return any(
         getattr(reason, "value", "")
-        in {"UNSUPPORTED_CLAIM", "SCOPE_MISMATCH", "NO_EXPLICIT_SUPPORT"}
+        in {
+            "UNSUPPORTED_CLAIM",
+            "SCOPE_MISMATCH",
+            "NO_EXPLICIT_SUPPORT",
+            "SOURCE_PACKAGE_ASSET_UNAVAILABLE",
+        }
         for reason in getattr(result, "reason_codes", ())
     )
 

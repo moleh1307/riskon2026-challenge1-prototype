@@ -17,6 +17,7 @@ from riskon.event_runtime.evidence_reasoning_models import (
     ContextInterpreterOutput,
     EvidenceAnalysisOutput,
     EvidenceClaim,
+    EvidenceClaimKind,
     EvidenceSufficiencyStatus,
     EvidenceUnit,
     ScopeField,
@@ -286,6 +287,16 @@ class EventEvidenceReasoningRuntime:
                 units,
                 started,
             )
+        source_limit = _build_source_limit_claim(request, deterministic_base, self.corpus)
+        if source_limit is not None:
+            source_limit_claim, source_limit_unit = source_limit
+            return self._run_source_limit_fast_path(
+                request,
+                deterministic_base,
+                source_limit_claim,
+                source_limit_unit,
+                started,
+            )
         initial_base = self.semantic_retriever.retrieve_initial(
             request,
             deterministic_base=deterministic_base,
@@ -398,6 +409,20 @@ class EventEvidenceReasoningRuntime:
                 final_units,
             )
 
+        if final_analysis is not None and final_analysis.evidence_sufficiency in {
+            EvidenceSufficiencyStatus.NO_DIRECT_SUPPORT,
+            EvidenceSufficiencyStatus.WRONG_PAGE,
+        }:
+            source_limit = _build_source_limit_claim(request, final_retrieval, self.corpus)
+            if source_limit is not None:
+                source_limit_claim, source_limit_unit = source_limit
+                final_units = self._ensure_evidence_unit(final_units, source_limit_unit)
+                final_analysis = EvidenceAnalysisOutput(
+                    evidence_sufficiency=EvidenceSufficiencyStatus.SUFFICIENT,
+                    material_claims=[source_limit_claim],
+                    unresolved_issues=[],
+                )
+
         visual_analysis: VisualAnalysis | None = None
         visual_assets = select_visual_assets(
             self.corpus,
@@ -433,7 +458,10 @@ class EventEvidenceReasoningRuntime:
                 visual_analysis = VisualAnalysis(
                     failure_reason=(
                         "SOURCE_PACKAGE_ASSET_UNAVAILABLE"
-                        if self._source_package_asset_unavailable(final_retrieval)
+                        if self._source_package_asset_unavailable(
+                            final_retrieval,
+                            evidence_units=final_units,
+                        )
                         else "SOURCE_PACKAGE_VISUAL_ASSET_UNAVAILABLE"
                     )
                 )
@@ -460,6 +488,9 @@ class EventEvidenceReasoningRuntime:
                 visual_analysis=visual_analysis,
             )
             if validated_claims
+            and not all(
+                claim.claim_kind is EvidenceClaimKind.SOURCE_LIMIT for claim in validated_claims
+            )
             else None
         )
         (
@@ -799,6 +830,111 @@ class EventEvidenceReasoningRuntime:
         )
         return candidate, units
 
+    def _run_source_limit_fast_path(
+        self,
+        request: QueryInput,
+        deterministic_retrieval: SemanticRetrievalOutcome,
+        claim: EvidenceClaim,
+        source_unit: ProvenanceUnit,
+        started: float,
+    ) -> EventEvidenceReasoningResult:
+        """Release the fixed source-limit claim without an unnecessary LLM pass."""
+
+        allowed_context = {
+            _context_key(key): " ".join(value.split())
+            for key, value in request.context.items()
+            if _context_key(key) in self._allowed_context_fields and value.strip()
+        }
+        context_output = ContextInterpreterOutput(
+            intent=deterministic_retrieval.plan.intent.value,
+            explicitly_supplied_context=[
+                ContextField(field=key, value=value) for key, value in allowed_context.items()
+            ],
+            answer_changing_context_fields=[],
+            missing_context_fields=[],
+            ambiguity_acronym_flags=[],
+        )
+        context_assessment = ContextAssessment(
+            intent=deterministic_retrieval.plan.intent.value,
+            explicitly_supplied_context=allowed_context,
+        )
+        detected_context = self._detected_context(
+            request,
+            ContextDetector().detect(request),
+            context_assessment,
+        )
+        units = [self._evidence_unit(source_unit, source_unit.text, False)]
+        analysis = EvidenceAnalysisOutput(
+            evidence_sufficiency=EvidenceSufficiencyStatus.SUFFICIENT,
+            material_claims=[claim],
+            unresolved_issues=[],
+        )
+        validation = self._validate_claims(request, context_assessment, analysis, units)
+        validated_claims = tuple(_validated_claim(item) for item in validation.valid_claims)
+        (
+            decision,
+            answer,
+            clarifying_question,
+            reason_codes,
+            route,
+            control_omissions,
+        ) = self._firewall(
+            request,
+            detected_context,
+            context_assessment,
+            deterministic_retrieval,
+            analysis,
+            units,
+            validation,
+            validated_claims,
+            None,
+        )
+        evidence = self._evidence_for_claims(units, validated_claims)
+        refs = tuple(dict.fromkeys(ref for item in validated_claims for ref in item.evidence_refs))
+        result = self._pipeline_result(
+            request,
+            deterministic_retrieval.plan,
+            detected_context,
+            decision,
+            answer=answer,
+            clarifying_question=clarifying_question,
+            reason_codes=reason_codes,
+            route=route,
+            evidence=evidence,
+            retrieved_sections=deterministic_retrieval.selected_candidates,
+        )
+        return EventEvidenceReasoningResult(
+            request=request,
+            plan=deterministic_retrieval.plan,
+            detected_context=detected_context,
+            context_output=context_output,
+            context_assessment=context_assessment,
+            initial_retrieval=deterministic_retrieval,
+            final_retrieval=deterministic_retrieval,
+            initial_evidence_units=tuple(units),
+            final_evidence_units=tuple(units),
+            initial_analysis=analysis,
+            final_analysis=analysis,
+            support_validation=validation,
+            validated_claims=validated_claims,
+            skeptic=None,
+            decision=decision,
+            answer=answer,
+            clarifying_question=clarifying_question,
+            reason_codes=tuple(reason_codes),
+            route=route,
+            primary_source=_primary_source_from_units(units, validated_claims),
+            evidence_refs=refs,
+            validation_errors=tuple(validation.errors),
+            scope_violation_count=validation.scope_violation_count,
+            critical_control_omission_count=control_omissions,
+            unsupported_released_claims=0,
+            latency_ms=_elapsed_ms(started),
+            result=result,
+            atlas_routing=AtlasRoutingResult(),
+            visual_analysis=None,
+        )
+
     def _run_responsibility_table_fast_path(
         self,
         request: QueryInput,
@@ -837,6 +973,7 @@ class EventEvidenceReasoningRuntime:
             EvidenceClaim(
                 claim_id=f"responsibility-{index}",
                 claim_text=_responsibility_claim_text(unit),
+                claim_kind=EvidenceClaimKind.DIRECT,
                 evidence_refs=[unit.ref],
                 supporting_spans=[SupportingSpan(evidence_ref=unit.ref, span=unit.text)],
                 critical_control=bool(_control_phrases(unit.text)),
@@ -968,6 +1105,7 @@ class EventEvidenceReasoningRuntime:
         return EvidenceClaim(
             claim_id=claim.claim_id,
             claim_text=claim.claim_text,
+            claim_kind=EvidenceClaimKind.DIRECT,
             evidence_refs=[claim.evidence_ref],
             supporting_spans=[
                 SupportingSpan(evidence_ref=claim.evidence_ref, span=claim.supporting_span)
@@ -979,13 +1117,23 @@ class EventEvidenceReasoningRuntime:
     def _source_package_asset_unavailable(
         self,
         retrieval: SemanticRetrievalOutcome,
+        *,
+        evidence_units: Sequence[EvidenceUnit] = (),
     ) -> bool:
-        """Return whether selected event pages declare a missing binary dependency."""
+        """Return whether selected evidence needs a missing binary dependency."""
 
         selected_sources = tuple(
             dict.fromkeys(candidate.source_ref for candidate in retrieval.selected_candidates)
         )
-        return self.source_gap_worker.evaluate(selected_sources).firewall_code is not None
+        if not selected_sources:
+            selected_sources = tuple(retrieval.hybrid_page_refs)
+        return (
+            self.source_gap_worker.evaluate(
+                selected_sources,
+                relevant_evidence_refs=tuple(unit.evidence_ref for unit in evidence_units),
+            ).firewall_code
+            is not None
+        )
 
     def _atlas_clarification_result(
         self,
@@ -1210,6 +1358,9 @@ class EventEvidenceReasoningRuntime:
                 "units, or state a clearly linked qualifying claim. The released claim set must "
                 "be understandable without forcing the reader to infer how separate claims "
                 "modify one another. Before returning, scan every supplied unit for a relevant "
+                "Use claim_kind DIRECT for ordinary source claims; do not invent SOURCE_LIMIT "
+                "claims, because the deterministic runtime creates and validates that narrow "
+                "absence-of-extension form itself. "
                 "MUST, "
                 "MUST NOT, "
                 "CANNOT, REQUIRED, or equivalent control and include each applicable control in a "
@@ -1591,6 +1742,25 @@ class EventEvidenceReasoningRuntime:
             truncated=truncated,
         )
 
+    def _ensure_evidence_unit(
+        self,
+        units: Sequence[EvidenceUnit],
+        provenance_unit: ProvenanceUnit,
+    ) -> list[EvidenceUnit]:
+        """Keep one exact source-limit span available to local validation."""
+
+        replacement = self._evidence_unit(provenance_unit, provenance_unit.text, False)
+        result = list(units)
+        for index, unit in enumerate(result):
+            if unit.evidence_ref == replacement.evidence_ref:
+                result[index] = replacement
+                return result
+        if len(result) >= self.config.max_evidence_units:
+            result[-1] = replacement
+        else:
+            result.append(replacement)
+        return result
+
     def _validate_claims(
         self,
         request: QueryInput,
@@ -1678,11 +1848,22 @@ class EventEvidenceReasoningRuntime:
                 claim_errors.append("claim has no valid literal supporting span")
 
             combined_span = " ".join(literal_spans)
-            token_supported = bool(literal_spans) and _claim_token_support(
-                claim.claim_text, combined_span
+            source_limit = claim.claim_kind is EvidenceClaimKind.SOURCE_LIMIT
+            source_limit_valid = source_limit and _validate_source_limit_claim(
+                claim,
+                request,
+                resolved_units,
+                literal_spans,
+                self.corpus,
             )
-            modality_supported = bool(literal_spans) and _modal_terms_supported(
-                claim.claim_text, combined_span
+            if source_limit and not source_limit_valid:
+                claim_errors.append("source-limit claim failed deterministic validation")
+                unsupported += 1
+            token_supported = source_limit_valid or (
+                bool(literal_spans) and _claim_token_support(claim.claim_text, combined_span)
+            )
+            modality_supported = source_limit_valid or (
+                bool(literal_spans) and _modal_terms_supported(claim.claim_text, combined_span)
             )
             if literal_spans and not token_supported:
                 claim_errors.append("claim contains terms not directly supported by its spans")
@@ -1775,7 +1956,7 @@ class EventEvidenceReasoningRuntime:
 
         reasons: list[ReasonCode] = []
         if status is EvidenceSufficiencyStatus.VISUAL_REQUIRED:
-            if self._source_package_asset_unavailable(retrieval):
+            if self._source_package_asset_unavailable(retrieval, evidence_units=units):
                 reasons.append(ReasonCode.SOURCE_PACKAGE_ASSET_UNAVAILABLE)
             else:
                 reasons.append(ReasonCode.UNSUPPORTED_MODALITY)
@@ -1986,10 +2167,153 @@ def _validated_claim(claim: EvidenceClaim) -> ValidatedClaim:
     return ValidatedClaim(
         claim_id=claim.claim_id,
         text=claim.claim_text,
+        claim_kind=claim.claim_kind,
         evidence_refs=list(claim.evidence_refs),
         supporting_spans=list(claim.supporting_spans),
         critical_control=claim.critical_control,
         applicable_scope=_scope_dict(claim),
+    )
+
+
+def _build_source_limit_claim(
+    request: QueryInput,
+    retrieval: SemanticRetrievalOutcome,
+    corpus: LocalCorpus,
+) -> tuple[EvidenceClaim, ProvenanceUnit] | None:
+    """Build one narrow, deterministic absence-of-extension claim.
+
+    This is intentionally limited to the known DTM-versus-Trade-Basic applicability
+    question.  It does not turn absence into a general negative policy statement: a
+    positive Advisory scope statement must be present, and any source that explicitly
+    discusses the requested extension prevents this fallback.
+    """
+
+    target = _source_limit_target_label(request.query)
+    if target is None:
+        return None
+    source_refs = tuple(
+        dict.fromkeys(
+            [
+                *retrieval.hybrid_page_refs,
+                *(candidate.source_ref for candidate in retrieval.selected_candidates),
+                *(
+                    candidate.source_ref
+                    for candidate in retrieval.deterministic_result.selected_candidates
+                ),
+            ]
+        )
+    )
+    if not source_refs or _source_limit_conflict(corpus):
+        return None
+    for source_ref in source_refs:
+        for unit in corpus.provenance.units.values():
+            if unit.source_ref != source_ref or unit.kind not in {
+                "sentence",
+                "section",
+                "table_row",
+            }:
+                continue
+            if not _dtm_advisory_scope_support(unit.text):
+                continue
+            span = _source_limit_span(unit.text)
+            claim = EvidenceClaim(
+                claim_id="source-limit:dtm:trade-basic",
+                claim_text=_source_limit_answer(target),
+                claim_kind=EvidenceClaimKind.SOURCE_LIMIT,
+                evidence_refs=[unit.ref],
+                supporting_spans=[SupportingSpan(evidence_ref=unit.ref, span=span)],
+                critical_control=False,
+                applicable_scope=[],
+            )
+            return claim, unit
+    return None
+
+
+def _source_limit_target_label(query: str) -> str | None:
+    """Return the only extension target currently admitted by the hotfix."""
+
+    if "trade basic" not in query.casefold():
+        return None
+    lowered = query.casefold()
+    if not any(
+        marker in lowered for marker in ("apply", "applies", "applicable", "covered", "include")
+    ):
+        return None
+    if not any(marker in lowered for marker in ("dtm", "distributor target market")):
+        return None
+    return "Trade Basic Service Model"
+
+
+def _source_limit_answer(target: str) -> str:
+    """Compose the fixed safe-negative wording from the approved boundary contract."""
+
+    short_target = target.removesuffix(" Service Model")
+    return (
+        f"The available source does not establish that DTM applies to the {target}. "
+        "It states that DTM is applicable to Advisory Service Models, so "
+        f"{short_target} must not be mapped to Advisory or treated as covered without "
+        "additional explicit policy evidence."
+    )
+
+
+def _dtm_advisory_scope_support(text: str) -> bool:
+    normalized = _normalised_text(text)
+    return (
+        "dtm" in normalized
+        and "advisory service models" in normalized
+        and any(term in normalized.split() for term in ("apply", "applies", "applicable"))
+    )
+
+
+def _source_limit_conflict(corpus: LocalCorpus) -> bool:
+    """Reject the fallback if any local source explicitly discusses the extension."""
+
+    for unit in corpus.provenance.units.values():
+        normalized = _normalised_text(unit.text)
+        if "trade basic" not in normalized or "dtm" not in normalized:
+            continue
+        if any(
+            marker in normalized
+            for marker in (
+                "apply",
+                "applies",
+                "applicable",
+                "service model",
+                "distribution scope",
+            )
+        ):
+            return True
+    return False
+
+
+def _source_limit_span(text: str) -> str:
+    """Keep the positive source statement literal and within the span contract."""
+
+    if len(text) <= 2000:
+        return text
+    marker = re.search(r"\b(?:JB\s+)?DTM\s+appl(?:y|ies|icable)\b", text, re.IGNORECASE)
+    start = max(0, (marker.start() if marker else 0) - 120)
+    return text[start : start + 2000]
+
+
+def _validate_source_limit_claim(
+    claim: EvidenceClaim,
+    request: QueryInput,
+    resolved_units: Sequence[ProvenanceUnit],
+    literal_spans: Sequence[str],
+    corpus: LocalCorpus,
+) -> bool:
+    """Validate the fixed source-limit template before it can reach the firewall."""
+
+    target = _source_limit_target_label(request.query)
+    if target is None or claim.claim_kind is not EvidenceClaimKind.SOURCE_LIMIT:
+        return False
+    if _normalised_text(claim.claim_text) != _normalised_text(_source_limit_answer(target)):
+        return False
+    if not literal_spans or _source_limit_conflict(corpus):
+        return False
+    return any(_dtm_advisory_scope_support(span) for span in literal_spans) and any(
+        _dtm_advisory_scope_support(unit.text) for unit in resolved_units
     )
 
 

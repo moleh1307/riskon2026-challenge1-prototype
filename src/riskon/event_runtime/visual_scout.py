@@ -217,17 +217,52 @@ def should_run_visual_scout(
     analysis: EvidenceAnalysisOutput | None,
     evidence_units: Sequence[EvidenceUnit],
 ) -> bool:
-    """Trigger only for missing text/table support or explicit visual necessity."""
+    """Trigger only for an explicit visual dependency.
+
+    ``NO_DIRECT_SUPPORT`` is a textual support failure, not evidence that the answer
+    lives in an image.  It may reach Visual Scout only when the analyst (or a submitted
+    missing-asset unit) affirmatively says that the answer-bearing content is graphical.
+    """
 
     if analysis is None:
         return False
-    if analysis.evidence_sufficiency in {
-        EvidenceSufficiencyStatus.NO_DIRECT_SUPPORT,
-        EvidenceSufficiencyStatus.VISUAL_REQUIRED,
-    }:
+    if analysis.evidence_sufficiency is EvidenceSufficiencyStatus.VISUAL_REQUIRED:
         return True
-    return not any(
-        unit.kind in {"sentence", "table_row", "section"} and unit.text.strip()
+    if analysis.evidence_sufficiency is not EvidenceSufficiencyStatus.NO_DIRECT_SUPPORT:
+        return False
+    return _affirmative_visual_dependency(analysis, evidence_units)
+
+
+def _affirmative_visual_dependency(
+    analysis: EvidenceAnalysisOutput,
+    evidence_units: Sequence[EvidenceUnit],
+) -> bool:
+    """Recognise only explicit analyst/asset signals, never plain text absence."""
+
+    visual_phrases = (
+        "visual_required",
+        "visual required",
+        "only visible",
+        "only appears in image",
+        "answer-bearing content is graphical",
+        "requires an image",
+        "requires a diagram",
+        "missing attachment",
+        "attachment is required",
+        "image is required",
+    )
+    if any(
+        phrase in issue.casefold()
+        for issue in analysis.unresolved_issues
+        for phrase in visual_phrases
+    ):
+        return True
+    return any(
+        unit.kind in {"attachment", "missing_attachment"}
+        and any(
+            marker in " ".join((unit.evidence_ref, unit.text)).casefold()
+            for marker in ("missing", "unavailable", "required")
+        )
         for unit in evidence_units
     )
 
