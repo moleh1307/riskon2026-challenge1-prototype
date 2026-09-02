@@ -11,6 +11,7 @@ from riskon.event_runtime.corpus_loader import ingest_event_sections
 from riskon.event_runtime.evidence_reasoning import (
     EventEvidenceReasoningRuntime,
     _critical_control_omissions,
+    _effective_skeptic_objections,
     _validated_claim,
 )
 from riskon.event_runtime.evidence_reasoning_models import (
@@ -26,6 +27,8 @@ from riskon.event_runtime.evidence_reasoning_models import (
     EvidenceClaim,
     EvidenceSufficiencyStatus,
     EvidenceUnit,
+    SkepticCategory,
+    SkepticObjection,
     SkepticOutput,
     SupportingSpan,
     ValidatedClaim,
@@ -380,6 +383,168 @@ def test_critical_control_recall_does_not_hide_controls_in_supporting_spans() ->
     )
 
     assert _critical_control_omissions([unit], [claim], {"alert", "proceed"}) == 1
+
+
+def test_uncited_nearby_control_is_left_for_skeptic_review() -> None:
+    cited = EvidenceUnit(
+        evidence_ref="local://event-wiki/alerts.html#section-resolution:sentence-1",
+        kind="sentence",
+        source_ref="local://event-wiki/alerts.html",
+        title="Alerts",
+        filename="alerts.html",
+        heading_path=["Resolution"],
+        text="The RM reviews the alert.",
+    )
+    nearby_control = cited.model_copy(
+        update={
+            "evidence_ref": "local://event-wiki/alerts.html#section-resolution:sentence-2",
+            "text": "The RM must not proceed while the alert is shown.",
+        }
+    )
+    claim = ValidatedClaim(
+        claim_id="summary",
+        text="The RM reviews the alert.",
+        evidence_refs=[cited.evidence_ref],
+        supporting_spans=[SupportingSpan(evidence_ref=cited.evidence_ref, span=cited.text)],
+        critical_control=False,
+        applicable_scope={},
+    )
+
+    assert _critical_control_omissions([cited, nearby_control], [claim], {"alert", "proceed"}) == 0
+
+
+def test_modality_rewrite_recovers_exact_local_source_span(tmp_path: Path) -> None:
+    corpus = _corpus(tmp_path)
+    runtime = _runtime(corpus)
+    evidence = _unit(corpus)
+    claim = EvidenceClaim(
+        claim_id="rewritten",
+        claim_text="The policy must require a signed form for target 0.",
+        evidence_refs=[evidence.evidence_ref],
+        supporting_spans=[SupportingSpan(evidence_ref=evidence.evidence_ref, span=evidence.text)],
+        critical_control=False,
+        applicable_scope=[],
+    )
+    validation = runtime._validate_claims(
+        QueryInput(query="policy target"),
+        ContextAssessment(intent="REFERENCE_LOOKUP"),
+        EvidenceAnalysisOutput(
+            evidence_sufficiency=EvidenceSufficiencyStatus.SUFFICIENT,
+            material_claims=[claim],
+            unresolved_issues=[],
+        ),
+        [evidence],
+    )
+
+    assert [item.claim_id for item in validation.valid_claims] == ["rewritten"]
+    assert validation.valid_claims[0].claim_text == evidence.text
+    assert validation.rejected_claim_ids == []
+    assert validation.unsupported_claim_count == 0
+
+
+def test_effective_skeptic_objections_allow_explicit_general_branches() -> None:
+    units = [
+        EvidenceUnit(
+            evidence_ref="local://event-wiki/saa.html#section-saa:sentence-1",
+            kind="sentence",
+            source_ref="local://event-wiki/saa.html",
+            title="SAA",
+            filename="saa.html",
+            heading_path=["SAA"],
+            text="For active solicitation, the RM follows the active branch.",
+            scope={"solicitation_type": "ACTIVE"},
+        ),
+        EvidenceUnit(
+            evidence_ref="local://event-wiki/saa.html#section-saa:sentence-2",
+            kind="sentence",
+            source_ref="local://event-wiki/saa.html",
+            title="SAA",
+            filename="saa.html",
+            heading_path=["SAA"],
+            text="For reverse solicitation, the RM follows the reverse branch.",
+            scope={"solicitation_type": "REVERSE"},
+        ),
+    ]
+    claims = [
+        ValidatedClaim(
+            claim_id="active",
+            text=units[0].text,
+            evidence_refs=[units[0].evidence_ref],
+            supporting_spans=[
+                SupportingSpan(evidence_ref=units[0].evidence_ref, span=units[0].text)
+            ],
+            applicable_scope={"solicitation_type": "ACTIVE"},
+        ),
+        ValidatedClaim(
+            claim_id="reverse",
+            text=units[1].text,
+            evidence_refs=[units[1].evidence_ref],
+            supporting_spans=[
+                SupportingSpan(evidence_ref=units[1].evidence_ref, span=units[1].text)
+            ],
+            applicable_scope={"solicitation_type": "REVERSE"},
+        ),
+    ]
+    skeptic = SkepticOutput(
+        objections=[
+            SkepticObjection(
+                target_claim_id="active",
+                category=SkepticCategory.MISSING_REQUIRED_CONTEXT,
+                material=True,
+                detail="Solicitation type was not supplied.",
+                evidence_refs=[],
+            )
+        ]
+    )
+
+    effective = _effective_skeptic_objections(
+        skeptic,
+        claims,
+        units,
+        ContextAssessment(
+            intent="REFERENCE_LOOKUP",
+            answer_changing_context_fields=["solicitation_type"],
+        ),
+    )
+
+    assert effective == ()
+
+
+def test_effective_skeptic_objections_allow_exact_source_wording() -> None:
+    span = "Client-facing staff only need to ensure that alerts are handled before advice."
+    claim = ValidatedClaim(
+        claim_id="literal",
+        text=span,
+        evidence_refs=["local://event-wiki/advice.html#section-advice:sentence-1"],
+        supporting_spans=[
+            SupportingSpan(
+                evidence_ref="local://event-wiki/advice.html#section-advice:sentence-1",
+                span=span,
+            )
+        ],
+        applicable_scope={},
+    )
+    skeptic = SkepticOutput(
+        objections=[
+            SkepticObjection(
+                target_claim_id="literal",
+                category=SkepticCategory.UNSUPPORTED_INFERENCE,
+                material=True,
+                detail="The word only could be read as an exclusive interpretation.",
+                evidence_refs=[],
+            )
+        ]
+    )
+
+    assert (
+        _effective_skeptic_objections(
+            skeptic,
+            [claim],
+            [],
+            ContextAssessment(intent="REFERENCE_LOOKUP"),
+        )
+        == ()
+    )
 
 
 def test_blocked_order_requires_workflow_stage_even_when_system_is_named(tmp_path: Path) -> None:

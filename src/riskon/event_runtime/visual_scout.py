@@ -243,7 +243,7 @@ def run_visual_scout(
 
     bounded_assets = tuple(assets[:2])
     if not bounded_assets:
-        return VisualAnalysis(failure_reason="NO_LOCAL_VISUAL_ASSET")
+        return VisualAnalysis(failure_reason="SOURCE_PACKAGE_VISUAL_ASSET_UNAVAILABLE")
     try:
         output, _call = client.request_multimodal_json(
             "visual_scout",

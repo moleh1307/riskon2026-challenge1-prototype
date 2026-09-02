@@ -19,7 +19,9 @@ from riskon.event_runtime.evidence_reasoning_models import (
     EvidenceUnit,
     ScopeField,
     SkepticCategory,
+    SkepticObjection,
     SkepticOutput,
+    SupportingSpan,
     SupportValidation,
     ValidatedClaim,
 )
@@ -387,7 +389,9 @@ class EventEvidenceReasoningRuntime:
                         visual_analysis=visual_analysis,
                     )
             else:
-                visual_analysis = VisualAnalysis(failure_reason="NO_LOCAL_VISUAL_ASSET")
+                visual_analysis = VisualAnalysis(
+                    failure_reason="SOURCE_PACKAGE_VISUAL_ASSET_UNAVAILABLE"
+                )
 
         validation = self._validate_claims(
             request,
@@ -735,7 +739,9 @@ class EventEvidenceReasoningRuntime:
                 "than the source, preserve the source's exact spelling; never silently copy or "
                 "normalize the question's label. For procedures, include applicable prerequisites, "
                 "prohibitions, and required documentation alongside the action. Prefer narrow "
-                "source-worded claims over broad paraphrases. Return only schema."
+                "source-worded claims over broad paraphrases. If a candidate paraphrase fails "
+                "the local modality check but one literal supporting span directly states the "
+                "same proposition, prefer that exact source wording. Return only schema."
             ),
             user_prompt=json.dumps(
                 {
@@ -809,7 +815,10 @@ class EventEvidenceReasoningRuntime:
                 "Do not mark context missing merely because a "
                 "general question has multiple supported branches; object only when a targeted "
                 "missing field is necessary to answer safely. Do not invent facts, do not write "
-                "a replacement answer, and return only the structured schema."
+                "a replacement answer. A claim that is an exact copy of one literal supporting "
+                "source span is not an unsupported inference unless the claim adds a limiting "
+                "or exclusive interpretation beyond that source wording. Return only the "
+                "structured schema."
             ),
             user_prompt=json.dumps(
                 {
@@ -982,6 +991,7 @@ class EventEvidenceReasoningRuntime:
             section_indexes[section.section_id] = len(page_sections)
             page_sections.append(section)
         context = self.semantic_retriever.planner.context_values(request, retrieval.plan)
+        query_terms = _evidence_query_terms(request, retrieval.plan)
         result: list[RetrievalCandidate] = []
         seen: set[str] = set()
 
@@ -1003,6 +1013,29 @@ class EventEvidenceReasoningRuntime:
         for candidate in candidates:
             add(candidate)
 
+        # Keep section expansion page-local. When retrieval lands on a page but the best
+        # answer-bearing section is nearby, seed expansion from that page's strongest section
+        # before adding exactly one predecessor/successor. This does not broaden the page set or
+        # alter the deterministic retriever's ranking contract.
+        seed_sources = tuple(dict.fromkeys(candidate.source_ref for candidate in result))
+        for source_ref in seed_sources:
+            local_sections = [
+                candidate
+                for candidate in by_source.get(source_ref, ())
+                if candidate.section_id is not None and not candidate.is_table_row
+            ]
+            local_sections.sort(
+                key=lambda candidate: (
+                    -_candidate_local_support_score(candidate, query_terms),
+                    candidate.candidate_ref,
+                )
+            )
+            if (
+                local_sections
+                and _candidate_local_support_score(local_sections[0], query_terms) > 0
+            ):
+                add(local_sections[0])
+
         for seed in tuple(result):
             if seed.section_id is not None:
                 seed_section = source_sections.get(seed.section_id)
@@ -1010,17 +1043,16 @@ class EventEvidenceReasoningRuntime:
                     page_sections = sections_by_source.get(seed_section.source_ref, [])
                     index = section_indexes.get(seed_section.section_id)
                     if index is not None:
-                        for distance in (1, 2):
-                            for neighbour_index in (index - distance, index + distance):
-                                if not 0 <= neighbour_index < len(page_sections):
-                                    continue
-                                neighbour = page_sections[neighbour_index]
-                                neighbour_ref = deterministic_retriever.provenance.section_ref(
-                                    neighbour
-                                )
-                                neighbour_candidate = by_ref.get(neighbour_ref)
-                                if neighbour_candidate is not None:
-                                    add(neighbour_candidate)
+                        for neighbour_index in (index - 1, index + 1):
+                            if not 0 <= neighbour_index < len(page_sections):
+                                continue
+                            neighbour = page_sections[neighbour_index]
+                            neighbour_ref = deterministic_retriever.provenance.section_ref(
+                                neighbour
+                            )
+                            neighbour_candidate = by_ref.get(neighbour_ref)
+                            if neighbour_candidate is not None:
+                                add(neighbour_candidate)
 
                     for link in seed_section.links:
                         target_ref = self.corpus.provenance.resolve_link(seed_section, link.href)
@@ -1113,7 +1145,7 @@ class EventEvidenceReasoningRuntime:
 
             spans = list(claim.supporting_spans)
             literal_spans: list[str] = []
-            span_refs: set[str] = set()
+            literal_supports: list[SupportingSpan] = []
             for supporting in spans:
                 span_ref = supporting.evidence_ref
                 if span_ref not in refs:
@@ -1135,18 +1167,24 @@ class EventEvidenceReasoningRuntime:
                 elif supporting.span not in unit.text:
                     claim_errors.append(f"supporting span is not literal in {span_ref}")
                     continue
-                span_refs.add(span_ref)
                 literal_spans.append(supporting.span)
+                literal_supports.append(supporting)
             if not spans:
                 claim_errors.append("claim has no supporting span")
             if not literal_spans:
                 claim_errors.append("claim has no valid literal supporting span")
 
             combined_span = " ".join(literal_spans)
-            if literal_spans and not _claim_token_support(claim.claim_text, combined_span):
+            token_supported = bool(literal_spans) and _claim_token_support(
+                claim.claim_text, combined_span
+            )
+            modality_supported = bool(literal_spans) and _modal_terms_supported(
+                claim.claim_text, combined_span
+            )
+            if literal_spans and not token_supported:
                 claim_errors.append("claim contains terms not directly supported by its spans")
                 unsupported += 1
-            if literal_spans and not _modal_terms_supported(claim.claim_text, combined_span):
+            if literal_spans and not modality_supported:
                 claim_errors.append("claim modality is not literal in its supporting spans")
                 unsupported += 1
 
@@ -1159,6 +1197,20 @@ class EventEvidenceReasoningRuntime:
                 )
 
             if claim_errors:
+                recovered = _recover_literal_span_claim(
+                    claim,
+                    claim_errors,
+                    literal_supports,
+                    context,
+                    claim_scope,
+                    self.corpus,
+                )
+                if recovered is not None:
+                    # Recovery is exact source text, not generated prose. The sole allowed
+                    # recovery error is a modality rewrite by the Claim Builder.
+                    unsupported = max(0, unsupported - 1)
+                    valid.append(recovered)
+                    continue
                 rejected.append(claim.claim_id)
                 errors.extend(f"{claim.claim_id}: {error}" for error in claim_errors)
                 continue
@@ -1201,14 +1253,18 @@ class EventEvidenceReasoningRuntime:
         status = analysis.evidence_sufficiency if analysis is not None else None
         query_terms = _tokens(" ".join([request.query, retrieval.plan.normalised_query]))
         control_omissions = _critical_control_omissions(units, claims, query_terms)
-        material_objection = bool(
-            skeptic is not None and any(item.material for item in skeptic.objections)
+        effective_objections = _effective_skeptic_objections(
+            skeptic,
+            claims,
+            units,
+            context,
         )
+        material_objection = any(item.material for item in effective_objections)
         scope_conflict = (
             validation.scope_violation_count > 0
             or any(
                 item.category is SkepticCategory.SCOPE_LEAKAGE and item.material
-                for item in skeptic.objections
+                for item in effective_objections
             )
             if skeptic is not None
             else validation.scope_violation_count > 0
@@ -1606,7 +1662,18 @@ def _evidence_query_terms(request: QueryInput, plan: QueryPlan) -> set[str]:
     if "power of attorney" in lowered or re.search(r"\bpoa\b", lowered):
         # Standard abbreviation/role bridge used only to retain the source unit that states the
         # PoA-to-order-giver rule; it is never emitted as answer evidence by itself.
-        terms.update({"poa", "authorized", "representative", "empowerment", "order", "giver"})
+        terms.update(
+            {
+                "poa",
+                "power",
+                "attorney",
+                "authorized",
+                "representative",
+                "empowerment",
+                "order",
+                "giver",
+            }
+        )
     if "k&e" in lowered or "knowledge & experience" in lowered:
         terms.update({"knowledge", "experience", "form"})
     return terms
@@ -1625,6 +1692,23 @@ def _unit_support_score_from_text(text: str, query_terms: set[str]) -> float:
     return float(len(query_terms & _tokens(text)))
 
 
+def _candidate_local_support_score(
+    candidate: RetrievalCandidate,
+    query_terms: set[str],
+) -> float:
+    """Score a candidate only for bounded same-page section expansion."""
+
+    text = " ".join(
+        [
+            candidate.title,
+            *candidate.heading_path,
+            candidate.excerpt,
+            *[" ".join(row) for row in candidate.table_rows],
+        ]
+    )
+    return _unit_support_score_from_text(text, query_terms)
+
+
 def _claim_token_support(claim: str, spans: str) -> bool:
     claim_terms = _tokens(claim)
     span_terms = _tokens(spans)
@@ -1634,12 +1718,54 @@ def _claim_token_support(claim: str, spans: str) -> bool:
 
 
 def _modal_terms_supported(claim: str, spans: str) -> bool:
-    claim_lower = " ".join(claim.casefold().split())
-    span_lower = " ".join(spans.casefold().split())
-    for term in EventEvidenceReasoningRuntime._control_terms:
-        if term in claim_lower and term not in span_lower:
-            return False
-    return True
+    claim_controls = set(_control_phrases(claim))
+    span_controls = set(_control_phrases(spans))
+    return claim_controls.issubset(span_controls)
+
+
+def _recover_literal_span_claim(
+    claim: EvidenceClaim,
+    claim_errors: Sequence[str],
+    literal_supports: Sequence[SupportingSpan],
+    context: ContextAssessment,
+    claim_scope: dict[str, str],
+    corpus: LocalCorpus,
+) -> EvidenceClaim | None:
+    """Turn one modality-rewritten claim into exact source text, conservatively."""
+
+    if list(claim_errors) != ["claim modality is not literal in its supporting spans"]:
+        return None
+    claim_terms = _tokens(claim.claim_text)
+    if not claim_terms:
+        return None
+
+    options: list[tuple[int, str, SupportingSpan]] = []
+    for supporting in literal_supports:
+        if len(supporting.span) > 1200:
+            continue
+        unit = corpus.provenance.resolve(supporting.evidence_ref)
+        if unit is None or unit.kind not in {"sentence", "table_row", "section"}:
+            continue
+        if supporting.span not in unit.text:
+            continue
+        if not _scope_matches(claim_scope, [unit], context):
+            continue
+        overlap = len(claim_terms & _tokens(supporting.span))
+        if overlap / len(claim_terms) < 0.5:
+            continue
+        options.append((overlap, supporting.evidence_ref, supporting))
+
+    if not options:
+        return None
+    _overlap, _ref, best = max(options, key=lambda item: (item[0], item[1]))
+    return claim.model_copy(
+        update={
+            "claim_text": best.span,
+            "evidence_refs": [best.evidence_ref],
+            "supporting_spans": [best],
+            "critical_control": claim.critical_control or bool(_control_phrases(best.span)),
+        }
+    )
 
 
 def _scope_matches(
@@ -1678,6 +1804,7 @@ def _critical_control_omissions(
     claims: Sequence[ValidatedClaim],
     query_terms: set[str],
 ) -> int:
+    del query_terms
     claim_refs = {ref for claim in claims for ref in claim.evidence_refs}
     controlled_units = [
         unit
@@ -1685,10 +1812,7 @@ def _critical_control_omissions(
         if (
             unit.kind not in {"asset", "section"}
             and _control_phrases(unit.text)
-            and (
-                unit.evidence_ref in claim_refs
-                or _unit_support_score_from_text(unit.text, query_terms) >= 2.0
-            )
+            and unit.evidence_ref in claim_refs
         )
     ]
     if not controlled_units:
@@ -1706,7 +1830,130 @@ def _critical_control_omissions(
 
 def _control_phrases(value: str) -> list[str]:
     lowered = " ".join(value.casefold().split())
-    return [term for term in EventEvidenceReasoningRuntime._control_terms if term in lowered]
+    matches: list[tuple[int, int, str]] = []
+    for term in EventEvidenceReasoningRuntime._control_terms:
+        pattern = rf"(?<!\w){re.escape(term)}(?!\w)"
+        matches.extend(
+            (match.start(), match.end(), term) for match in re.finditer(pattern, lowered)
+        )
+    selected: list[tuple[int, int, str]] = []
+    for start, end, term in sorted(matches, key=lambda item: (item[0], -(item[1] - item[0]))):
+        if any(
+            start < selected_end and end > selected_start
+            for selected_start, selected_end, _ in selected
+        ):
+            continue
+        selected.append((start, end, term))
+    return [term for _start, _end, term in sorted(selected)]
+
+
+_BRANCH_CONTEXT_FIELDS = frozenset(
+    {
+        "region",
+        "jurisdiction",
+        "service_model",
+        "mandate",
+        "solicitation_type",
+        "client_classification",
+        "workflow_stage",
+        "channel",
+    }
+)
+
+
+def _effective_skeptic_objections(
+    skeptic: SkepticOutput | None,
+    claims: Sequence[ValidatedClaim],
+    units: Sequence[EvidenceUnit],
+    context: ContextAssessment,
+) -> tuple[SkepticObjection, ...]:
+    """Keep only material objections that survive deterministic source checks."""
+
+    if skeptic is None:
+        return ()
+    effective: list[SkepticObjection] = []
+    for objection in skeptic.objections:
+        if (
+            objection.category is SkepticCategory.MISSING_REQUIRED_CONTEXT
+            and _missing_context_is_resolved(
+                objection,
+                claims,
+                units,
+                context,
+            )
+        ):
+            continue
+        if objection.category is SkepticCategory.UNSUPPORTED_INFERENCE and _targets_literal_claim(
+            objection,
+            claims,
+        ):
+            continue
+        effective.append(objection)
+    return tuple(effective)
+
+
+def _missing_context_is_resolved(
+    objection: SkepticObjection,
+    claims: Sequence[ValidatedClaim],
+    units: Sequence[EvidenceUnit],
+    context: ContextAssessment,
+) -> bool:
+    """Recognize a general question answered by multiple evidence-backed branches."""
+
+    if not claims or context.missing_context_fields:
+        return False
+    units_by_ref = {unit.evidence_ref: unit for unit in units}
+    values_by_field: dict[str, set[str]] = {}
+    claim_ids_by_field: dict[str, set[str]] = {}
+    for claim in claims:
+        scoped_values: dict[str, set[str]] = {}
+        for field, value in claim.applicable_scope.items():
+            normalized_field = _context_key(field)
+            normalized_value = _normalised_text(value.replace("_", " "))
+            if normalized_field in _BRANCH_CONTEXT_FIELDS and normalized_value:
+                scoped_values.setdefault(normalized_field, set()).add(normalized_value)
+        for ref in claim.evidence_refs:
+            unit = units_by_ref.get(ref)
+            if unit is None:
+                continue
+            for field, value in unit.scope.items():
+                normalized_field = _context_key(field)
+                normalized_value = _normalised_text(value.replace("_", " "))
+                if normalized_field in _BRANCH_CONTEXT_FIELDS and normalized_value:
+                    scoped_values.setdefault(normalized_field, set()).add(normalized_value)
+        for field, values in scoped_values.items():
+            values_by_field.setdefault(field, set()).update(values)
+            claim_ids_by_field.setdefault(field, set()).add(claim.claim_id)
+
+    branch_fields = {
+        field
+        for field, values in values_by_field.items()
+        if len(values) >= 2 and len(claim_ids_by_field.get(field, set())) >= 2
+    }
+    if not branch_fields:
+        return False
+    target = next((claim for claim in claims if claim.claim_id == objection.target_claim_id), None)
+    detail = _normalised_text(objection.detail)
+    targeted_fields = {
+        field
+        for field in branch_fields
+        if field.replace("_", " ") in detail
+        or (target is not None and field in target.applicable_scope)
+    }
+    return bool(targeted_fields) or len(branch_fields) == 1
+
+
+def _targets_literal_claim(
+    objection: SkepticObjection,
+    claims: Sequence[ValidatedClaim],
+) -> bool:
+    claim = next((item for item in claims if item.claim_id == objection.target_claim_id), None)
+    if claim is None:
+        return False
+    claim_text = _normalised_text(claim.text)
+    return bool(claim_text) and any(
+        claim_text == _normalised_text(span.span) for span in claim.supporting_spans
+    )
 
 
 def _unresolved_scope_conflict(analysis: EvidenceAnalysisOutput | None) -> bool:
