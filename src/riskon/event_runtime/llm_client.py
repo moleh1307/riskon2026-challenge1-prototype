@@ -21,6 +21,8 @@ LLMPhase = Literal[
     "context_interpreter",
     "claim_builder",
     "skeptic",
+    "memory_manager",
+    "feedback_reviewer",
     "visual_scout",
     "visual_verification",
 ]
@@ -43,6 +45,12 @@ CLAIM_BUILDER_MODEL: str = "gpt-5.6-terra"
 CLAIM_BUILDER_REASONING: ReasoningEffort = "medium"
 SKEPTIC_MODEL: str = "gpt-5.6-terra"
 SKEPTIC_REASONING: ReasoningEffort = "medium"
+# Internal memory and feedback are deliberately kept on the already-approved
+# Luna lane.  They never receive answer-authority or source-evidence authority.
+MEMORY_MANAGER_MODEL: str = "gpt-5.6-luna"
+MEMORY_MANAGER_REASONING: ReasoningEffort = "low"
+FEEDBACK_REVIEWER_MODEL: str = "gpt-5.6-luna"
+FEEDBACK_REVIEWER_REASONING: ReasoningEffort = "low"
 VISUAL_SCOUT_MODEL: str = "gpt-5.6-sol"
 VISUAL_SCOUT_REASONING: ReasoningEffort = "medium"
 
@@ -113,6 +121,8 @@ class LLMUsage:
     context_interpreter_calls: int = 0
     claim_builder_calls: int = 0
     skeptic_calls: int = 0
+    memory_manager_calls: int = 0
+    feedback_reviewer_calls: int = 0
     visual_scout_calls: int = 0
     visual_verification_calls: int = 0
     input_tokens: int = 0
@@ -141,6 +151,10 @@ class LLMUsage:
                 self.claim_builder_calls += 1
             elif call.phase == "skeptic":
                 self.skeptic_calls += 1
+            elif call.phase == "memory_manager":
+                self.memory_manager_calls += 1
+            elif call.phase == "feedback_reviewer":
+                self.feedback_reviewer_calls += 1
             elif call.phase == "visual_scout":
                 self.visual_scout_calls += 1
             else:
@@ -164,6 +178,8 @@ class LLMUsage:
                 + self.context_interpreter_calls
                 + self.claim_builder_calls
                 + self.skeptic_calls
+                + self.memory_manager_calls
+                + self.feedback_reviewer_calls
                 + self.visual_scout_calls
                 + self.visual_verification_calls
             )
@@ -192,6 +208,8 @@ class EventOpenAIClient:
         "context_interpreter": (CONTEXT_INTERPRETER_MODEL, CONTEXT_INTERPRETER_REASONING, 900),
         "claim_builder": (CLAIM_BUILDER_MODEL, CLAIM_BUILDER_REASONING, 5000),
         "skeptic": (SKEPTIC_MODEL, SKEPTIC_REASONING, 1600),
+        "memory_manager": (MEMORY_MANAGER_MODEL, MEMORY_MANAGER_REASONING, 700),
+        "feedback_reviewer": (FEEDBACK_REVIEWER_MODEL, FEEDBACK_REVIEWER_REASONING, 700),
     }
     _visual_specs: dict[LLMPhase, tuple[str, ReasoningEffort, int]] = {
         "visual_scout": (VISUAL_SCOUT_MODEL, VISUAL_SCOUT_REASONING, 2200),
@@ -291,6 +309,8 @@ class EventOpenAIClient:
             "context_interpreter": "riskon_context_interpreter",
             "claim_builder": "riskon_evidence_claim_builder",
             "skeptic": "riskon_evidence_skeptic",
+            "memory_manager": "riskon_memory_manager",
+            "feedback_reviewer": "riskon_feedback_reviewer",
             "visual_scout": "riskon_visual_scout",
             "visual_verification": "riskon_visual_verification",
         }[phase]

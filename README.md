@@ -336,6 +336,15 @@ To use another local runtime configuration, set
 returns only the safe `EventQueryPayload` contract; source files and absolute
 paths are never sent to the browser.
 
+The UI also accepts an optional department and keeps a bounded conversation
+context. Three-way feedback is stored through `POST /v1/feedback`; a bare
+negative signal is only monitored, while an optional note can create a soft
+response-style `negative_words` signal. Memory and feedback are written only to
+ignored generated files, never to source evidence, citations, or the Firewall
+decision. The default event configuration remains offline; the memory module
+has a structured LLM hook for an explicitly configured provider but uses a
+local bounded fallback when no model client is enabled.
+
 ## Event Pitch (ER-C)
 
 ER-C packages the accepted ER-B stories and evaluator outputs for the final

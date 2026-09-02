@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 from pydantic import ValidationError
 
 import riskon.api.app as api
+from riskon.event_runtime.internal_memory import InternalMemoryStore, MemoryAgent
 from riskon.models import QueryInput
 from riskon.orchestra.errors import OrchestraFailClosedError
 
@@ -28,6 +31,8 @@ def test_ui_is_served_with_canonical_contract_labels() -> None:
 
     assert "RiskON Assistant" in page
     assert 'fetch("/v1/ask"' in page
+    assert 'fetch("/v1/feedback"' in page
+    assert 'id="department"' in page
     assert "res.decision" in page
     assert "evidence_refs" in page
 
@@ -46,9 +51,12 @@ def test_health_reports_runtime_readiness_without_source_paths(
 
 def test_ask_forwards_structured_context_and_safe_payload(
     monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
 ) -> None:
     fake = _FakePipeline(result=object())
     monkeypatch.setattr(api.state, "pipeline", fake)
+    monkeypatch.setattr(api.state, "memory", InternalMemoryStore(tmp_path / "memory"))
+    monkeypatch.setattr(api.state, "memory_agent", MemoryAgent())
     monkeypatch.setattr(
         api,
         "query_result_payload",
@@ -65,11 +73,49 @@ def test_ask_forwards_structured_context_and_safe_payload(
         },
     )
 
-    response = api.ask(api.AskRequest(question="What applies?", context={"region": "CH"}))
+    response = api.ask(
+        api.AskRequest(
+            question="What applies?",
+            context={"region": "CH"},
+            conversation_id="conversation-1",
+            department="Compliance",
+        )
+    )
 
-    assert fake.request == QueryInput(query="What applies?", context={"region": "CH"})
+    assert fake.request is not None
+    assert fake.request.query == "What applies?"
+    assert fake.request.context["region"] == "CH"
+    assert fake.request.context["department"] == "Compliance"
+    assert "_riskon_memory_context" in fake.request.context
+    assert fake.request.trace_id == response.turn_id
+    assert response.conversation_id == "conversation-1"
     assert response.result.decision == "ANSWER"
     assert response.result.evidence_refs == ["local://event-wiki/page#table-1"]
+
+
+def test_feedback_is_reviewed_before_a_soft_memory_update(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    monkeypatch.setattr(api.state, "memory", InternalMemoryStore(tmp_path / "memory"))
+    monkeypatch.setattr(api.state, "memory_agent", MemoryAgent())
+
+    response = api.feedback(
+        api.FeedbackRequest(
+            conversation_id="conversation-1",
+            turn_id="turn-1",
+            rating="down",
+            department="Compliance",
+            decision="ANSWER",
+            note="too technical",
+        )
+    )
+
+    assert response.accepted is True
+    assert response.action == "update_style_signal"
+    saved = (tmp_path / "memory" / "shared_memory.json").read_text(encoding="utf-8")
+    assert "technical" in saved
+    assert "negative_words" in saved
 
 
 def test_fail_closed_runtime_error_is_not_rewritten_as_an_answer(
@@ -92,3 +138,8 @@ def test_fail_closed_runtime_error_is_not_rewritten_as_an_answer(
 def test_request_rejects_unknown_fields() -> None:
     with pytest.raises(ValidationError):
         api.AskRequest(question="What applies?", unexpected="value")
+
+
+def test_request_rejects_unknown_department() -> None:
+    with pytest.raises(ValidationError):
+        api.AskRequest(question="What applies?", department="Secret Department")

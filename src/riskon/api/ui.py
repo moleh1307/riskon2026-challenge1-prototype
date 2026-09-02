@@ -50,7 +50,7 @@ INDEX_HTML = r"""<!doctype html>
       -webkit-font-smoothing: antialiased;
     }
 
-    button, textarea { font: inherit; }
+    button, textarea, select { font: inherit; }
 
     button { color: inherit; }
 
@@ -349,6 +349,83 @@ INDEX_HTML = r"""<!doctype html>
       line-height: 1.45;
     }
 
+    .feedback {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      margin-top: 20px;
+      padding-top: 15px;
+      border-top: 1px solid var(--line);
+      color: var(--faint);
+      font-size: 11px;
+    }
+
+    .feedback-actions {
+      display: flex;
+      gap: 6px;
+    }
+
+    .feedback-button {
+      min-width: 34px;
+      height: 28px;
+      padding: 0 9px;
+      border: 1px solid var(--line-strong);
+      border-radius: 2px;
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 14px;
+      line-height: 1;
+    }
+
+    .feedback-button:hover,
+    .feedback-button:focus-visible,
+    .feedback-button.selected {
+      border-color: var(--accent);
+      background: var(--accent-soft);
+      color: var(--accent);
+    }
+
+    .feedback-status {
+      color: var(--accent);
+      font-size: 11px;
+    }
+
+    .feedback-note-wrap {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+      margin-top: 10px;
+    }
+
+    .feedback-note {
+      min-width: 0;
+      flex: 1;
+      height: 30px;
+      padding: 0 8px;
+      border: 1px solid var(--line-strong);
+      border-radius: 2px;
+      outline: 0;
+      background: var(--card);
+      color: var(--ink);
+      font-size: 12px;
+    }
+
+    .feedback-note:focus { border-color: var(--accent); }
+
+    .feedback-submit {
+      height: 30px;
+      padding: 0 10px;
+      border: 1px solid var(--ink);
+      border-radius: 2px;
+      background: var(--ink);
+      color: #fff;
+      cursor: pointer;
+      font-size: 11px;
+    }
+
     .composer-wrap {
       width: 100%;
       flex: 0 0 auto;
@@ -379,6 +456,39 @@ INDEX_HTML = r"""<!doctype html>
       gap: 18px;
       align-items: end;
     }
+
+    .composer-main { min-width: 0; }
+
+    .department-line {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .department-line .input-label {
+      margin: 0;
+      white-space: nowrap;
+    }
+
+    .department-note {
+      color: var(--faint);
+      font-size: 11px;
+    }
+
+    .department-select {
+      min-width: 170px;
+      padding: 5px 22px 5px 0;
+      border: 0;
+      border-bottom: 1px solid var(--line-strong);
+      border-radius: 0;
+      outline: 0;
+      background: transparent;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .department-select:focus { border-bottom-color: var(--accent); }
 
     .input-label {
       display: block;
@@ -455,6 +565,7 @@ INDEX_HTML = r"""<!doctype html>
       .thread-intro { margin-bottom: 32px; }
       .result { margin-left: 0; padding: 19px; }
       .result-footer { grid-template-columns: 1fr; gap: 18px; }
+      .feedback { align-items: flex-start; flex-direction: column; gap: 10px; }
     }
 
     @media (max-width: 480px) {
@@ -467,6 +578,8 @@ INDEX_HTML = r"""<!doctype html>
       .composer { grid-template-columns: 1fr; gap: 12px; }
       .send { width: 100%; }
       .composer-foot { display: block; }
+      .department-line { align-items: flex-start; flex-wrap: wrap; }
+      .department-select { min-width: 150px; }
     }
   </style>
 </head>
@@ -520,7 +633,23 @@ INDEX_HTML = r"""<!doctype html>
       </section>
       <footer class="composer-wrap">
         <form class="composer" id="askForm">
-          <div>
+          <div class="composer-main">
+            <div class="department-line">
+              <label class="input-label" for="department">Department</label>
+              <select class="department-select" id="department" autocomplete="organization-title">
+                <option value="">Optional</option>
+                <option value="Compliance">Compliance</option>
+                <option value="Risk Management">Risk Management</option>
+                <option value="Wealth Management">Wealth Management</option>
+                <option value="Investment Advisory">Investment Advisory</option>
+                <option value="Operations">Operations</option>
+                <option value="Technology">Technology</option>
+                <option value="Legal">Legal</option>
+                <option value="Front Office">Front Office</option>
+                <option value="Other">Other</option>
+              </select>
+              <span class="department-note">helps tailor the explanation</span>
+            </div>
             <label class="input-label" for="question">Your question</label>
             <textarea
               id="question"
@@ -550,6 +679,7 @@ INDEX_HTML = r"""<!doctype html>
     const sendButton = document.getElementById("send");
     const errorBox = document.getElementById("error");
     const newChat = document.getElementById("newChat");
+    const departmentInput = document.getElementById("department");
     const runtimeStatus = document.getElementById("runtimeStatus");
     const statusDot = runtimeStatus.querySelector(".status-dot");
     const statusText = runtimeStatus.querySelector("span:last-child");
@@ -559,6 +689,8 @@ INDEX_HTML = r"""<!doctype html>
       CLARIFY: "Clarification needed",
       ABSTAIN: "Route to specialist",
     };
+
+    let conversationId = crypto.randomUUID();
 
     function addText(parent, className, value) {
       const node = document.createElement("div");
@@ -606,6 +738,8 @@ INDEX_HTML = r"""<!doctype html>
       errorBox.hidden = true;
       errorBox.textContent = "";
       questionInput.value = "";
+      departmentInput.value = "";
+      conversationId = crypto.randomUUID();
       questionInput.focus();
     }
 
@@ -677,6 +811,87 @@ INDEX_HTML = r"""<!doctype html>
       footer.appendChild(route);
 
       resultCard.appendChild(footer);
+
+      const feedback = document.createElement("div");
+      feedback.className = "feedback";
+      const feedbackPrompt = addText(feedback, "", "Was this useful?");
+      const feedbackActions = document.createElement("div");
+      feedbackActions.className = "feedback-actions";
+      const feedbackStatus = addText(feedback, "feedback-status", "");
+      const feedbackButtons = [
+        ["up", "↑", "Helpful"],
+        ["neutral", "—", "Neutral"],
+        ["down", "↓", "Needs work"],
+      ];
+      let submitted = false;
+      feedbackButtons.forEach(function(item) {
+        const button = document.createElement("button");
+        button.className = "feedback-button";
+        button.type = "button";
+        button.dataset.rating = item[0];
+        button.textContent = item[1];
+        button.title = item[2];
+        button.setAttribute("aria-label", item[2]);
+        button.addEventListener("click", function() {
+          if (submitted) return;
+          if (item[0] === "down") {
+            const noteWrap = document.createElement("div");
+            noteWrap.className = "feedback-note-wrap";
+            const note = document.createElement("input");
+            note.className = "feedback-note";
+            note.type = "text";
+            note.maxLength = 240;
+            note.placeholder = "Optional: what should be clearer?";
+            const submit = document.createElement("button");
+            submit.className = "feedback-submit";
+            submit.type = "button";
+            submit.textContent = "Send";
+            noteWrap.appendChild(note);
+            noteWrap.appendChild(submit);
+            feedback.appendChild(noteWrap);
+            feedbackPrompt.textContent = "Tell us what to improve, or send without a note.";
+            button.disabled = true;
+            submit.addEventListener("click", function() {
+              submitFeedback(item[0], note.value);
+            });
+            note.focus();
+            return;
+          }
+          submitFeedback(item[0], "");
+        });
+        feedbackActions.appendChild(button);
+      });
+      feedback.appendChild(feedbackActions);
+
+      async function submitFeedback(rating, note) {
+        if (submitted) return;
+        submitted = true;
+        try {
+          const response = await fetch("/v1/feedback", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              conversation_id: conversationId,
+              turn_id: valueOrEmpty(res.turn_id) || crypto.randomUUID(),
+              rating: rating,
+              department: departmentInput.value || null,
+              decision: decision,
+              note: note || null,
+            }),
+          });
+          if (!response.ok) throw new Error("feedback request failed");
+          feedbackStatus.textContent = "Feedback saved";
+          feedbackActions.querySelectorAll("button").forEach(function(item) {
+            item.disabled = true;
+            if (item.dataset.rating === rating) item.classList.add("selected");
+          });
+        } catch (error) {
+          submitted = false;
+          feedbackStatus.textContent = "Could not save feedback";
+        }
+      }
+
+      resultCard.appendChild(feedback);
       turn.appendChild(resultCard);
       turns.appendChild(turn);
       turn.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -686,13 +901,22 @@ INDEX_HTML = r"""<!doctype html>
       const response = await fetch("/v1/ask", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question: question, context: {} }),
+        body: JSON.stringify({
+          question: question,
+          context: {},
+          conversation_id: conversationId,
+          department: departmentInput.value || null,
+        }),
       });
       const body = await response.json().catch(function() { return {}; });
       if (!response.ok) {
         throw new Error(valueOrEmpty(body.detail) || "The local runtime could not answer.");
       }
-      return Object.assign({}, body.result || {}, { took_ms: body.took_ms });
+      return Object.assign({}, body.result || {}, {
+        took_ms: body.took_ms,
+        turn_id: body.turn_id,
+        conversation_id: body.conversation_id,
+      });
     }
 
     async function checkRuntime() {
