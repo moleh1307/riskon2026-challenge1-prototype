@@ -652,6 +652,52 @@ INDEX_HTML = r"""<!doctype html>
       line-height: 1.45;
     }
 
+    .ask-progress {
+      margin-top: 14px;
+      padding-top: 12px;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+    }
+
+    .ask-progress-top {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11px;
+      line-height: 1.4;
+    }
+
+    .progress-dot {
+      width: 7px;
+      height: 7px;
+      flex: 0 0 auto;
+      border-radius: 50%;
+      background: var(--accent);
+      animation: progress-pulse 1.25s ease-in-out infinite;
+    }
+
+    .progress-label {
+      color: var(--faint);
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: .13em;
+      text-transform: uppercase;
+    }
+
+    .progress-stage { color: var(--accent); }
+
+    .progress-detail {
+      margin: 4px 0 0 15px;
+      color: var(--faint);
+      font-size: 11px;
+      line-height: 1.45;
+    }
+
+    @keyframes progress-pulse {
+      0%, 100% { opacity: .38; transform: scale(.85); }
+      50% { opacity: 1; transform: scale(1); }
+    }
+
     .error {
       margin-top: 14px;
       color: var(--danger);
@@ -804,6 +850,14 @@ INDEX_HTML = r"""<!doctype html>
       <div class="composer-foot">
         <span>Enter a question · ⌘/Ctrl + Enter to send</span>
       </div>
+        <div class="ask-progress" id="askProgress" role="status" aria-live="polite" hidden>
+          <div class="ask-progress-top">
+            <span class="progress-dot" aria-hidden="true"></span>
+            <span class="progress-label">Pipeline</span>
+            <span class="progress-stage" id="progressStage"></span>
+          </div>
+          <div class="progress-detail" id="progressDetail"></div>
+        </div>
         <div class="error" id="error" role="alert" hidden></div>
       </footer>
     </main>
@@ -828,6 +882,9 @@ INDEX_HTML = r"""<!doctype html>
     const manifestPathInput = document.getElementById("manifestPath");
     const saveDataButton = document.getElementById("saveData");
     const dataStatus = document.getElementById("dataStatus");
+    const askProgress = document.getElementById("askProgress");
+    const progressStage = document.getElementById("progressStage");
+    const progressDetail = document.getElementById("progressDetail");
 
     const labels = {
       ANSWER: "Answer released",
@@ -836,6 +893,21 @@ INDEX_HTML = r"""<!doctype html>
     };
 
     let conversationId = crypto.randomUUID();
+    let progressTimer = null;
+
+    const progressStages = [
+      ["Reading the question", "Understanding the question and optional department context."],
+      [
+        "Searching original pages",
+        "Matching relevant Julius Baer pages, sections, and tables.",
+      ],
+      ["Checking evidence", "Verifying exact source spans, scope, and declared meanings."],
+      [
+        "Running safety checks",
+        "Checking claims against the Answer Firewall and specialist rules.",
+      ],
+      ["Preparing the response", "Keeping only validated claims and original source references."],
+    ];
 
     function addText(parent, className, value) {
       const node = document.createElement("div");
@@ -867,6 +939,34 @@ INDEX_HTML = r"""<!doctype html>
     function setRuntimeStatus(ready) {
       statusDot.classList.toggle("offline", !ready);
       statusText.textContent = ready ? "Local runtime ready" : "Runtime unavailable";
+    }
+
+    function showProgressStage(index) {
+      const stage = progressStages[index];
+      progressStage.textContent = stage[0];
+      progressDetail.textContent = stage[1];
+    }
+
+    function startProgress() {
+      window.clearTimeout(progressTimer);
+      let index = 0;
+      askProgress.hidden = false;
+      showProgressStage(index);
+
+      function advance() {
+        if (index >= progressStages.length - 1) return;
+        index += 1;
+        showProgressStage(index);
+        progressTimer = window.setTimeout(advance, index === 1 ? 2600 : 4200);
+      }
+
+      progressTimer = window.setTimeout(advance, 900);
+    }
+
+    function stopProgress() {
+      window.clearTimeout(progressTimer);
+      progressTimer = null;
+      askProgress.hidden = true;
     }
 
     function loadSavedDataPaths() {
@@ -1139,7 +1239,8 @@ INDEX_HTML = r"""<!doctype html>
 
       errorBox.hidden = true;
       sendButton.disabled = true;
-      sendButton.textContent = "Checking…";
+      startProgress();
+      sendButton.textContent = "Working…";
       try {
         const result = await ask(question);
         addTurn(question, result);
@@ -1149,6 +1250,7 @@ INDEX_HTML = r"""<!doctype html>
         errorBox.textContent = error.message || "Something went wrong.";
         errorBox.hidden = false;
       } finally {
+        stopProgress();
         sendButton.disabled = false;
         sendButton.innerHTML = 'Ask desk <span aria-hidden="true">↗</span>';
       }

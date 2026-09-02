@@ -36,6 +36,9 @@ def test_ui_is_served_with_canonical_contract_labels() -> None:
     assert 'id="department"' in page
     assert "res.decision" in page
     assert "evidence_refs" in page
+    assert 'id="askProgress"' in page
+    assert "Searching original pages" in page
+    assert "Running safety checks" in page
 
 
 def test_memory_page_and_view_are_read_only_and_redacted(
