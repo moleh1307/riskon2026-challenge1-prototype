@@ -158,8 +158,8 @@ INDEX_HTML = r"""<!doctype html>
       width: 100%;
       display: grid;
       grid-template-columns: minmax(0, 1fr) minmax(280px, 360px);
-      gap: clamp(48px, 10vw, 150px);
-      align-items: end;
+      gap: clamp(40px, 8vw, 100px);
+      align-items: start;
     }
 
     .eyebrow,
@@ -167,8 +167,6 @@ INDEX_HTML = r"""<!doctype html>
     .input-label { color: var(--accent); }
 
     h1 {
-      max-width: 680px;
-      margin: 18px 0 24px;
       font-family: Georgia, "Times New Roman", serif;
       font-size: clamp(48px, 7vw, 86px);
       font-weight: 400;
@@ -178,14 +176,15 @@ INDEX_HTML = r"""<!doctype html>
 
     .intro-copy {
       max-width: 470px;
-      margin: 0;
+      margin: 19px 0 0;
       color: var(--muted);
-      font-size: 15px;
+      font-size: 14px;
       line-height: 1.65;
     }
 
     .intro-note {
-      margin-top: 42px;
+      max-width: 470px;
+      margin-top: 26px;
       padding-top: 13px;
       border-top: 1px solid var(--line);
       color: var(--faint);
@@ -484,14 +483,12 @@ INDEX_HTML = r"""<!doctype html>
     </header>
 
     <main>
-      <section class="empty-state" id="emptyState" aria-labelledby="pageTitle">
+      <section class="empty-state" id="emptyState" aria-label="Ask the evidence desk">
         <div>
           <div class="eyebrow">Ask the evidence desk</div>
-          <h1 id="pageTitle">Find the answer.<br>Or the boundary.</h1>
           <p class="intro-copy">
-            Ask about the Julius Baer material. The desk traces every released
-            answer back to the original source and says when the package is not
-            enough to answer safely.
+            Ask about the Julius Baer material. Every released answer stays tied
+            to an original source, with clear limits when the package is not enough.
           </p>
           <p class="intro-note">
             Deterministic retrieval and the Answer Firewall remain authoritative.
