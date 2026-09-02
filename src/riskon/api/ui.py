@@ -162,10 +162,8 @@ INDEX_HTML = r"""<!doctype html>
 
     .empty-state {
       width: 100%;
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) minmax(280px, 360px);
-      gap: clamp(40px, 8vw, 100px);
-      align-items: start;
+      display: flex;
+      justify-content: center;
     }
 
     .eyebrow,
@@ -180,26 +178,8 @@ INDEX_HTML = r"""<!doctype html>
       line-height: .92;
     }
 
-    .intro-copy {
-      max-width: 470px;
-      margin: 19px 0 0;
-      color: var(--muted);
-      font-size: 14px;
-      line-height: 1.65;
-    }
-
-    .intro-note {
-      max-width: 470px;
-      margin-top: 26px;
-      padding-top: 13px;
-      border-top: 1px solid var(--line);
-      color: var(--faint);
-      font-size: 11px;
-      line-height: 1.5;
-    }
-
     .suggestions {
-      align-self: stretch;
+      width: min(100%, 560px);
       border-top: 1px solid var(--ink);
     }
 
@@ -510,18 +490,7 @@ INDEX_HTML = r"""<!doctype html>
     </header>
 
     <main>
-      <section class="empty-state" id="emptyState" aria-label="Ask the evidence desk">
-        <div>
-          <div class="eyebrow">Ask the evidence desk</div>
-          <p class="intro-copy">
-            Ask about the Julius Baer material. Every released answer stays tied
-            to an original source, with clear limits when the package is not enough.
-          </p>
-          <p class="intro-note">
-            Deterministic retrieval and the Answer Firewall remain authoritative.
-          </p>
-        </div>
-
+      <section class="empty-state" id="emptyState" aria-label="Question suggestions">
         <div class="suggestions">
           <div class="suggestions-head">
             <span class="section-label">Try a question</span>
@@ -563,10 +532,9 @@ INDEX_HTML = r"""<!doctype html>
             Ask desk <span aria-hidden="true">↗</span>
           </button>
         </form>
-        <div class="composer-foot">
-          <span>Enter a question · ⌘/Ctrl + Enter to send</span>
-          <span>Original evidence only</span>
-        </div>
+      <div class="composer-foot">
+        <span>Enter a question · ⌘/Ctrl + Enter to send</span>
+      </div>
         <div class="error" id="error" role="alert" hidden></div>
       </footer>
     </main>
