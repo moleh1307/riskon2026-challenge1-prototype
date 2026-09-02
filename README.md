@@ -319,6 +319,23 @@ Event demo PASS: stories 5/5; dashboard metrics sourced; self-contained HTML 2/2
 ER-B is the accepted demo-surface step in this repository. It does not add an
 M6 milestone or authorize processing of real event-day data.
 
+## Local Chat UI
+
+The chat page adapted from Gabriel's assistant-v0 frontend is served by a
+small transport-only FastAPI layer. It calls the existing event runtime; it
+does not create a second answer engine or decision authority. The default
+configuration is `data/private/event_runtime.toml`:
+
+```bash
+uv run uvicorn riskon.api.app:app --host 127.0.0.1 --port 3000
+open http://127.0.0.1:3000/
+```
+
+To use another local runtime configuration, set
+`RISKON_EVENT_RUNTIME_CONFIG=/absolute/path/to/event_runtime.toml`. The API
+returns only the safe `EventQueryPayload` contract; source files and absolute
+paths are never sent to the browser.
+
 ## Event Pitch (ER-C)
 
 ER-C packages the accepted ER-B stories and evaluator outputs for the final
