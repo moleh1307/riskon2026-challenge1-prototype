@@ -273,6 +273,19 @@ class EventEvidenceReasoningRuntime:
                 structural_result,
                 started,
             )
+        responsibility_table = self._responsibility_table_fast_path(
+            request,
+            deterministic_base,
+        )
+        if responsibility_table is not None:
+            candidate, units = responsibility_table
+            return self._run_responsibility_table_fast_path(
+                request,
+                deterministic_base,
+                candidate,
+                units,
+                started,
+            )
         initial_base = self.semantic_retriever.retrieve_initial(
             request,
             deterministic_base=deterministic_base,
@@ -698,6 +711,207 @@ class EventEvidenceReasoningRuntime:
                 structural_result.primary_source
                 or _primary_source(deterministic_retrieval.selected_candidates)
             ),
+            evidence_refs=refs,
+            validation_errors=tuple(validation.errors),
+            scope_violation_count=validation.scope_violation_count,
+            critical_control_omission_count=control_omissions,
+            unsupported_released_claims=0,
+            latency_ms=_elapsed_ms(started),
+            result=result,
+            atlas_routing=AtlasRoutingResult(),
+            visual_analysis=None,
+        )
+
+    def _responsibility_table_fast_path(
+        self,
+        request: QueryInput,
+        deterministic_retrieval: SemanticRetrievalOutcome,
+    ) -> tuple[RetrievalCandidate, list[ProvenanceUnit]] | None:
+        """Find an exact responsibility table before invoking the LLM stages.
+
+        This is a bounded evidence-selection shortcut, not a new retriever.  It only
+        activates when the question names a responsibility list and a source heading
+        contains the same role phrase.  The source table remains ordinary original
+        HTML evidence; its ``Scope`` column is a row attribute, not user scope.
+        """
+
+        if not _is_responsibility_list_question(request.query):
+            return None
+        if _question_has_explicit_scope(request.query):
+            # Let the normal context interpreter and scope firewall handle explicit
+            # jurisdiction/location/service branches rather than silently broadening them.
+            return None
+
+        deterministic_retriever = self.semantic_retriever.deterministic_retriever
+        candidates_by_ref = {
+            candidate.candidate_ref: candidate
+            for candidate in deterministic_retriever.candidates
+            if not candidate.is_table_row
+        }
+        matches: list[tuple[int, str, RetrievalCandidate, list[ProvenanceUnit]]] = []
+        query_tokens = set(_ordered_support_tokens(request.query))
+        for section in self.corpus.sections:
+            heading = section.heading_path[-1] if section.heading_path else section.title
+            heading_tokens = _ordered_support_tokens(heading)
+            if len(heading_tokens) < 3 or not set(heading_tokens).issubset(query_tokens):
+                continue
+            section_ref = self.corpus.provenance.section_ref(section)
+            candidate = candidates_by_ref.get(section_ref)
+            if candidate is None:
+                continue
+            address = self.corpus.provenance.section_address(section.section_id)
+            if address is None:
+                continue
+            table = next(
+                (
+                    table
+                    for table in section.tables
+                    if _is_responsibility_table_headers(table.headers)
+                ),
+                None,
+            )
+            if table is None or len(table.rows) < 2:
+                continue
+            row_refs = list(address.table_row_refs)
+            if len(row_refs) != len(table.rows):
+                continue
+            units: list[ProvenanceUnit] = []
+            for row_ref in row_refs:
+                unit = self.corpus.provenance.resolve(row_ref)
+                if (
+                    unit is None
+                    or unit.kind != "table_row"
+                    or unit.section_id != section.section_id
+                    or not unit.row
+                ):
+                    units = []
+                    break
+                units.append(unit)
+            if len(units) != len(table.rows):
+                continue
+            matches.append((len(heading_tokens), candidate.candidate_ref, candidate, units))
+
+        if not matches:
+            return None
+        _heading_size, _candidate_ref, candidate, units = max(
+            matches,
+            key=lambda item: (item[0], item[1]),
+        )
+        return candidate, units
+
+    def _run_responsibility_table_fast_path(
+        self,
+        request: QueryInput,
+        deterministic_retrieval: SemanticRetrievalOutcome,
+        candidate: RetrievalCandidate,
+        source_units: Sequence[ProvenanceUnit],
+        started: float,
+    ) -> EventEvidenceReasoningResult:
+        """Validate and release every row of one directly matched source table."""
+
+        allowed_context = {
+            _context_key(key): " ".join(value.split())
+            for key, value in request.context.items()
+            if _context_key(key) in self._allowed_context_fields and value.strip()
+        }
+        context_output = ContextInterpreterOutput(
+            intent=deterministic_retrieval.plan.intent.value,
+            explicitly_supplied_context=[
+                ContextField(field=key, value=value) for key, value in allowed_context.items()
+            ],
+            answer_changing_context_fields=[],
+            missing_context_fields=[],
+            ambiguity_acronym_flags=[],
+        )
+        context_assessment = ContextAssessment(
+            intent=deterministic_retrieval.plan.intent.value,
+            explicitly_supplied_context=allowed_context,
+        )
+        detected_context = self._detected_context(
+            request,
+            ContextDetector().detect(request),
+            context_assessment,
+        )
+        units = [self._evidence_unit(unit, unit.text, False) for unit in source_units]
+        claims = [
+            EvidenceClaim(
+                claim_id=f"responsibility-{index}",
+                claim_text=_responsibility_claim_text(unit),
+                evidence_refs=[unit.ref],
+                supporting_spans=[SupportingSpan(evidence_ref=unit.ref, span=unit.text)],
+                critical_control=bool(_control_phrases(unit.text)),
+                applicable_scope=_scope_fields_from_dict(candidate.scope_dict),
+            )
+            for index, unit in enumerate(source_units, start=1)
+        ]
+        analysis = EvidenceAnalysisOutput(
+            evidence_sufficiency=EvidenceSufficiencyStatus.SUFFICIENT,
+            material_claims=claims,
+            unresolved_issues=[],
+        )
+        validation = self._validate_claims(
+            request,
+            context_assessment,
+            analysis,
+            units,
+            claim_limit=len(claims),
+        )
+        validated_claims = tuple(_validated_claim(claim) for claim in validation.valid_claims)
+        (
+            decision,
+            answer,
+            clarifying_question,
+            reason_codes,
+            route,
+            control_omissions,
+        ) = self._firewall(
+            request,
+            detected_context,
+            context_assessment,
+            deterministic_retrieval,
+            analysis,
+            units,
+            validation,
+            validated_claims,
+            None,
+        )
+        evidence = self._evidence_for_claims(units, validated_claims)
+        refs = tuple(
+            dict.fromkeys(ref for claim in validated_claims for ref in claim.evidence_refs)
+        )
+        result = self._pipeline_result(
+            request,
+            deterministic_retrieval.plan,
+            detected_context,
+            decision,
+            answer=answer,
+            clarifying_question=clarifying_question,
+            reason_codes=reason_codes,
+            route=route,
+            evidence=evidence,
+            retrieved_sections=[candidate],
+        )
+        return EventEvidenceReasoningResult(
+            request=request,
+            plan=deterministic_retrieval.plan,
+            detected_context=detected_context,
+            context_output=context_output,
+            context_assessment=context_assessment,
+            initial_retrieval=deterministic_retrieval,
+            final_retrieval=deterministic_retrieval,
+            initial_evidence_units=tuple(units),
+            final_evidence_units=tuple(units),
+            initial_analysis=analysis,
+            final_analysis=analysis,
+            support_validation=validation,
+            validated_claims=validated_claims,
+            skeptic=None,
+            decision=decision,
+            answer=answer,
+            clarifying_question=clarifying_question,
+            reason_codes=tuple(reason_codes),
+            route=route,
+            primary_source=_primary_source_from_units(units, validated_claims),
             evidence_refs=refs,
             validation_errors=tuple(validation.errors),
             scope_violation_count=validation.scope_violation_count,
@@ -1879,6 +2093,58 @@ def _field_is_explicitly_relevant(field: str, query: str) -> bool:
 
 def _normalised_text(value: str) -> str:
     return " ".join(re.findall(r"[a-z0-9]+", value.casefold()))
+
+
+def _is_responsibility_list_question(value: str) -> bool:
+    """Recognise a role-responsibility enumeration without guessing the answer."""
+
+    normalised = _normalised_text(value)
+    tokens = set(_ordered_support_tokens(value))
+    return "responsibility" in tokens and (
+        "what are" in normalised or "list" in tokens or "which are" in normalised
+    )
+
+
+def _is_responsibility_table_headers(headers: Sequence[str]) -> bool:
+    """Require the source table's responsibility and scope columns."""
+
+    normalised = [_normalised_text(header) for header in headers]
+    return any("responsibility" in header for header in normalised) and "scope" in normalised
+
+
+def _question_has_explicit_scope(value: str) -> bool:
+    """Keep explicit scope branches on the normal interpreter/firewall path."""
+
+    normalised = _normalised_text(value)
+    return any(
+        marker in normalised
+        for marker in (
+            "jurisdiction",
+            "country",
+            "location",
+            "region",
+            "service model",
+            "mandate",
+            "legal entity",
+            "booking centre",
+            "booking center",
+        )
+    ) or bool(re.search(r"\b(?:in|under|within)\s+(?:the\s+)?[a-z0-9]+", normalised))
+
+
+def _responsibility_claim_text(unit: ProvenanceUnit) -> str:
+    """Render one row from its original cells without adding semantic prose."""
+
+    if len(unit.row) < 2 or len(unit.headers) < 2:
+        return unit.text
+    parts = [f"{unit.row[0]} — {unit.headers[1]}: {unit.row[1]}"]
+    for _index, (header, value) in enumerate(
+        zip(unit.headers[2:], unit.row[2:], strict=False),
+        start=2,
+    ):
+        if value.strip():
+            parts.append(f"{header}: {value}")
+    return "; ".join(parts)
 
 
 def _has_unrepresented_section_content(unit: ProvenanceUnit, represented_text: str) -> bool:
