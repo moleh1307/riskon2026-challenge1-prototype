@@ -155,6 +155,31 @@ def test_visual_asset_selection_is_local_bounded_and_context_bound(tmp_path: Pat
     assert "four control checks" in assets[0].nearby_context
 
 
+def test_visual_asset_selection_skips_inline_data_uri(tmp_path: Path) -> None:
+    source = tmp_path / "inline.html"
+    source.write_text(
+        "<html><body><h1>Inline visual</h1>"
+        '<img src="data:image/svg+xml;charset=utf-8,'
+        + ("x" * 5000)
+        + '" alt="inline diagram" /></body></html>',
+        encoding="utf-8",
+    )
+    entry = ManifestEntry(
+        filename="inline.html",
+        title="Inline visual",
+        url="local://event-wiki/inline.html",
+        source_path=str(source),
+    )
+    sections = ingest_event_sections([entry])
+    corpus = LocalCorpus(
+        sections=tuple(sections),
+        provenance=ProvenanceIndex(sections, knowledge_root=tmp_path, ref_style="m2"),
+        knowledge_root=tmp_path,
+    )
+
+    assert select_visual_assets(corpus, _retrieval(corpus)) == ()
+
+
 def test_visual_scout_requires_independent_agreement() -> None:
     asset = SimpleNamespace(
         asset_evidence_ref="local://event-wiki/visual.html#asset-1",

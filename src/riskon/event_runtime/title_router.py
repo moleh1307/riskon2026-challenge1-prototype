@@ -77,6 +77,17 @@ class PageCardRouter:
         previous = tuple(dict.fromkeys(previous_attempted_refs))
         shortlist = self._shortlist(request, plan, deterministic_source_refs, previous)
         if not shortlist:
+            if retry:
+                # A one-page corpus can have no safe alternative on the bounded retry.
+                # Preserve the initial route and let evidence analysis/firewall decide;
+                # do not turn an exhausted retry budget into a runtime configuration error.
+                return RouterResult(
+                    selections=(),
+                    attempted_page_refs=(),
+                    shortlist_page_refs=(),
+                    call=None,
+                    retry=True,
+                )
             raise ValueError("Task 4 title router has no eligible page titles")
         relevant_cards = shortlist[: self.config.router_card_limit]
         phase: LLMPhase = "router_retry" if retry else "title_router"

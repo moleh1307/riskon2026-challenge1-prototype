@@ -419,11 +419,19 @@ def _retrieved_page_refs(retrieval: SemanticRetrievalOutcome, limit: int) -> tup
 
 
 def _safe_local_asset(root: Path, source: str) -> Path | None:
-    relative = Path(source)
-    if relative.is_absolute() or ".." in relative.parts or not relative.parts:
+    # Inline data and remote URLs are source metadata, not local raster assets.
+    # Reject them before constructing/stat-ing a Path: synthetic Confluence exports
+    # can contain long data URIs that otherwise raise ``OSError: File name too long``.
+    if not source or source.startswith(("data:", "http:", "https:")) or "://" in source:
         return None
-    candidate = (root / relative).resolve()
-    if root not in candidate.parents or not candidate.is_file():
+    try:
+        relative = Path(source)
+        if relative.is_absolute() or ".." in relative.parts or not relative.parts:
+            return None
+        candidate = (root / relative).resolve()
+        if root not in candidate.parents or not candidate.is_file():
+            return None
+    except (OSError, RuntimeError, ValueError):
         return None
     return candidate
 

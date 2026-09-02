@@ -116,6 +116,51 @@ def test_structural_worker_filters_session_rows_and_preserves_error(tmp_path: Pa
     assert all("information" not in claim.claim_text for claim in result.claims)
 
 
+def test_structural_worker_filters_explicit_solicitation_dimension(tmp_path: Path) -> None:
+    entry = _entry(
+        tmp_path,
+        "solicitation.html",
+        "Solicitation matrix",
+        """<html><body>
+        <p><ac:emoticon ac:name="tick"/> Session and Overnight
+           <ac:emoticon ac:name="warning"/> only session</p>
+        <h2>Advisory Location CH</h2>
+        <table>
+          <tr><th>Service Model</th><th>Solicitation Type</th><th>Alert A</th><th>Alert B</th></tr>
+          <tr><td>Advice Premium</td><td>Active Solicitation</td>
+              <td><ac:emoticon ac:name="tick"/></td><td><ac:emoticon ac:name="warning"/></td></tr>
+          <tr><td>Advice Premium</td><td>Reverse Solicitation</td>
+              <td><ac:emoticon ac:name="warning"/></td><td><ac:emoticon ac:name="tick"/></td></tr>
+        </table></body></html>""",
+    )
+    structural = build_structural_event_corpus([entry])
+    sections = attach_structural_tables(ingest_event_sections([entry]), structural)
+    corpus = LocalCorpus(
+        sections=tuple(sections),
+        provenance=ProvenanceIndex(sections, knowledge_root=tmp_path, ref_style="m2"),
+        knowledge_root=tmp_path,
+        structural=structural,
+    )
+    retriever = _retriever(corpus)
+    plan = _plan()
+    request = QueryInput(
+        query=(
+            "Which session alerts are triggered for Advice Premium with Active Solicitation "
+            "in Advisory Location CH?"
+        ),
+        context={"region": "CH", "service_model": "Advice Premium"},
+    )
+    retrieval = retriever.retrieve(plan, {"region": "CH", "service_model": "Advice Premium"})
+
+    result = StructuralMatrixWorker(corpus).evaluate(request, plan, retrieval)
+
+    assert result.status is StructuralStatus.SUFFICIENT
+    assert result.matched_record_count == 2
+    assert all(
+        claim.dimensions["Solicitation Type"] == "Active Solicitation" for claim in result.claims
+    )
+
+
 def test_equivalent_k_and_e_expansions_are_not_ambiguous(tmp_path: Path) -> None:
     entry = _entry(
         tmp_path,
@@ -163,6 +208,38 @@ def test_source_gap_worker_reports_missing_package_asset(tmp_path: Path) -> None
     assert result.firewall_code == "SOURCE_PACKAGE_ASSET_UNAVAILABLE"
     assert result.gaps[0].target == "missing.png"
     assert "not delivered" in result.distinction
+
+
+def test_non_matrix_question_ignores_unrelated_page_asset_gap(tmp_path: Path) -> None:
+    entry = _entry(
+        tmp_path,
+        "policy.html",
+        "Policy",
+        "<html><body><h1>Policy</h1><p>OWN means One-way Notification.</p>"
+        '<ac:image><ri:attachment ri:filename="missing.png"/></ac:image>'
+        "</body></html>",
+    )
+    structural = build_structural_event_corpus([entry])
+    sections = attach_structural_tables(ingest_event_sections([entry]), structural)
+    corpus = LocalCorpus(
+        sections=tuple(sections),
+        provenance=ProvenanceIndex(sections, knowledge_root=tmp_path, ref_style="m2"),
+        knowledge_root=tmp_path,
+        structural=structural,
+    )
+    plan = _plan().model_copy(
+        update={"intent": QueryIntent.DEFINITION, "normalised_query": "what does own mean"}
+    )
+    request = QueryInput(query="What does OWN mean?", context={})
+
+    result = StructuralMatrixWorker(corpus).evaluate(
+        request,
+        plan,
+        SimpleNamespace(selected_candidates=(SimpleNamespace(source_ref=entry.url),)),
+    )
+
+    assert result.status is StructuralStatus.NOT_APPLICABLE
+    assert result.source_package_gap_codes == []
 
 
 def test_gap_result_merges_existing_acronym_metadata(tmp_path: Path) -> None:

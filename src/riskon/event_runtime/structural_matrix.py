@@ -279,13 +279,6 @@ class StructuralMatrixWorker:
             )
 
         if not self._is_matrix_question(request, plan):
-            gap_result = self.gap_worker.evaluate(
-                _retrieval_source_refs(retrieval),
-                required=True,
-                relevant_evidence_refs=_retrieval_evidence_refs(retrieval),
-            )
-            if gap_result.firewall_code is not None:
-                return self._gap_result(gap_result, expansions, ambiguities)
             return StructuralMatrixResult(
                 status=StructuralStatus.NOT_APPLICABLE,
                 acronym_expansions=expansions,
@@ -335,13 +328,18 @@ class StructuralMatrixWorker:
                 **base,
             )
 
-        requested_service = self._requested_dimension(request, table, "service model")
-        requested_offering = self._requested_dimension(request, table, "service offering")
+        requested_dimensions = [
+            (dimension, requested)
+            for dimension in _table_dimensions(table)
+            if (requested := self._requested_dimension(request, table, dimension)) is not None
+        ]
         records = [
             record
             for record in table.records
-            if self._record_matches(record, requested_service, "service model")
-            and self._record_matches(record, requested_offering, "service offering")
+            if all(
+                self._record_matches(record, requested, dimension)
+                for dimension, requested in requested_dimensions
+            )
         ]
         columns = self._requested_columns(request, table)
         records = [record for record in records if record.column in columns]
@@ -716,6 +714,14 @@ def _table_is_complete(table: StructuralTableData) -> bool:
         and table.verdict.has_declared_header
         and expected == len(table.records) + len(table.rejections)
         and not table.rejections
+    )
+
+
+def _table_dimensions(table: StructuralTableData) -> tuple[str, ...]:
+    """Return dimension headings in stable first-seen order."""
+
+    return tuple(
+        dict.fromkeys(key for record in table.records for key in record.dimensions if key.strip())
     )
 
 

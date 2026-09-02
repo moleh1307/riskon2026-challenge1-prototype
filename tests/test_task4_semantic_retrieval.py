@@ -27,6 +27,7 @@ from riskon.event_runtime.semantic_models import (
     PageCardPayload,
     RouterOutput,
     RouterSelection,
+    SemanticFailureReason,
     SufficiencyStatus,
 )
 from riskon.event_runtime.semantic_retrieval import SemanticEventRetriever
@@ -228,6 +229,45 @@ def test_title_router_bounds_shortlist_and_drops_unknown_refs(tmp_path: Path) ->
     prompt = json.loads(client.prompts[0])
     assert len(prompt["title_shortlist"]) <= 10
     assert len(prompt["relevant_page_cards"]) <= 8
+
+
+def test_retry_router_is_empty_when_no_alternative_page_exists(tmp_path: Path) -> None:
+    corpus = _corpus(tmp_path, [("only.html", "policy material")])
+    card = _card(
+        corpus.sections[0].source_ref,
+        corpus.sections[0].filename,
+        corpus.sections[0].title,
+        "policy material",
+    )
+    client = _FakeClient(
+        RouterOutput(
+            selections=[
+                RouterSelection(
+                    page_ref=card.source_ref,
+                    rank=1,
+                    confidence=1.0,
+                    reason="only page",
+                )
+            ]
+        )
+    )
+    router = PageCardRouter([card], client)
+    planner, _retriever = _retrieval_components(corpus)
+    request = QueryInput(query="unrelated question")
+    plan = planner.plan(request)
+
+    result = router.route(
+        request,
+        plan,
+        [card.source_ref],
+        previous_attempted_refs=[card.source_ref],
+        failure_reason=SemanticFailureReason.WRONG_PAGE,
+    )
+
+    assert result.retry
+    assert result.selections == ()
+    assert result.call is None
+    assert client.calls == []
 
 
 def test_hybrid_union_respects_ten_page_cap_and_keeps_router_page(tmp_path: Path) -> None:
