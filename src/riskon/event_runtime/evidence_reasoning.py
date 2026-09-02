@@ -10,6 +10,7 @@ from dataclasses import dataclass
 from typing import Any, Protocol, cast
 
 from riskon.context import ContextDetector
+from riskon.event_runtime.answer_presentation import format_structural_answer
 from riskon.event_runtime.evidence_reasoning_models import (
     ContextAssessment,
     ContextField,
@@ -652,6 +653,11 @@ class EventEvidenceReasoningRuntime:
             validated_claims,
             None,
         )
+        if decision is Decision.ANSWER:
+            answer = format_structural_answer(
+                structural_result.claims,
+                approved_claim_ids={claim.claim_id for claim in validated_claims},
+            )
         evidence = self._evidence_for_claims(units, validated_claims)
         refs = tuple(
             dict.fromkeys(ref for claim in validated_claims for ref in claim.evidence_refs)

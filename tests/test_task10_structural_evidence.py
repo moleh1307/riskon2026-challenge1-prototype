@@ -7,6 +7,7 @@ from types import SimpleNamespace
 from typing import Any
 
 from riskon.config import load_milestone2_config
+from riskon.event_runtime.answer_presentation import format_structural_answer
 from riskon.event_runtime.corpus_loader import ingest_event_sections
 from riskon.event_runtime.evidence_reasoning import EventEvidenceReasoningRuntime
 from riskon.event_runtime.retrieval import EventHybridRetriever
@@ -206,3 +207,29 @@ def test_structural_fast_path_does_not_call_router_or_llm(tmp_path: Path) -> Non
     assert result.decision.value == "ANSWER"
     assert result.skeptic is None
     assert client.calls == 0
+
+
+def test_structural_answer_groups_declared_states_and_keeps_unresolved_visible(
+    tmp_path: Path,
+) -> None:
+    corpus = _corpus(tmp_path)
+    retriever = _retriever(corpus)
+    plan = _plan()
+    request = QueryInput(
+        query="Which alerts apply for Advice Premium in Advisory Location CH?",
+        context={"region": "CH", "service_model": "Advice Premium"},
+    )
+    retrieval = retriever.retrieve(plan, {"region": "CH", "service_model": "Advice Premium"})
+    result = StructuralMatrixWorker(corpus).evaluate(request, plan, retrieval)
+
+    answer = format_structural_answer(result.claims)
+
+    assert "Scope: Advisory Location CH (BC CH) · Service Model: Advice Premium" in answer
+    assert "Source-declared alert configuration" in answer
+    assert "Session and overnight (tick)" in answer
+    assert "Only session (warning)" in answer
+    assert "Only overnight (information)" in answer
+    assert "Unresolved source state" in answer
+    assert "state: error; the source declares no meaning" in answer
+    assert "heading:" not in answer
+    assert "icon encoding:" not in answer

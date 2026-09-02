@@ -649,6 +649,7 @@ class RiskonPipeline:
         active_provenance = provenance or self._m4d_provenance
         if self._m4d_planner is None or active_retriever is None or active_provenance is None:
             raise ValueError("M4D planner, retriever, and provenance are not configured")
+        from riskon.event_runtime.answer_presentation import format_structural_answer
         from riskon.event_runtime.structural_matrix import StructuralMatrixWorker, StructuralStatus
 
         plan = self._m4d_planner.plan(request)
@@ -728,7 +729,7 @@ class RiskonPipeline:
                         request,
                         plan,
                         decision=Decision.ANSWER,
-                        answer="\n".join(claim.text for claim in structural_claims),
+                        answer=format_structural_answer(structural_result.claims),
                         evidence=structural_evidence,
                         retrieved_sections=retrieved_hits,
                         evidence_refs=structural_refs,
