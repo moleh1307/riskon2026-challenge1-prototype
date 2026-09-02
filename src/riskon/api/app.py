@@ -14,7 +14,9 @@ RISKON_EVENT_RUNTIME_CONFIG to use another local configuration file.
 
 from __future__ import annotations
 
+import json
 import os
+import tempfile
 import time
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
@@ -26,6 +28,7 @@ from fastapi.responses import HTMLResponse
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from riskon.api.memory_ui import MEMORY_HTML
+from riskon.api.question_gate import question_gate_message
 from riskon.api.ui import INDEX_HTML
 from riskon.event_runtime.config import load_event_runtime_config
 from riskon.event_runtime.corpus_loader import EventRuntimeCorpusError
@@ -148,11 +151,71 @@ class HealthResponse(BaseModel):
     runtime_loaded: bool
 
 
+class RuntimeConfigRequest(BaseModel):
+    """Local paths used to connect a teammate's private event package."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    source_root: str = Field(min_length=1, max_length=500)
+    manifest: str = Field(min_length=1, max_length=500)
+
+    @field_validator("source_root", "manifest")
+    @classmethod
+    def _absolute_local_path(cls, value: str) -> str:
+        """Normalise a pasted Finder path without accepting URLs or relatives."""
+
+        clean = value.strip()
+        if not clean or "\x00" in clean:
+            raise ValueError("Local paths must be non-empty")
+        try:
+            path = Path(clean).expanduser()
+        except (OSError, RuntimeError) as exc:
+            raise ValueError("Local paths must be valid filesystem paths") from exc
+        if not path.is_absolute():
+            raise ValueError("Local paths must be absolute")
+        return str(path.resolve())
+
+
+class RuntimeConfigResponse(BaseModel):
+    """Safe acknowledgement without returning private corpus paths."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    configured: bool
+    runtime_loaded: bool
+    message: str
+
+
 def _event_config_path() -> Path:
     """Resolve the local event config without accepting a secret or URL."""
 
     configured = os.environ.get("RISKON_EVENT_RUNTIME_CONFIG", "").strip()
     return Path(configured).expanduser().resolve() if configured else DEFAULT_EVENT_CONFIG
+
+
+def _event_runtime_config_text(source_root: Path, manifest: Path) -> str:
+    """Render the ignored local config without embedding event data in the repo."""
+
+    source_value = json.dumps(str(source_root), ensure_ascii=False)
+    manifest_value = json.dumps(str(manifest), ensure_ascii=False)
+    return (
+        "[base]\n"
+        'pipeline_config = "config/milestone5b.toml"\n\n'
+        "[event_corpus]\n"
+        f"source_root = {source_value}\n"
+        f"manifest = {manifest_value}\n"
+        "column_mapping = {}\n"
+        'url_prefix = "local://event-wiki/"\n'
+        'generated_root = "data/generated/event_runtime"\n\n'
+        "[event_runtime]\n"
+        'alias_registry = "data/generated/event_runtime/event_aliases.json"\n'
+        'routing_profile = "default"\n'
+        "overlay_enabled = false\n\n"
+        "[security]\n"
+        "event_data_copy_enabled = false\n"
+        "network_enabled = false\n"
+        "external_api_enabled = false\n"
+    )
 
 
 def _load_event_pipeline() -> M4DRiskonPipeline:
@@ -282,15 +345,83 @@ def health() -> HealthResponse:
     )
 
 
+@app.post("/v1/runtime-config", response_model=RuntimeConfigResponse, tags=["ops"])
+def configure_runtime(request: RuntimeConfigRequest) -> RuntimeConfigResponse:
+    """Connect a local private pages package and reload the canonical runtime."""
+
+    source_root = Path(request.source_root)
+    manifest = Path(request.manifest)
+    if not source_root.is_dir():
+        raise HTTPException(status_code=400, detail="Pages folder was not found.")
+    if not manifest.is_file() or manifest.suffix.casefold() not in {".xlsx", ".xls"}:
+        raise HTTPException(status_code=400, detail="Summary workbook was not found.")
+    if not any(
+        path.is_file() and path.suffix.casefold() in {".html", ".htm"}
+        for path in source_root.rglob("*")
+    ):
+        raise HTTPException(status_code=400, detail="Pages folder contains no HTML pages.")
+
+    config_path = _event_config_path()
+    try:
+        if not config_path.is_relative_to(PROJECT_ROOT):
+            raise ValueError("Local runtime config must remain inside the repository")
+        config_path.parent.mkdir(parents=True, exist_ok=True)
+        temporary_path: Path | None = None
+        try:
+            with tempfile.NamedTemporaryFile(
+                mode="w",
+                encoding="utf-8",
+                dir=config_path.parent,
+                prefix=".event_runtime.",
+                suffix=".toml",
+                delete=False,
+            ) as handle:
+                temporary_path = Path(handle.name)
+                handle.write(_event_runtime_config_text(source_root, manifest))
+            candidate_config = load_event_runtime_config(temporary_path)
+            candidate_pipeline = RiskonPipeline.from_event_runtime_config(candidate_config)
+            os.replace(temporary_path, config_path)
+            state.pipeline = candidate_pipeline
+            state.startup_error = None
+        finally:
+            if temporary_path is not None:
+                temporary_path.unlink(missing_ok=True)
+    except (EventRuntimeCorpusError, FileNotFoundError, OSError, RuntimeError, ValueError) as exc:
+        raise HTTPException(
+            status_code=400,
+            detail="These local event files could not be loaded. Check the pages and workbook.",
+        ) from exc
+    return RuntimeConfigResponse(
+        configured=True,
+        runtime_loaded=state.pipeline is not None,
+        message="Local event data connected.",
+    )
+
+
 @app.post("/v1/ask", response_model=AskResponse, tags=["assistant"])
 def ask(request: AskRequest) -> AskResponse:
     """Run exactly one canonical orchestration request."""
 
+    conversation_id = request.conversation_id or str(uuid4())
+    turn_id = str(uuid4())
+    gate_started = time.perf_counter()
+    gate_message = question_gate_message(request.question, state.pipeline)
+    if gate_message is not None:
+        return AskResponse(
+            conversation_id=conversation_id,
+            turn_id=turn_id,
+            took_ms=round((time.perf_counter() - gate_started) * 1000, 1),
+            result=EventQueryPayload(
+                decision="CLARIFY",
+                clarification=gate_message,
+                activation_profile="QUESTION_GATE",
+                worker_execution_count=0,
+            ),
+        )
+
     pipeline = _pipeline()
     memory = _memory_store()
     agent = _memory_agent()
-    conversation_id = request.conversation_id or str(uuid4())
-    turn_id = str(uuid4())
     context = dict(request.context)
     if request.department is not None:
         context["department"] = request.department

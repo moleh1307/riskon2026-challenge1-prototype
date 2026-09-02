@@ -249,15 +249,20 @@ MEMORY_HTML = r"""<!doctype html>
 
       <section class="section" aria-labelledby="overviewTitle">
         <h2 id="overviewTitle">Overview</h2>
-        <p id="summaryText">Loading memory summary…</p>
+        <p id="summaryText">No durable shared memory has been saved yet.</p>
       </section>
 
       <section class="memory-section" aria-labelledby="memoryTitle">
         <div class="memory-heading">
           <h2 id="memoryTitle">Shared memory</h2>
-          <span class="count" id="count">—</span>
+          <span class="count" id="count">0 / 64</span>
         </div>
-        <div id="items"><div class="empty">Loading…</div></div>
+        <div id="items">
+          <div class="empty">
+            No durable shared memory has been saved yet. It will appear here as the assistant
+            learns reusable context.
+          </div>
+        </div>
       </section>
 
       <div class="boundary">
@@ -295,7 +300,7 @@ MEMORY_HTML = r"""<!doctype html>
 
     async function loadMemory() {
       try {
-        const response = await fetch("/v1/memory");
+        const response = await fetch("/v1/memory", { cache: "no-store" });
         const body = await response.json().catch(function() { return {}; });
         if (!response.ok) throw new Error("memory unavailable");
         const memoryItems = Array.isArray(body.items) ? body.items : [];

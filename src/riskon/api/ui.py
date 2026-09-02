@@ -158,6 +158,103 @@ INDEX_HTML = r"""<!doctype html>
     .memory-link:hover,
     .memory-link:focus-visible { color: var(--ink); }
 
+    .data-settings { position: relative; }
+
+    .data-settings > summary {
+      padding: 7px 0;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 12px;
+      list-style: none;
+      white-space: nowrap;
+    }
+
+    .data-settings > summary::-webkit-details-marker { display: none; }
+
+    .data-settings > summary:hover,
+    .data-settings > summary:focus-visible { color: var(--ink); }
+
+    .data-panel {
+      position: absolute;
+      z-index: 10;
+      top: calc(100% + 14px);
+      right: 0;
+      width: min(420px, calc(100vw - 32px));
+      padding: 18px;
+      border: 1px solid var(--line-strong);
+      background: var(--card);
+      box-shadow: 0 12px 30px rgba(30, 33, 30, .12);
+    }
+
+    .data-panel-title {
+      margin: 0 0 6px;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 22px;
+      font-weight: 400;
+      letter-spacing: -.03em;
+    }
+
+    .data-panel-copy {
+      margin: 0 0 15px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .data-field { display: block; margin-top: 11px; }
+
+    .data-field span {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--faint);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+    }
+
+    .data-input {
+      width: 100%;
+      height: 32px;
+      padding: 0 8px;
+      border: 1px solid var(--line-strong);
+      border-radius: 2px;
+      outline: 0;
+      background: var(--paper);
+      color: var(--ink);
+      font-size: 12px;
+    }
+
+    .data-input:focus { border-color: var(--accent); }
+
+    .data-panel-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .data-save {
+      height: 32px;
+      padding: 0 12px;
+      border: 1px solid var(--ink);
+      border-radius: 2px;
+      background: var(--ink);
+      color: #fff;
+      cursor: pointer;
+      font-size: 11px;
+    }
+
+    .data-save:disabled { cursor: wait; opacity: .55; }
+
+    .data-status {
+      color: var(--accent);
+      font-size: 11px;
+      line-height: 1.4;
+    }
+
+    .data-status.error { color: var(--danger); }
+
     main {
       display: flex;
       flex-direction: column;
@@ -608,6 +705,38 @@ INDEX_HTML = r"""<!doctype html>
           <span class="status-dot" aria-hidden="true"></span>
           <span>Checking runtime</span>
         </div>
+        <details class="data-settings" id="dataSettings">
+          <summary>Set local data ↗</summary>
+          <div class="data-panel">
+            <h2 class="data-panel-title">Connect event data</h2>
+            <p class="data-panel-copy">
+              Paste the local pages folder and the summary workbook. They stay on this machine
+              and are never committed to GitHub.
+            </p>
+            <label class="data-field" for="pagesPath">
+              <span>Pages folder</span>
+              <input
+                class="data-input"
+                id="pagesPath"
+                type="text"
+                placeholder="/path/to/raw/pages"
+                autocomplete="off">
+            </label>
+            <label class="data-field" for="manifestPath">
+              <span>Summary workbook</span>
+              <input
+                class="data-input"
+                id="manifestPath"
+                type="text"
+                placeholder="/path/to/5_Summary of pages.xlsx"
+                autocomplete="off">
+            </label>
+            <div class="data-panel-actions">
+              <button class="data-save" id="saveData" type="button">Use local data</button>
+              <span class="data-status" id="dataStatus" role="status" hidden></span>
+            </div>
+          </div>
+        </details>
         <a class="memory-link" href="/memory">Memory summary ↗</a>
         <button class="new-chat" id="newChat" type="button">New question</button>
       </div>
@@ -694,6 +823,11 @@ INDEX_HTML = r"""<!doctype html>
     const runtimeStatus = document.getElementById("runtimeStatus");
     const statusDot = runtimeStatus.querySelector(".status-dot");
     const statusText = runtimeStatus.querySelector("span:last-child");
+    const dataSettings = document.getElementById("dataSettings");
+    const pagesPathInput = document.getElementById("pagesPath");
+    const manifestPathInput = document.getElementById("manifestPath");
+    const saveDataButton = document.getElementById("saveData");
+    const dataStatus = document.getElementById("dataStatus");
 
     const labels = {
       ANSWER: "Answer released",
@@ -733,6 +867,59 @@ INDEX_HTML = r"""<!doctype html>
     function setRuntimeStatus(ready) {
       statusDot.classList.toggle("offline", !ready);
       statusText.textContent = ready ? "Local runtime ready" : "Runtime unavailable";
+    }
+
+    function loadSavedDataPaths() {
+      try {
+        const saved = JSON.parse(localStorage.getItem("riskon-event-paths") || "{}");
+        pagesPathInput.value = valueOrEmpty(saved.source_root);
+        manifestPathInput.value = valueOrEmpty(saved.manifest);
+      } catch (error) {
+        // Local path memory is only a convenience; the runtime remains authoritative.
+      }
+    }
+
+    function showDataStatus(message, isError) {
+      dataStatus.textContent = message;
+      dataStatus.classList.toggle("error", Boolean(isError));
+      dataStatus.hidden = false;
+    }
+
+    async function connectLocalData() {
+      const sourceRoot = pagesPathInput.value.trim();
+      const manifest = manifestPathInput.value.trim();
+      if (!sourceRoot || !manifest) {
+        showDataStatus("Add both local paths first.", true);
+        return;
+      }
+      saveDataButton.disabled = true;
+      showDataStatus("Loading local event data…", false);
+      try {
+        const response = await fetch("/v1/runtime-config", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ source_root: sourceRoot, manifest: manifest }),
+        });
+        const body = await response.json().catch(function() { return {}; });
+        if (!response.ok) {
+          throw new Error(valueOrEmpty(body.detail) || "Could not load local data.");
+        }
+        try {
+          localStorage.setItem(
+            "riskon-event-paths",
+            JSON.stringify({ source_root: sourceRoot, manifest: manifest }),
+          );
+        } catch (error) {
+          // The paths are still active for this server even if browser storage is unavailable.
+        }
+        showDataStatus("Local data connected.", false);
+        dataSettings.removeAttribute("open");
+        setRuntimeStatus(true);
+      } catch (error) {
+        showDataStatus(error.message || "Could not load local data.", true);
+      } finally {
+        saveDataButton.disabled = false;
+      }
     }
 
     function showThread() {
@@ -982,6 +1169,8 @@ INDEX_HTML = r"""<!doctype html>
       }
     });
     newChat.addEventListener("click", resetConversation);
+    saveDataButton.addEventListener("click", connectLocalData);
+    loadSavedDataPaths();
     checkRuntime();
   </script>
 </body>
