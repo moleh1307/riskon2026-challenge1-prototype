@@ -50,6 +50,10 @@ def test_html_intake_page_is_local_only_and_exposes_page_card_metadata() -> None
     assert "source_hash" in page
     assert "contains_table" in page
     assert "contains_visual" in page
+    assert "extractTableMetadata" in page
+    assert "column_headers:" in page
+    assert "merged_cell_count" in page
+    assert "declared_meaning" in page
     assert "file.text()" in page
     assert "fetch(" not in page
     assert "not uploaded, saved, or used as answer evidence" in page

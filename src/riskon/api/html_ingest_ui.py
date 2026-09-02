@@ -215,6 +215,7 @@ HTML_INGEST_HTML = r"""<!doctype html>
       margin-top: 20px;
     }
     .metadata-item { min-width: 0; padding: 13px 0; border-top: 1px solid var(--line); }
+    .metadata-item.wide { grid-column: 1 / -1; }
     .metadata-value { color: var(--ink); font-size: 13px; line-height: 1.45; overflow-wrap: anywhere; }
     .metadata-value.list { color: var(--accent); }
     .metadata-value.boolean { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
@@ -419,6 +420,87 @@ HTML_INGEST_HTML = r"""<!doctype html>
       });
     }
 
+    function iconNodes(container) {
+      return Array.from(container.querySelectorAll("*")).filter(function(node) {
+        const tag = (node.tagName || "").toLowerCase();
+        return tag === "ac:emoticon" || tag === "ac:image";
+      });
+    }
+
+    function iconState(node) {
+      const tag = (node.tagName || "").toLowerCase();
+      if (tag === "ac:emoticon") {
+        return clean(node.getAttribute("ac:name") || node.getAttribute("name") || "");
+      }
+      return clean(node.getAttribute("ac:alt") || node.getAttribute("alt") || "image");
+    }
+
+    function precedingHeading(node) {
+      let sibling = node.previousElementSibling;
+      while (sibling) {
+        if (/^H[1-6]$/.test(sibling.tagName || "")) return textOf(sibling);
+        sibling = sibling.previousElementSibling;
+      }
+      return "";
+    }
+
+    function findLegend(doc) {
+      const direct = doc.querySelector(".legend");
+      if (direct) return direct;
+      const heading = Array.from(doc.querySelectorAll("h1, h2, h3, h4, h5, h6")).find(function(node) {
+        return /legend/i.test(textOf(node));
+      });
+      return heading ? heading.nextElementSibling : null;
+    }
+
+    function extractLegend(doc) {
+      const root = findLegend(doc);
+      const entries = root ? iconNodes(root).map(function(node) {
+        return {
+          raw_icon: iconState(node),
+          declared_meaning: textOf(node.parentElement)
+        };
+      }).filter(function(entry) { return entry.raw_icon; }) : [];
+      return {
+        present: entries.length > 0,
+        entries: entries
+      };
+    }
+
+    function extractTableMetadata(doc) {
+      return Array.from(doc.querySelectorAll("table")).map(function(table, index) {
+        const rows = Array.from(table.querySelectorAll("tr"));
+        const headers = Array.from(table.querySelectorAll("th")).map(textOf).filter(Boolean);
+        const columnHeaders = Array.from(new Set(headers));
+        const dataRows = rows.filter(function(row) { return !row.querySelector("th"); });
+        const cells = Array.from(table.querySelectorAll("th, td"));
+        const columnCount = rows.reduce(function(max, row) {
+          const width = Array.from(row.children).reduce(function(total, cell) {
+            return total + Math.max(1, Number(cell.getAttribute("colspan")) || 1);
+          }, 0);
+          return Math.max(max, width);
+        }, 0);
+        const mergedCells = cells.filter(function(cell) {
+          return Number(cell.getAttribute("rowspan")) > 1 || Number(cell.getAttribute("colspan")) > 1;
+        });
+        const iconStates = Array.from(new Set(iconNodes(table).map(iconState).filter(Boolean)));
+        return {
+          index: index + 1,
+          heading: precedingHeading(table),
+          matrix: dataRows.length > 1 && columnHeaders.length >= 3 && columnCount >= 3,
+          header_row_count: rows.filter(function(row) { return Boolean(row.querySelector("th")); }).length,
+          data_row_count: dataRows.length,
+          column_count: columnCount,
+          column_headers: columnHeaders,
+          merged_cell_count: mergedCells.length,
+          rowspan_count: cells.filter(function(cell) { return Number(cell.getAttribute("rowspan")) > 1; }).length,
+          colspan_count: cells.filter(function(cell) { return Number(cell.getAttribute("colspan")) > 1; }).length,
+          status_icon_states: iconStates,
+          has_declared_legend: extractLegend(doc).present
+        };
+      });
+    }
+
     function formatBytes(bytes) {
       if (bytes < 1024) return bytes + " B";
       if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
@@ -450,9 +532,9 @@ HTML_INGEST_HTML = r"""<!doctype html>
       fileInfo.appendChild(stats);
     }
 
-    function addMetadataItem(label, value, kind) {
+    function addMetadataItem(label, value, kind, wide) {
       const item = document.createElement("div");
-      item.className = "metadata-item";
+      item.className = "metadata-item" + (wide ? " wide" : "");
       const labelNode = document.createElement("div");
       labelNode.className = "meta-label";
       labelNode.textContent = label;
@@ -475,6 +557,8 @@ HTML_INGEST_HTML = r"""<!doctype html>
       const headings = Array.from(doc.querySelectorAll("h1, h2, h3")).map(textOf).filter(Boolean).slice(0, 12);
       const tables = doc.querySelectorAll("table");
       const visualCount = doc.querySelectorAll("img, svg, video, canvas, figure").length + (source.match(/<ac:(?:image|emoticon)\b/gi) || []).length;
+      const tableMetadata = extractTableMetadata(doc);
+      const legend = extractLegend(doc);
       const hash = await sha256(source);
       return {
         metadata_version: "riskon.page_card.v1",
@@ -489,6 +573,8 @@ HTML_INGEST_HTML = r"""<!doctype html>
         source_hash: "sha256:" + hash,
         table_count: tables.length,
         visual_count: visualCount,
+        tables: tableMetadata,
+        legend: legend,
         heading_count: headings.length,
         headings: headings,
         word_count: bodyText ? bodyText.split(/\s+/).filter(Boolean).length : 0
@@ -508,6 +594,16 @@ HTML_INGEST_HTML = r"""<!doctype html>
       addMetadataItem("Table", metadata.contains_table ? "true" : "false", "boolean");
       addMetadataItem("Visual", metadata.contains_visual ? "true" : "false", "boolean");
       addMetadataItem("Structure", metadata.table_count + " table(s) · " + metadata.visual_count + " visual(s)");
+      if (metadata.tables.length) {
+        const table = metadata.tables[0];
+        addMetadataItem(
+          "Table map",
+          (table.matrix ? "matrix" : "table") + " · " + table.data_row_count + " data row(s) · " + table.column_count + " column(s)",
+        );
+        addMetadataItem("Table columns", table.column_headers, "list", true);
+        addMetadataItem("Merged cells", table.merged_cell_count + " · rowspan " + table.rowspan_count + " · colspan " + table.colspan_count);
+        addMetadataItem("Declared legend", metadata.legend.present ? metadata.legend.entries.length + " icon meaning(s)" : "not found");
+      }
       addMetadataItem("Words", metadata.word_count);
       currentJson = JSON.stringify(metadata, null, 2);
       jsonOutput.textContent = currentJson;
