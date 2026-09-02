@@ -289,8 +289,13 @@ def _needs_evidence_fallback(run: object) -> bool:
     result = getattr(final, "result", None)
     if result is None or getattr(result.decision, "value", "") != "ABSTAIN":
         return False
+    # The legacy M4D shell can fail closed on generic questions before the Task 5
+    # evidence runtime gets a chance to inspect the actual source.  Let the bounded
+    # evidence runtime adjudicate both unsupported and legacy scope failures; its own
+    # local validation and Answer Firewall remain authoritative.
     return any(
-        getattr(reason, "value", "") == "UNSUPPORTED_CLAIM"
+        getattr(reason, "value", "")
+        in {"UNSUPPORTED_CLAIM", "SCOPE_MISMATCH", "NO_EXPLICIT_SUPPORT"}
         for reason in getattr(result, "reason_codes", ())
     )
 

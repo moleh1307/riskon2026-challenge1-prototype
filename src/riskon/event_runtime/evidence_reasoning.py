@@ -1151,10 +1151,31 @@ class EventEvidenceReasoningRuntime:
         possible: list[tuple[float, int, str, ProvenanceUnit]] = []
         required_ref_set = set(required_refs)
         for candidate_rank, candidate in enumerate(candidates, start=1):
-            for unit in self._units_for_candidate(candidate):
+            candidate_units = self._units_for_candidate(candidate)
+            has_atomic_units = any(unit.kind != "section" for unit in candidate_units)
+            phrase_scores = [
+                _query_phrase_support(unit.text, request.query, retrieval.plan)
+                for unit in candidate_units
+            ]
+            direct_anchor_indexes = [
+                index
+                for index, (unit, phrase_score) in enumerate(
+                    zip(candidate_units, phrase_scores, strict=True)
+                )
+                if unit.kind != "section" and phrase_score > 0.0
+            ]
+            for unit_index, unit in enumerate(candidate_units):
                 if unit.kind == "attachment":
                     continue
                 score = _unit_support_score(unit, query_terms)
+                score += phrase_scores[unit_index]
+                score += _nearby_query_support(phrase_scores, unit_index)
+                score += _direct_anchor_window_support(direct_anchor_indexes, unit_index)
+                if unit.kind == "section" and has_atomic_units:
+                    # Prefer sentence/table-row provenance when the parser already exposed
+                    # atomic units.  A large parent section can otherwise consume the entire
+                    # evidence budget and hide the exact paragraph answering the question.
+                    score -= 10.0
                 if table_priority and unit.kind == "table_row":
                     score += 5.0
                 if _control_phrases(unit.text) and score >= 1.0:
@@ -1983,6 +2004,82 @@ def _unit_support_score(unit: ProvenanceUnit, query_terms: set[str]) -> float:
 
 def _unit_support_score_from_text(text: str, query_terms: set[str]) -> float:
     return float(len(query_terms & _tokens(text)))
+
+
+def _query_phrase_support(text: str, query: str, plan: QueryPlan) -> float:
+    """Reward direct multi-word anchors without treating them as answer evidence."""
+
+    query_tokens = _ordered_support_tokens(" ".join([query, plan.normalised_query]))
+    unit_tokens = _ordered_support_tokens(text)
+    best = 0
+    for query_index in range(len(query_tokens)):
+        for unit_index in range(len(unit_tokens)):
+            length = 0
+            while (
+                query_index + length < len(query_tokens)
+                and unit_index + length < len(unit_tokens)
+                and query_tokens[query_index + length] == unit_tokens[unit_index + length]
+            ):
+                length += 1
+            best = max(best, length)
+    return float(max(0, best - 1) * 2)
+
+
+def _nearby_query_support(phrase_scores: Sequence[float], index: int) -> float:
+    """Keep explanatory sentences that follow a direct query anchor."""
+
+    bonus = 0.0
+    for other_index, phrase_score in enumerate(phrase_scores):
+        if other_index == index or phrase_score <= 0.0:
+            continue
+        distance = abs(other_index - index)
+        if distance > 2:
+            continue
+        # A matched population/condition is normally followed by its rule in the
+        # source paragraph.  Do not let a preceding, broader heading such as
+        # ``Legal Entity`` outrank the matched ``Life insurance companies`` unit.
+        direction_weight = 1.0 if other_index < index else 0.1
+        bonus = max(bonus, phrase_score * direction_weight / distance)
+    return bonus
+
+
+def _direct_anchor_window_support(anchor_indexes: Sequence[int], index: int) -> float:
+    """Prefer the bounded explanatory chain after a direct population/condition match."""
+
+    if not anchor_indexes:
+        return 0.0
+    following = [anchor_index for anchor_index in anchor_indexes if anchor_index < index]
+    if following:
+        distance = index - max(following)
+        if distance <= 5:
+            # Keep the rule, its qualification, and a nearby exception together.  This
+            # prevents an earlier broad branch from displacing a later source-declared
+            # exception when the query names a specific population.
+            return float(8 - distance)
+    preceding = [anchor_index for anchor_index in anchor_indexes if anchor_index > index]
+    if preceding and min(preceding) - index <= 2:
+        # A broad preceding branch (for example, Legal Entity) should not outrank the
+        # population explicitly named by the question.
+        return -4.0
+    return 0.0
+
+
+def _ordered_support_tokens(value: str) -> list[str]:
+    """Tokenize query/source text for short phrase-alignment scoring."""
+
+    tokens: list[str] = []
+    for token in re.findall(r"[a-z0-9]+(?:&[a-z0-9]+)?", value.casefold()):
+        if len(token) < 3 and "&" not in token:
+            continue
+        if token in EventEvidenceReasoningRuntime._stop_words:
+            continue
+        if token.endswith("ies") and len(token) > 4:
+            token = token[:-3] + "y"
+        elif token.endswith("s") and len(token) > 4:
+            token = token[:-1]
+        if token not in tokens:
+            tokens.append(token)
+    return tokens
 
 
 def _candidate_local_support_score(
