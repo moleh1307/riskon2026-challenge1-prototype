@@ -1,324 +1,760 @@
-"""The RiskON chat UI, served as a self-contained page.
-
-The visual shell is adapted from Gabriel's assistant-v0 branch. It stays as a Python
-string because this repository deliberately ignores standalone HTML files. The page talks
-only to the canonical event-runtime API and treats its structured response as display data:
-the deterministic runtime remains authoritative for every decision and evidence boundary.
-"""
-
-# ruff: noqa: E501 - this module is an embedded HTML/CSS/JS asset, not Python to wrap.
+"""Minimal local RiskON evidence-desk interface."""
 
 from __future__ import annotations
 
 INDEX_HTML = r"""<!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>RiskON Assistant</title>
-<style>
-  :root {
-    color-scheme: light dark;
-    --bg:#f4f5f7; --surface:#fff; --surface-2:#eef0f3; --text:#1b1e24; --muted:#697080;
-    --border:#e2e5ea; --accent:#3d5afe; --accent-ink:#fff;
-    --answer:#2e7d32; --clarify:#c77700; --route:#3d5afe; --gap:#7b4bd0;
-    --answer-bg:#eef7ee; --clarify-bg:#fff6e8; --route-bg:#eef1ff; --gap-bg:#f3eefc;
-    --shadow:0 1px 2px rgba(20,24,34,.06), 0 8px 24px rgba(20,24,34,.05);
-  }
-  @media (prefers-color-scheme: dark) {
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <meta name="application-name" content="RiskON Assistant">
+  <meta
+    http-equiv="Content-Security-Policy"
+    content="default-src 'none';
+      style-src 'unsafe-inline';
+      script-src 'unsafe-inline';
+      connect-src 'self';
+      base-uri 'none';
+      form-action 'self'">
+  <title>RiskON / Evidence Desk</title>
+  <style>
     :root {
-      --bg:#14161a; --surface:#1d2025; --surface-2:#23272e; --text:#e8eaed; --muted:#9aa1ab;
-      --border:#2e333b; --accent:#6b83ff; --accent-ink:#0e1013;
-      --answer:#6ac06e; --clarify:#e0a44a; --route:#6b83ff; --gap:#b18af0;
-      --answer-bg:#1a241a; --clarify-bg:#2c2519; --route-bg:#1c2036; --gap-bg:#231c33;
-      --shadow:0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.28);
+      color-scheme: light;
+      --ink: #1e211e;
+      --muted: #6f736d;
+      --faint: #9b9f98;
+      --paper: #f5f5f1;
+      --card: #fbfbf8;
+      --line: #d9dcd4;
+      --line-strong: #bfc4bb;
+      --accent: #254f42;
+      --accent-soft: #e4ece6;
+      --warn: #744d24;
+      --warn-soft: #f4ecdf;
+      --danger: #7c3835;
+      --danger-soft: #f3e5e3;
+      --max: 1180px;
     }
-  }
-  * { box-sizing:border-box; }
-  html,body { height:100%; }
-  body { margin:0; background:var(--bg); color:var(--text);
-    font:15px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; }
-  .app { display:flex; flex-direction:column; height:100dvh; }
 
-  header { display:flex; align-items:center; gap:12px; padding:14px 20px;
-    border-bottom:1px solid var(--border); background:var(--surface); position:sticky; top:0; z-index:5; }
-  .logo { width:30px; height:30px; border-radius:8px; background:var(--accent); color:var(--accent-ink);
-    display:grid; place-items:center; font-weight:800; flex:none; }
-  header h1 { font-size:15px; margin:0; font-weight:650; }
-  header p { font-size:12px; margin:1px 0 0; color:var(--muted); }
-  header .spacer { flex:1; }
-  .ghost { border:1px solid var(--border); background:var(--surface); color:var(--muted);
-    font:inherit; font-size:13px; padding:6px 12px; border-radius:8px; cursor:pointer; }
-  .ghost:hover { color:var(--text); }
+    * { box-sizing: border-box; }
 
-  main { flex:1; overflow-y:auto; }
-  .thread { max-width:800px; margin:0 auto; padding:26px 20px 10px; }
-  .row { display:flex; margin-bottom:20px; }
-  .row.user { justify-content:flex-end; }
-  .bubble { background:var(--accent); color:var(--accent-ink); padding:10px 14px;
-    border-radius:14px 14px 4px 14px; max-width:80%; white-space:pre-wrap; word-wrap:break-word; }
+    html { min-width: 320px; background: var(--paper); }
 
-  .card { background:var(--surface); border:1px solid var(--border); border-left:3px solid var(--route);
-    border-radius:12px; box-shadow:var(--shadow); padding:16px 18px; width:100%; }
-  .card.answer { border-left-color:var(--answer); }
-  .card.answer_with_gap { border-left-color:var(--gap); background:var(--gap-bg); }
-  .card.clarify { border-left-color:var(--clarify); background:var(--clarify-bg); }
-  .card.route { border-left-color:var(--route); background:var(--route-bg); }
-  .card.abstain { border-left-color:var(--route); background:var(--route-bg); }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: var(--paper);
+      font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI",
+        sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
 
-  .pill { display:inline-flex; gap:6px; align-items:center; font-size:11px; font-weight:700;
-    letter-spacing:.04em; text-transform:uppercase; margin-bottom:10px; }
-  .answer .pill { color:var(--answer); } .clarify .pill { color:var(--clarify); }
-  .route .pill { color:var(--route); } .answer_with_gap .pill { color:var(--gap); }
-  .abstain .pill { color:var(--route); }
-  .dot { width:7px; height:7px; border-radius:50%; background:currentColor; }
+    button, textarea { font: inherit; }
 
-  .lead { margin:0 0 10px; }
-  .passages { white-space:pre-wrap; word-wrap:break-word; background:var(--surface-2);
-    border-radius:10px; padding:12px 14px; font-size:13.5px; max-height:320px; overflow-y:auto; }
-  .clarify-q { font-weight:650; margin:10px 0 0; }
+    button { color: inherit; }
 
-  .block { margin-top:14px; border-top:1px dashed var(--border); padding-top:10px; }
-  .block > .label { font-size:11px; font-weight:650; color:var(--muted); text-transform:uppercase;
-    letter-spacing:.04em; margin-bottom:8px; }
-  .src { padding:7px 0; border-bottom:1px solid var(--border); }
-  .src:last-child { border-bottom:none; }
-  .src a, .src .name { color:var(--text); font-weight:600; font-size:13.5px; text-decoration:none; }
-  .src a:hover { color:var(--accent); text-decoration:underline; }
-  .src .where { font-size:12px; color:var(--muted); margin-top:2px; }
-  .src .snip { font-size:12.5px; color:var(--muted); margin-top:4px;
-    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
-  .expert { padding:6px 0; font-size:13px; }
-  .expert .score { color:var(--muted); font-size:12px; }
-  .meta { font-size:11.5px; color:var(--muted); margin-top:12px; display:flex; gap:14px; flex-wrap:wrap; }
-  .bars { display:flex; gap:14px; margin-top:8px; flex-wrap:wrap; }
-  .bar { font-size:11px; color:var(--muted); }
-  .bar b { display:block; height:5px; border-radius:3px; background:var(--accent); margin-top:3px; min-width:40px; }
+    .page {
+      width: min(calc(100% - 48px), var(--max));
+      min-height: 100svh;
+      margin: 0 auto;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+    }
 
-  .empty { max-width:620px; margin:8vh auto 0; text-align:center; padding:0 20px; }
-  .empty .logo { width:44px; height:44px; font-size:20px; border-radius:12px; margin:0 auto 16px; }
-  .empty h2 { font-size:19px; margin:0 0 6px; }
-  .empty p { color:var(--muted); margin:0 0 22px; }
-  .chips { display:flex; flex-wrap:wrap; gap:8px; justify-content:center; }
-  .chip { border:1px solid var(--border); background:var(--surface); color:var(--text); font:inherit;
-    font-size:13px; padding:8px 12px; border-radius:999px; cursor:pointer; text-align:left; }
-  .chip:hover { border-color:var(--accent); color:var(--accent); }
+    .topbar {
+      min-height: 76px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+      border-bottom: 1px solid var(--line);
+    }
 
-  .typing { display:inline-flex; gap:4px; padding:4px 0; }
-  .typing i { width:7px; height:7px; border-radius:50%; background:var(--muted); animation:blink 1.3s infinite both; }
-  .typing i:nth-child(2){animation-delay:.2s;} .typing i:nth-child(3){animation-delay:.4s;}
-  @keyframes blink { 0%,60%,100%{opacity:.25;} 30%{opacity:1;} }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 13px;
+    }
 
-  footer { border-top:1px solid var(--border); background:var(--surface);
-    padding:12px 20px calc(12px + env(safe-area-inset-bottom)); position:sticky; bottom:0; }
-  .composer { max-width:800px; margin:0 auto; display:flex; gap:10px; align-items:flex-end; }
-  .composer textarea { flex:1; resize:none; border:1px solid var(--border); background:var(--bg);
-    color:var(--text); font:inherit; padding:11px 14px; border-radius:12px; max-height:160px; line-height:1.5; }
-  .composer textarea:focus { outline:2px solid var(--accent); outline-offset:-1px; border-color:transparent; }
-  .send { flex:none; width:42px; height:42px; border:none; border-radius:12px; background:var(--accent);
-    color:var(--accent-ink); cursor:pointer; display:grid; place-items:center; }
-  .send:disabled { opacity:.4; cursor:default; }
-  .send svg { width:18px; height:18px; }
-  .disclaimer { max-width:800px; margin:8px auto 0; font-size:11px; color:var(--muted); text-align:center; }
-  @media (max-width:560px){ .bubble{max-width:88%;} }
-</style>
+    .mark {
+      width: 30px;
+      height: 30px;
+      display: grid;
+      place-items: center;
+      border: 1px solid var(--ink);
+      border-radius: 50%;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 17px;
+      line-height: 1;
+    }
+
+    .brand-name,
+    .eyebrow,
+    .status,
+    .section-label,
+    .decision,
+    .meta-label,
+    .source-label,
+    .route-label,
+    .input-label {
+      text-transform: uppercase;
+      letter-spacing: .13em;
+      font-size: 10px;
+      font-weight: 700;
+    }
+
+    .brand-name { letter-spacing: .18em; }
+
+    .brand-sub {
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .top-actions {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+    }
+
+    .status {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      color: var(--muted);
+      letter-spacing: .09em;
+      white-space: nowrap;
+    }
+
+    .status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--accent);
+    }
+
+    .status-dot.offline { background: var(--danger); }
+
+    .new-chat {
+      border: 0;
+      border-left: 1px solid var(--line);
+      padding: 7px 0 7px 18px;
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 12px;
+    }
+
+    .new-chat:hover { color: var(--ink); }
+
+    main {
+      display: flex;
+      align-items: center;
+      padding: 66px 0 72px;
+    }
+
+    .empty-state {
+      width: 100%;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(280px, 360px);
+      gap: clamp(48px, 10vw, 150px);
+      align-items: end;
+    }
+
+    .eyebrow,
+    .section-label,
+    .input-label { color: var(--accent); }
+
+    h1 {
+      max-width: 680px;
+      margin: 18px 0 24px;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: clamp(48px, 7vw, 86px);
+      font-weight: 400;
+      letter-spacing: -.055em;
+      line-height: .92;
+    }
+
+    .intro-copy {
+      max-width: 470px;
+      margin: 0;
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.65;
+    }
+
+    .intro-note {
+      margin-top: 42px;
+      padding-top: 13px;
+      border-top: 1px solid var(--line);
+      color: var(--faint);
+      font-size: 11px;
+      line-height: 1.5;
+    }
+
+    .suggestions {
+      align-self: stretch;
+      border-top: 1px solid var(--ink);
+    }
+
+    .suggestions-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 13px 0 15px;
+    }
+
+    .suggestions-count {
+      color: var(--faint);
+      font-size: 11px;
+    }
+
+    .suggestion {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      padding: 17px 0;
+      border: 0;
+      border-top: 1px solid var(--line);
+      background: transparent;
+      text-align: left;
+      cursor: pointer;
+      font-size: 13px;
+      line-height: 1.35;
+    }
+
+    .suggestion::after {
+      content: "↗";
+      color: var(--faint);
+      font-size: 18px;
+      transition: transform .18s ease, color .18s ease;
+    }
+
+    .suggestion:hover::after {
+      color: var(--accent);
+      transform: translate(2px, -2px);
+    }
+
+    .thread {
+      width: 100%;
+      align-self: start;
+      display: none;
+    }
+
+    .thread.visible { display: block; }
+
+    .thread-intro {
+      max-width: 760px;
+      margin-bottom: 46px;
+    }
+
+    .thread-title {
+      margin: 16px 0 0;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: clamp(38px, 5vw, 64px);
+      font-weight: 400;
+      letter-spacing: -.045em;
+      line-height: .98;
+    }
+
+    .turn {
+      padding: 24px 0;
+      border-top: 1px solid var(--line);
+    }
+
+    .question-line {
+      display: flex;
+      gap: 18px;
+      align-items: baseline;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .question-prefix {
+      min-width: 54px;
+      color: var(--faint);
+      text-transform: uppercase;
+      letter-spacing: .12em;
+      font-size: 10px;
+      font-weight: 700;
+    }
+
+    .result {
+      margin: 22px 0 0 72px;
+      padding: 22px 24px 24px;
+      border: 1px solid var(--line-strong);
+      border-left: 3px solid var(--accent);
+      background: var(--card);
+    }
+
+    .result[data-decision="CLARIFY"] {
+      border-left-color: var(--warn);
+      background: var(--warn-soft);
+    }
+
+    .result[data-decision="ABSTAIN"] {
+      border-left-color: var(--danger);
+      background: var(--danger-soft);
+    }
+
+    .result-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      padding-bottom: 17px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .decision { color: var(--accent); }
+
+    [data-decision="CLARIFY"] .decision { color: var(--warn); }
+    [data-decision="ABSTAIN"] .decision { color: var(--danger); }
+
+    .answer {
+      margin: 21px 0 24px;
+      white-space: pre-wrap;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 20px;
+      line-height: 1.45;
+    }
+
+    .secondary {
+      margin: -10px 0 23px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
+    .result-footer {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(180px, .65fr);
+      gap: 25px;
+      padding-top: 17px;
+      border-top: 1px solid var(--line);
+    }
+
+    .source-label,
+    .route-label,
+    .meta-label {
+      display: block;
+      margin-bottom: 9px;
+      color: var(--faint);
+    }
+
+    .source-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px 13px;
+      color: var(--accent);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .source-list span { overflow-wrap: anywhere; }
+
+    .route {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .composer-wrap {
+      padding: 17px 0 22px;
+      border-top: 1px solid var(--ink);
+    }
+
+    .composer {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 18px;
+      align-items: end;
+    }
+
+    .input-label {
+      display: block;
+      margin-bottom: 10px;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 47px;
+      max-height: 160px;
+      resize: none;
+      padding: 0;
+      border: 0;
+      outline: 0;
+      overflow-y: auto;
+      color: var(--ink);
+      background: transparent;
+      font-size: 15px;
+      line-height: 1.5;
+    }
+
+    textarea::placeholder { color: var(--faint); }
+
+    .send {
+      min-width: 102px;
+      height: 42px;
+      padding: 0 17px;
+      border: 1px solid var(--ink);
+      border-radius: 3px;
+      background: var(--ink);
+      color: #fff;
+      cursor: pointer;
+      font-size: 12px;
+      transition: background .18s ease, color .18s ease;
+    }
+
+    .send:hover,
+    .send:focus-visible {
+      background: var(--accent);
+    }
+
+    .send:disabled {
+      cursor: wait;
+      opacity: .55;
+    }
+
+    .composer-foot {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      margin-top: 12px;
+      color: var(--faint);
+      font-size: 10px;
+      line-height: 1.45;
+    }
+
+    .error {
+      margin-top: 14px;
+      color: var(--danger);
+      font-size: 12px;
+    }
+
+    @media (max-width: 760px) {
+      .page { width: min(calc(100% - 32px), var(--max)); }
+      .topbar { min-height: 68px; }
+      .brand-sub { display: none; }
+      .status { font-size: 9px; }
+      .new-chat { padding-left: 13px; }
+      main { padding: 48px 0 54px; }
+      .empty-state { grid-template-columns: 1fr; gap: 55px; }
+      h1 { max-width: 520px; font-size: clamp(46px, 15vw, 70px); }
+      .intro-note { margin-top: 30px; }
+      .thread-intro { margin-bottom: 32px; }
+      .result { margin-left: 0; padding: 19px; }
+      .result-footer { grid-template-columns: 1fr; gap: 18px; }
+    }
+
+    @media (max-width: 480px) {
+      .page { width: calc(100% - 26px); }
+      .top-actions { gap: 10px; }
+      .status { max-width: 96px; white-space: normal; line-height: 1.3; }
+      h1 { font-size: 48px; }
+      .question-line { display: block; }
+      .question-prefix { display: block; margin-bottom: 7px; }
+      .composer { grid-template-columns: 1fr; gap: 12px; }
+      .send { width: 100%; }
+      .composer-foot { display: block; }
+    }
+  </style>
 </head>
 <body>
-<div class="app">
-  <header>
-    <div class="logo">R</div>
-    <div><h1>RiskON Assistant</h1><p>Evidence-first answers from the event corpus</p></div>
-    <div class="spacer"></div>
-    <button class="ghost" id="reset">New chat</button>
-  </header>
-  <main id="main"><div class="thread" id="thread"></div></main>
-  <footer>
-    <form class="composer" id="composer">
-      <textarea id="input" rows="1" placeholder="Ask a policy or compliance question…" autocomplete="off"></textarea>
-      <button class="send" id="send" type="submit" aria-label="Send">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
-      </button>
-    </form>
-    <div class="disclaimer">The deterministic Answer Firewall decides what can be released. Evidence references remain local and inspectable.</div>
-  </footer>
-</div>
-<script>
-"use strict";
+  <div class="page">
+    <header class="topbar">
+      <div class="brand">
+        <div class="mark" aria-hidden="true">R</div>
+        <div>
+          <div class="brand-name">RiskON / Challenge 1</div>
+          <div class="brand-sub">Evidence desk · local event runtime</div>
+        </div>
+      </div>
+      <div class="top-actions">
+        <div class="status" id="runtimeStatus">
+          <span class="status-dot" aria-hidden="true"></span>
+          <span>Checking runtime</span>
+        </div>
+        <button class="new-chat" id="newChat" type="button">New question</button>
+      </div>
+    </header>
 
-const EXAMPLES = [
-  "Is it mandatory for a Power of Attorney holder to have a K&E document?",
-  "Can a RM give advice on digital assets to any client?",
-  "How can I change the K&E of an existing client?",
-  "I am blocked for entering a purchase order in Wealth Navigator, how can I unblock it?",
-];
+    <main>
+      <section class="empty-state" id="emptyState" aria-labelledby="pageTitle">
+        <div>
+          <div class="eyebrow">Ask the evidence desk</div>
+          <h1 id="pageTitle">Find the answer.<br>Or the boundary.</h1>
+          <p class="intro-copy">
+            Ask about the Julius Baer material. The desk traces every released
+            answer back to the original source and says when the package is not
+            enough to answer safely.
+          </p>
+          <p class="intro-note">
+            Deterministic retrieval and the Answer Firewall remain authoritative.
+          </p>
+        </div>
 
-const PILLABEL = {
-  ANSWER: "Answer",
-  CLARIFY: "Needs clarification",
-  ABSTAIN: "Route to a specialist",
-};
+        <div class="suggestions">
+          <div class="suggestions-head">
+            <span class="section-label">Try a question</span>
+            <span class="suggestions-count">04 examples</span>
+          </div>
+          <button class="suggestion" type="button">
+            What support is available on suitability matters?
+          </button>
+          <button class="suggestion" type="button">
+            Who should handle a complex suitability case?
+          </button>
+          <button class="suggestion" type="button">
+            What does LoD mean in this material?
+          </button>
+          <button class="suggestion" type="button">
+            Which alerts apply during the session?
+          </button>
+        </div>
+      </section>
 
-/* The only place that knows the backend shape: POST /v1/ask -> { took_ms, result }. */
-async function ask(question) {
-  const res = await fetch("/v1/ask", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ question, context: {} }),
-  });
-  if (!res.ok) {
-    let detail = res.statusText;
-    try { detail = (await res.json()).detail || detail; } catch (e) {}
-    throw new Error(res.status + " — " + detail);
-  }
-  return (await res.json()).result;
-}
+      <section class="thread" id="thread" aria-live="polite">
+        <div class="thread-intro">
+          <div class="eyebrow">Evidence desk</div>
+          <h1 class="thread-title">Source-led answers,<br>clear limits.</h1>
+        </div>
+        <div id="turns"></div>
+      </section>
+    </main>
 
-const thread = document.getElementById("thread");
-const main = document.getElementById("main");
-const form = document.getElementById("composer");
-const input = document.getElementById("input");
-const send = document.getElementById("send");
-let pending = false, started = false;
+    <footer class="composer-wrap">
+      <form class="composer" id="askForm">
+        <div>
+          <label class="input-label" for="question">Your question</label>
+          <textarea
+            id="question"
+            rows="1"
+            placeholder="Ask something from the event material…"
+            autocomplete="off"></textarea>
+        </div>
+        <button class="send" id="send" type="submit">
+          Ask desk <span aria-hidden="true">↗</span>
+        </button>
+      </form>
+      <div class="composer-foot">
+        <span>Enter a question · ⌘/Ctrl + Enter to send</span>
+        <span>Original evidence only</span>
+      </div>
+      <div class="error" id="error" role="alert" hidden></div>
+    </footer>
+  </div>
 
-function esc(s) {
-  return String(s == null ? "" : s).replace(/[&<>"']/g, c =>
-    ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]));
-}
-function down() { main.scrollTop = main.scrollHeight; }
+  <script>
+    const emptyState = document.getElementById("emptyState");
+    const thread = document.getElementById("thread");
+    const turns = document.getElementById("turns");
+    const form = document.getElementById("askForm");
+    const questionInput = document.getElementById("question");
+    const sendButton = document.getElementById("send");
+    const errorBox = document.getElementById("error");
+    const newChat = document.getElementById("newChat");
+    const runtimeStatus = document.getElementById("runtimeStatus");
+    const statusDot = runtimeStatus.querySelector(".status-dot");
+    const statusText = runtimeStatus.querySelector("span:last-child");
 
-function renderEmpty() {
-  thread.innerHTML =
-    '<div class="empty"><div class="logo">R</div><h2>What do you need to verify?</h2>' +
-    '<p>Ask a Julius Baer policy question. The runtime answers only when the source and scope are established.</p>' +
-    '<div class="chips">' +
-    EXAMPLES.map(q => '<button class="chip" data-q="' + esc(q) + '">' + esc(q) + "</button>").join("") +
-    "</div></div>";
-  thread.querySelectorAll(".chip").forEach(c => c.addEventListener("click", () => submit(c.dataset.q)));
-}
+    const labels = {
+      ANSWER: "Answer released",
+      CLARIFY: "Clarification needed",
+      ABSTAIN: "Route to specialist",
+    };
 
-function sources(list, label) {
-  if (!list || !list.length) return "";
-  const items = list.map(ref =>
-    '<div class="src"><span class="name">' + esc(ref) + "</span></div>"
-  ).join("");
-  return '<div class="block"><div class="label">' + esc(label) + "</div>" + items + "</div>";
-}
+    function addText(parent, className, value) {
+      const node = document.createElement("div");
+      node.className = className;
+      node.textContent = value || "";
+      parent.appendChild(node);
+      return node;
+    }
 
-function routing(r) {
-  if (!r) return "";
-  const target = r.support_function || r.queue_id || r.selected_expert_id || "configured specialist";
-  const mode = r.route_mode ? " · " + esc(r.route_mode) : "";
-  return '<div class="block"><div class="label">Route to</div>' +
-    "<div><strong>" + esc(target) + "</strong>" + mode + "</div>" +
-    (r.routing_reason ? '<div class="where">' + esc(r.routing_reason) + "</div>" : "") +
-    (r.routing_confidence != null
-      ? '<div class="where">routing confidence ' + Number(r.routing_confidence).toFixed(2) + "</div>"
-      : "") +
-    "</div>";
-}
+    function valueOrEmpty(value) {
+      return value === null || value === undefined ? "" : String(value);
+    }
 
-function confidences(res) {
-  const bars = [];
-  if (res.route && typeof res.route.routing_confidence === "number") {
-    const confidence = res.route.routing_confidence;
-    bars.push('<div class="bar">routing confidence ' + confidence.toFixed(2) +
-      '<b style="width:' + Math.round(confidence * 120) + 'px"></b></div>');
-  }
-  return bars.length ? '<div class="bars">' + bars.join("") + "</div>" : "";
-}
+    function listValues(value) {
+      return Array.isArray(value) ? value.filter(Boolean).map(String) : [];
+    }
 
-function reasons(list) {
-  if (!list || !list.length) return "";
-  return '<div class="block"><div class="label">Why</div>' +
-    list.map(item => '<div class="where">• ' + esc(item) + "</div>").join("") + "</div>";
-}
+    function routeSummary(route) {
+      if (!route) return "";
+      if (typeof route === "string") return route;
+      if (typeof route !== "object") return "";
+      return [
+        route.support_function,
+        route.route_mode,
+        route.queue_id,
+      ].filter(Boolean).join(" · ");
+    }
 
-function metadata(res) {
-  const bits = [];
-  if (res.activation_profile) bits.push("profile " + res.activation_profile);
-  if (typeof res.worker_execution_count === "number")
-    bits.push(res.worker_execution_count + " worker(s)");
-  if (res.worker_roles && res.worker_roles.length)
-    bits.push("roles " + res.worker_roles.join(", "));
-  return bits.length ? '<div class="meta">' + bits.map(esc).join(" · ") + "</div>" : "";
-}
+    function setRuntimeStatus(ready) {
+      statusDot.classList.toggle("offline", !ready);
+      statusText.textContent = ready ? "Local runtime ready" : "Runtime unavailable";
+    }
 
-function renderResult(res) {
-  const row = document.createElement("div");
-  row.className = "row assistant";
-  const decision = String(res.decision || "ABSTAIN").toUpperCase();
-  const cssClass = decision.toLowerCase();
-  let body = '<div class="pill"><span class="dot"></span>' +
-    esc(PILLABEL[decision] || decision) + "</div>";
+    function showThread() {
+      emptyState.style.display = "none";
+      thread.classList.add("visible");
+    }
 
-  if (decision === "ANSWER") {
-    body += '<div class="passages">' + esc(res.answer || "No released answer.") + "</div>";
-    body += sources(res.evidence_refs, "Evidence references");
-  } else if (decision === "CLARIFY") {
-    body += '<p class="lead">More context is needed before the Firewall can release an answer.</p>';
-    if (res.clarification) body += '<p class="clarify-q">' + esc(res.clarification) + "</p>";
-    body += reasons(res.abstention_reason);
-  } else {
-    body += '<p class="lead">The runtime could not safely release an answer from the available evidence.</p>';
-    body += reasons(res.abstention_reason);
-  }
+    function resetConversation() {
+      turns.replaceChildren();
+      thread.classList.remove("visible");
+      emptyState.style.display = "";
+      errorBox.hidden = true;
+      errorBox.textContent = "";
+      questionInput.value = "";
+      questionInput.focus();
+    }
 
-  if (decision === "ABSTAIN") body += routing(res.route);
-  body += confidences(res);
-  body += metadata(res);
+    function addTurn(question, res) {
+      showThread();
 
-  row.innerHTML = '<div class="card ' + esc(cssClass) + '">' + body + "</div>";
-  thread.appendChild(row);
-  down();
-}
+      const turn = document.createElement("article");
+      turn.className = "turn";
 
-function addUser(text) {
-  if (!started) { thread.innerHTML = ""; started = true; }
-  const row = document.createElement("div");
-  row.className = "row user";
-  row.innerHTML = '<div class="bubble">' + esc(text) + "</div>";
-  thread.appendChild(row);
-  down();
-}
-function addTyping() {
-  const row = document.createElement("div");
-  row.className = "row assistant"; row.id = "typing";
-  row.innerHTML = '<div class="card"><div class="typing"><i></i><i></i><i></i></div></div>';
-  thread.appendChild(row); down();
-}
-function rmTyping() { const t = document.getElementById("typing"); if (t) t.remove(); }
-function addError(msg) {
-  const row = document.createElement("div");
-  row.className = "row assistant";
-  row.innerHTML = '<div class="card route"><div class="pill"><span class="dot"></span>Connection problem</div>' +
-    '<p class="lead">Could not reach the assistant: ' + esc(msg) + "</p></div>";
-  thread.appendChild(row); down();
-}
+      const questionLine = document.createElement("div");
+      questionLine.className = "question-line";
+      addText(questionLine, "question-prefix", "Question");
+      addText(questionLine, "question-text", question);
+      turn.appendChild(questionLine);
 
-async function submit(text) {
-  text = (text || "").trim();
-  if (!text || pending) return;
-  addUser(text);
-  pending = true; send.disabled = true; addTyping();
-  try {
-    const res = await ask(text);
-    rmTyping(); renderResult(res);
-  } catch (e) {
-    rmTyping(); addError(e.message || String(e));
-  } finally {
-    pending = false; send.disabled = false; input.focus();
-  }
-}
+      const decision = valueOrEmpty(res.decision) || "ABSTAIN";
+      const resultCard = document.createElement("div");
+      resultCard.className = "result";
+      resultCard.dataset.decision = decision;
 
-form.addEventListener("submit", e => { e.preventDefault(); const v = input.value; input.value = ""; grow(); submit(v); });
-input.addEventListener("keydown", e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); form.requestSubmit(); } });
-function grow() { input.style.height = "auto"; input.style.height = Math.min(input.scrollHeight, 160) + "px"; }
-input.addEventListener("input", grow);
-document.getElementById("reset").addEventListener("click", () => { started = false; renderEmpty(); input.focus(); });
+      const resultHeader = document.createElement("div");
+      resultHeader.className = "result-header";
+      addText(resultHeader, "decision", labels[decision] || decision);
+      const duration = Number(res.took_ms);
+      addText(
+        resultHeader,
+        "meta-label",
+        Number.isFinite(duration) ? Math.round(duration) + " ms" : "",
+      );
+      resultCard.appendChild(resultHeader);
 
-renderEmpty();
-input.focus();
-</script>
+      const answer = valueOrEmpty(res.answer);
+      const clarification = valueOrEmpty(res.clarification);
+      const abstention = valueOrEmpty(res.abstention_reason);
+      const primaryText = answer || clarification || abstention || "No releasable result.";
+      addText(resultCard, "answer", primaryText);
+
+      const secondary = decision === "ANSWER"
+        ? ""
+        : valueOrEmpty(res.clarification || res.abstention_reason);
+      if (secondary && secondary !== primaryText) {
+        addText(resultCard, "secondary", secondary);
+      }
+
+      const footer = document.createElement("div");
+      footer.className = "result-footer";
+
+      const sources = document.createElement("div");
+      addText(sources, "source-label", "Original sources");
+      const sourceList = document.createElement("div");
+      sourceList.className = "source-list";
+      const refs = listValues(res.evidence_refs);
+      if (refs.length === 0) {
+        addText(sourceList, "", "No source reference released");
+      } else {
+        refs.forEach(function(ref) { addText(sourceList, "", ref); });
+      }
+      sources.appendChild(sourceList);
+      footer.appendChild(sources);
+
+      const route = document.createElement("div");
+      addText(route, "route-label", "Runtime path");
+      const routeText = [
+        routeSummary(res.route),
+        valueOrEmpty(res.activation_profile),
+        listValues(res.worker_roles).join(" · "),
+      ].filter(Boolean).join(" / ");
+      addText(route, "route", routeText || "Firewall");
+      footer.appendChild(route);
+
+      resultCard.appendChild(footer);
+      turn.appendChild(resultCard);
+      turns.appendChild(turn);
+      turn.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
+    async function ask(question) {
+      const response = await fetch("/v1/ask", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question: question, context: {} }),
+      });
+      const body = await response.json().catch(function() { return {}; });
+      if (!response.ok) {
+        throw new Error(valueOrEmpty(body.detail) || "The local runtime could not answer.");
+      }
+      return Object.assign({}, body.result || {}, { took_ms: body.took_ms });
+    }
+
+    async function checkRuntime() {
+      try {
+        const response = await fetch("/v1/health");
+        const body = await response.json();
+        setRuntimeStatus(response.ok && body.runtime_loaded === true);
+      } catch (error) {
+        setRuntimeStatus(false);
+      }
+    }
+
+    function resizeInput() {
+      questionInput.style.height = "auto";
+      questionInput.style.height = Math.min(questionInput.scrollHeight, 160) + "px";
+    }
+
+    form.addEventListener("submit", async function(event) {
+      event.preventDefault();
+      const question = questionInput.value.trim();
+      if (!question || sendButton.disabled) return;
+
+      errorBox.hidden = true;
+      sendButton.disabled = true;
+      sendButton.textContent = "Checking…";
+      try {
+        const result = await ask(question);
+        addTurn(question, result);
+        questionInput.value = "";
+        resizeInput();
+      } catch (error) {
+        errorBox.textContent = error.message || "Something went wrong.";
+        errorBox.hidden = false;
+      } finally {
+        sendButton.disabled = false;
+        sendButton.innerHTML = 'Ask desk <span aria-hidden="true">↗</span>';
+      }
+    });
+
+    document.querySelectorAll(".suggestion").forEach(function(button) {
+      button.addEventListener("click", function() {
+        questionInput.value = button.textContent.trim();
+        resizeInput();
+        questionInput.focus();
+      });
+    });
+
+    questionInput.addEventListener("input", resizeInput);
+    questionInput.addEventListener("keydown", function(event) {
+      if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
+        form.requestSubmit();
+      }
+    });
+    newChat.addEventListener("click", resetConversation);
+    checkRuntime();
+  </script>
 </body>
 </html>
 """
