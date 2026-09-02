@@ -59,7 +59,7 @@ INDEX_HTML = r"""<!doctype html>
       min-height: 100svh;
       margin: 0 auto;
       display: grid;
-      grid-template-rows: auto 1fr auto;
+      grid-template-rows: auto 1fr;
     }
 
     .topbar {
@@ -150,8 +150,14 @@ INDEX_HTML = r"""<!doctype html>
 
     main {
       display: flex;
-      align-items: center;
-      padding: 66px 0 72px;
+      flex-direction: column;
+      min-height: 0;
+      overflow-y: auto;
+    }
+
+    .page:not(.has-thread) main {
+      justify-content: center;
+      padding: 56px 0 72px;
     }
 
     .empty-state {
@@ -241,6 +247,7 @@ INDEX_HTML = r"""<!doctype html>
       width: 100%;
       align-self: start;
       display: none;
+      padding-top: 58px;
     }
 
     .thread.visible { display: block; }
@@ -363,8 +370,27 @@ INDEX_HTML = r"""<!doctype html>
     }
 
     .composer-wrap {
+      width: 100%;
+      flex: 0 0 auto;
       padding: 17px 0 22px;
       border-top: 1px solid var(--ink);
+    }
+
+    .page:not(.has-thread) .composer-wrap {
+      width: min(100%, 780px);
+      margin: 0 auto;
+      padding: 0;
+      border-top: 0;
+    }
+
+    .page:not(.has-thread) .composer {
+      padding-top: 20px;
+      border-top: 1px solid var(--ink);
+    }
+
+    .page:not(.has-thread) textarea {
+      min-height: 70px;
+      font-size: 18px;
     }
 
     .composer {
@@ -441,8 +467,9 @@ INDEX_HTML = r"""<!doctype html>
       .brand-sub { display: none; }
       .status { font-size: 9px; }
       .new-chat { padding-left: 13px; }
-      main { padding: 48px 0 54px; }
+      .page:not(.has-thread) main { padding: 44px 0 58px; }
       .empty-state { grid-template-columns: 1fr; gap: 55px; }
+      .page:not(.has-thread) .composer { grid-template-columns: 1fr; }
       h1 { max-width: 520px; font-size: clamp(46px, 15vw, 70px); }
       .intro-note { margin-top: 30px; }
       .thread-intro { margin-bottom: 32px; }
@@ -522,31 +549,31 @@ INDEX_HTML = r"""<!doctype html>
         </div>
         <div id="turns"></div>
       </section>
-    </main>
-
-    <footer class="composer-wrap">
-      <form class="composer" id="askForm">
-        <div>
-          <label class="input-label" for="question">Your question</label>
-          <textarea
-            id="question"
-            rows="1"
-            placeholder="Ask something from the event material…"
-            autocomplete="off"></textarea>
+      <footer class="composer-wrap">
+        <form class="composer" id="askForm">
+          <div>
+            <label class="input-label" for="question">Your question</label>
+            <textarea
+              id="question"
+              rows="1"
+              placeholder="Ask something from the event material…"
+              autocomplete="off"></textarea>
+          </div>
+          <button class="send" id="send" type="submit">
+            Ask desk <span aria-hidden="true">↗</span>
+          </button>
+        </form>
+        <div class="composer-foot">
+          <span>Enter a question · ⌘/Ctrl + Enter to send</span>
+          <span>Original evidence only</span>
         </div>
-        <button class="send" id="send" type="submit">
-          Ask desk <span aria-hidden="true">↗</span>
-        </button>
-      </form>
-      <div class="composer-foot">
-        <span>Enter a question · ⌘/Ctrl + Enter to send</span>
-        <span>Original evidence only</span>
-      </div>
-      <div class="error" id="error" role="alert" hidden></div>
-    </footer>
+        <div class="error" id="error" role="alert" hidden></div>
+      </footer>
+    </main>
   </div>
 
   <script>
+    const page = document.querySelector(".page");
     const emptyState = document.getElementById("emptyState");
     const thread = document.getElementById("thread");
     const turns = document.getElementById("turns");
@@ -598,12 +625,14 @@ INDEX_HTML = r"""<!doctype html>
     }
 
     function showThread() {
+      page.classList.add("has-thread");
       emptyState.style.display = "none";
       thread.classList.add("visible");
     }
 
     function resetConversation() {
       turns.replaceChildren();
+      page.classList.remove("has-thread");
       thread.classList.remove("visible");
       emptyState.style.display = "";
       errorBox.hidden = true;
