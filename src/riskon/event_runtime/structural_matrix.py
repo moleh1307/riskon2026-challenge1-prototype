@@ -381,14 +381,15 @@ class StructuralMatrixWorker:
         ambiguities: dict[str, list[str]],
         **extra: Any,
     ) -> StructuralMatrixResult:
+        fields = dict(extra)
+        fields.setdefault("acronym_expansions", expansions)
+        fields.setdefault("acronym_ambiguities", ambiguities)
         return StructuralMatrixResult(
             status=StructuralStatus.SOURCE_PACKAGE_ASSET_UNAVAILABLE,
-            acronym_expansions=expansions,
-            acronym_ambiguities=ambiguities,
             source_package_gap_codes=[gap_result.firewall_code] if gap_result.firewall_code else [],
             source_package_gap_targets=[gap.target for gap in gap_result.gaps],
             reason=gap_result.distinction,
-            **extra,
+            **fields,
         )
 
     def _is_matrix_question(self, request: QueryInput, plan: QueryPlan) -> bool:

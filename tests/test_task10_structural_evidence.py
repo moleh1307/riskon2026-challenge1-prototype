@@ -12,6 +12,7 @@ from riskon.event_runtime.evidence_reasoning import EventEvidenceReasoningRuntim
 from riskon.event_runtime.retrieval import EventHybridRetriever
 from riskon.event_runtime.semantic_retrieval import SemanticEventRetriever
 from riskon.event_runtime.structural_matrix import (
+    SourceGapResult,
     SourceGapWorker,
     StructuralMatrixWorker,
     StructuralStatus,
@@ -136,6 +137,26 @@ def test_source_gap_worker_reports_missing_package_asset(tmp_path: Path) -> None
     assert result.firewall_code == "SOURCE_PACKAGE_ASSET_UNAVAILABLE"
     assert result.gaps[0].target == "missing.png"
     assert "not delivered" in result.distinction
+
+
+def test_gap_result_merges_existing_acronym_metadata(tmp_path: Path) -> None:
+    worker = StructuralMatrixWorker(_corpus(tmp_path))
+    gap = SourceGapResult(
+        required=True,
+        distinction="The required source asset was not delivered in the event package.",
+    )
+
+    result = worker._gap_result(
+        gap,
+        {"LOD": "Line of Defence"},
+        {},
+        acronym_expansions={"LOD": "Line of Defence"},
+        source_refs=["local://event-wiki/matrix.html"],
+    )
+
+    assert result.status is StructuralStatus.SOURCE_PACKAGE_ASSET_UNAVAILABLE
+    assert result.acronym_expansions == {"LOD": "Line of Defence"}
+    assert result.source_refs == ["local://event-wiki/matrix.html"]
 
 
 def test_structural_fast_path_does_not_call_router_or_llm(tmp_path: Path) -> None:
