@@ -43,7 +43,7 @@ class RouterResult:
     selections: tuple[RouterSelection, ...]
     attempted_page_refs: tuple[str, ...]
     shortlist_page_refs: tuple[str, ...]
-    call: LLMCallRecord
+    call: LLMCallRecord | None
     retry: bool
 
 

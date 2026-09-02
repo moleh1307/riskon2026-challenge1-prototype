@@ -281,6 +281,21 @@ class UnifiedOrchestraRuntime:
         source_safety = self._source_safety(source_safety_report)
         baseline_result = baseline.verified_run.result
 
+        # A fully validated structural matrix lookup is already a deterministic
+        # answer.  It must not be sent through the generic worker fan-out, where
+        # a second claim builder or skeptic could reinterpret the source rows.
+        if self._is_structural_fast_path(baseline):
+            return self._zero_worker_run(
+                baseline,
+                orchestration_context,
+                profile,
+                assessment,
+                source_safety,
+                request=request,
+                run_planned_call_count=run_planned_call_count,
+                candidate_claim_count=len(baseline.verified_run.verification.supported_claim_ids),
+            )
+
         if profile is ActivationProfile.SHORT_CIRCUIT_CLARIFY:
             if baseline_result.decision is not Decision.CLARIFY:
                 raise OrchestraConfigurationError(
@@ -532,6 +547,7 @@ class UnifiedOrchestraRuntime:
         *,
         request: QueryInput | None,
         run_planned_call_count: int,
+        candidate_claim_count: int = 0,
     ) -> OrchestraRun:
         """Return a zero-worker path without altering the baseline."""
 
@@ -550,7 +566,7 @@ class UnifiedOrchestraRuntime:
                 active_agent_count=0,
                 task_count=0,
                 finding_count=0,
-                candidate_claim_count=0,
+                candidate_claim_count=candidate_claim_count,
                 material_objection_count=0,
                 counterfactual_count=0,
                 worker_execution_count=0,
@@ -563,6 +579,21 @@ class UnifiedOrchestraRuntime:
         )
         self._append_success(run, request, assessment)
         return run
+
+    def _is_structural_fast_path(self, baseline: PlannedVerifiedRun) -> bool:
+        """Recognise an event answer whose every cited unit is structural evidence."""
+
+        if baseline.verified_run.result.decision is not Decision.ANSWER:
+            return False
+        refs = baseline.verified_run.verification.evidence_refs
+        if not refs:
+            return False
+        return all(
+            (unit := self.corpus.resolve(reference)) is not None
+            and unit.structured
+            and unit.kind == "table_row"
+            for reference in refs
+        )
 
     def _human_first_run(
         self,

@@ -105,7 +105,10 @@ class EvidenceAnalysisOutput(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 
     evidence_sufficiency: EvidenceSufficiencyStatus
-    material_claims: list[EvidenceClaim] = Field(max_length=8)
+    # The LLM Claim Builder remains bounded by Task5LLMConfig.max_claims.  The
+    # deterministic structural fast path may admit one direct claim per matrix
+    # cell, so its validated container must not impose the LLM's smaller budget.
+    material_claims: list[EvidenceClaim] = Field(max_length=64)
     unresolved_issues: list[str] = Field(max_length=12)
 
 
@@ -166,8 +169,8 @@ class SupportValidation(BaseModel):
 
     model_config = ConfigDict(extra="forbid", frozen=True)
 
-    valid_claims: list[EvidenceClaim] = Field(default_factory=list, max_length=8)
-    rejected_claim_ids: list[str] = Field(default_factory=list, max_length=8)
+    valid_claims: list[EvidenceClaim] = Field(default_factory=list, max_length=64)
+    rejected_claim_ids: list[str] = Field(default_factory=list, max_length=64)
     errors: list[str] = Field(default_factory=list, max_length=32)
     scope_violation_count: int = Field(default=0, ge=0)
     unsupported_claim_count: int = Field(default=0, ge=0)

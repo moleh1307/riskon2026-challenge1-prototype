@@ -84,18 +84,78 @@ class SemanticEventRetriever:
             return self.retry_once(request, initial, initial.sufficiency.reason)
         return initial
 
-    def retrieve_initial(self, request: QueryInput) -> SemanticRetrievalOutcome:
+    def retrieve_initial(
+        self,
+        request: QueryInput,
+        *,
+        deterministic_base: SemanticRetrievalOutcome | None = None,
+    ) -> SemanticRetrievalOutcome:
         """Run deterministic retrieval and the initial title route without retrying."""
+
+        started = time.perf_counter()
+        if deterministic_base is not None:
+            return self._retrieve_initial_from_deterministic(
+                request,
+                started,
+                deterministic_base.plan,
+                self.planner.context_values(request, deterministic_base.plan),
+                deterministic_base.deterministic_result,
+                use_router=True,
+            )
+        plan = self.planner.plan(request)
+        context = self.planner.context_values(request, plan)
+        deterministic_result = self.deterministic_retriever.retrieve(plan, context)
+        return self._retrieve_initial_from_deterministic(
+            request,
+            started,
+            plan,
+            context,
+            deterministic_result,
+            use_router=True,
+        )
+
+    def retrieve_deterministic(self, request: QueryInput) -> SemanticRetrievalOutcome:
+        """Run only the deterministic retrieval layer, without an LLM router call."""
 
         started = time.perf_counter()
         plan = self.planner.plan(request)
         context = self.planner.context_values(request, plan)
         deterministic_result = self.deterministic_retriever.retrieve(plan, context)
+        return self._retrieve_initial_from_deterministic(
+            request,
+            started,
+            plan,
+            context,
+            deterministic_result,
+            use_router=False,
+        )
+
+    def _retrieve_initial_from_deterministic(
+        self,
+        request: QueryInput,
+        started: float,
+        plan: QueryPlan,
+        context: dict[str, str],
+        deterministic_result: HybridRetrievalResult,
+        *,
+        use_router: bool,
+    ) -> SemanticRetrievalOutcome:
+        """Complete initial section selection from one deterministic result."""
+
         deterministic_scores, deterministic_page_refs = _deterministic_page_scores(
             deterministic_result,
             self.deterministic_retriever,
         )
-        initial_router = self.router.route(request, plan, deterministic_page_refs)
+        if use_router:
+            initial_router = self.router.route(request, plan, deterministic_page_refs)
+        else:
+            initial_router = RouterResult(
+                selections=(),
+                attempted_page_refs=(),
+                shortlist_page_refs=tuple(deterministic_page_refs),
+                call=None,
+                retry=False,
+            )
         routes = [initial_router]
         page_scores = _merge_page_scores(deterministic_scores, routes)
         hybrid_page_refs = tuple(

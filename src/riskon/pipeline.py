@@ -72,6 +72,7 @@ from riskon.verification import VerificationEngine
 
 if TYPE_CHECKING:
     from riskon.event_runtime.config import EventRuntimeConfig
+    from riskon.event_runtime.structural_matrix import StructuralMatrixResult
 
 
 class RiskonPipeline:
@@ -489,9 +490,10 @@ class RiskonPipeline:
         router = self._m3_routers.get(routing_profile)
         if router is None:
             raise ValueError(f"Unknown M3 routing profile: {routing_profile}")
+        routing_reason_codes = _m3_routing_reason_codes(actual_reason_codes)
         request = RoutingRequest(
             need_type=routing_context.need_type,
-            reason_codes=actual_reason_codes,
+            reason_codes=routing_reason_codes,
             topics=list(routing_context.topics),
             jurisdiction=routing_context.jurisdiction,
             region=routing_context.region,
@@ -647,6 +649,8 @@ class RiskonPipeline:
         active_provenance = provenance or self._m4d_provenance
         if self._m4d_planner is None or active_retriever is None or active_provenance is None:
             raise ValueError("M4D planner, retriever, and provenance are not configured")
+        from riskon.event_runtime.structural_matrix import StructuralMatrixWorker, StructuralStatus
+
         plan = self._m4d_planner.plan(request)
         if plan.retrieval_skipped:
             reason = (
@@ -696,6 +700,111 @@ class RiskonPipeline:
         claims = self._m2_claims(units)
         evidence_refs = list(dict.fromkeys(ref for claim in claims for ref in claim.evidence_refs))
         detected_context = self._m4d_detected_context(request)
+
+        if self._m4d_corpus is not None and self._m4d_corpus.structural is not None:
+            structural_result = StructuralMatrixWorker(self._m4d_corpus).evaluate(
+                request,
+                plan,
+                retrieval,
+                provenance=active_provenance,
+            )
+            if structural_result.status is not StructuralStatus.NOT_APPLICABLE:
+                structural_evidence = self._m4d_structural_evidence(
+                    structural_result,
+                    provenance=active_provenance,
+                )
+                structural_refs = list(structural_result.evidence_refs)
+                if structural_result.status is StructuralStatus.SUFFICIENT:
+                    structural_claims = [
+                        AnswerClaim(
+                            claim_id=claim.claim_id,
+                            text=claim.claim_text,
+                            evidence_refs=[claim.evidence_ref],
+                            critical=claim.critical_control,
+                        )
+                        for claim in structural_result.claims
+                    ]
+                    return self._m4d_simple_verified(
+                        request,
+                        plan,
+                        decision=Decision.ANSWER,
+                        answer="\n".join(claim.text for claim in structural_claims),
+                        evidence=structural_evidence,
+                        retrieved_sections=retrieved_hits,
+                        evidence_refs=structural_refs,
+                        retrieval_diagnostics=retrieval.diagnostics,
+                        claims=structural_claims,
+                        reason_codes=[],
+                        explanation=(
+                            "Every structural matrix claim has direct source-row provenance "
+                            "validated before release."
+                        ),
+                    )
+                if structural_result.status is StructuralStatus.AMBIGUOUS_ACRONYM:
+                    return self._m4d_simple_verified(
+                        request,
+                        plan,
+                        decision=Decision.CLARIFY,
+                        reason_codes=[ReasonCode.AMBIGUOUS_ACRONYM],
+                        clarifying_question=(
+                            structural_result.clarification_question
+                            or "Please clarify the acronym before I answer."
+                        ),
+                        evidence=structural_evidence,
+                        retrieved_sections=retrieved_hits,
+                        evidence_refs=structural_refs,
+                        retrieval_diagnostics=retrieval.diagnostics,
+                        explanation=(
+                            "The corpus-local glossary contains multiple verified meanings "
+                            "for the queried acronym."
+                        ),
+                    )
+                if structural_result.status is StructuralStatus.WRONG_SCOPE:
+                    route = self.router.route(detected_context, [ReasonCode.SCOPE_MISMATCH])
+                    return self._m4d_simple_verified(
+                        request,
+                        plan,
+                        decision=Decision.ABSTAIN,
+                        reason_codes=[ReasonCode.SCOPE_MISMATCH],
+                        route=route,
+                        evidence=structural_evidence,
+                        retrieved_sections=retrieved_hits,
+                        evidence_refs=structural_refs,
+                        retrieval_diagnostics=retrieval.diagnostics,
+                        scope_mismatches=[structural_result.reason],
+                        explanation=structural_result.reason,
+                    )
+                if structural_result.status is StructuralStatus.SOURCE_PACKAGE_ASSET_UNAVAILABLE:
+                    route = self.router.route(
+                        detected_context,
+                        [ReasonCode.SOURCE_PACKAGE_ASSET_UNAVAILABLE],
+                    )
+                    return self._m4d_simple_verified(
+                        request,
+                        plan,
+                        decision=Decision.ABSTAIN,
+                        reason_codes=[ReasonCode.SOURCE_PACKAGE_ASSET_UNAVAILABLE],
+                        route=route,
+                        evidence=selected_evidence,
+                        retrieved_sections=retrieved_hits,
+                        evidence_refs=evidence_refs,
+                        retrieval_diagnostics=retrieval.diagnostics,
+                        explanation=structural_result.reason,
+                    )
+                if structural_result.status is StructuralStatus.PROVENANCE_INVALID:
+                    route = self.router.route(detected_context, [ReasonCode.UNSUPPORTED_CLAIM])
+                    return self._m4d_simple_verified(
+                        request,
+                        plan,
+                        decision=Decision.ABSTAIN,
+                        reason_codes=[ReasonCode.UNSUPPORTED_CLAIM],
+                        route=route,
+                        evidence=structural_evidence,
+                        retrieved_sections=retrieved_hits,
+                        evidence_refs=structural_refs,
+                        retrieval_diagnostics=retrieval.diagnostics,
+                        explanation=structural_result.reason,
+                    )
         lowered = request.query.lower()
 
         if "synthetic atlas exception request" in lowered:
@@ -1032,6 +1141,39 @@ class RiskonPipeline:
                     existing.evidence_refs.append(evidence_ref)
         return list(claims.values())
 
+    def _m4d_structural_evidence(
+        self,
+        structural_result: "StructuralMatrixResult",
+        *,
+        provenance: ProvenanceIndex,
+    ) -> list[Evidence]:
+        """Convert validated structural rows into ordinary M4D evidence objects."""
+
+        if self._m4d_corpus is None:
+            return []
+        titles = {section.source_ref: section.title for section in self._m4d_corpus.sections}
+        evidence: list[Evidence] = []
+        seen: set[str] = set()
+        for reference in structural_result.evidence_refs:
+            if reference in seen:
+                continue
+            unit = provenance.resolve(reference)
+            if unit is None or not unit.structured:
+                continue
+            evidence.append(
+                Evidence(
+                    section_id=unit.section_id or reference,
+                    source_ref=unit.source_ref,
+                    title=titles.get(unit.source_ref, unit.filename),
+                    heading_path=list(unit.heading_path),
+                    score=1.0,
+                    excerpt=unit.text,
+                    table_rows=[list(unit.row)] if unit.row else [],
+                )
+            )
+            seen.add(reference)
+        return evidence
+
     def _m2_link_refs(self, evidence: list[Evidence]) -> list[str]:
         if self._m2_provenance is None:
             return []
@@ -1171,6 +1313,24 @@ class M5BRiskonPipeline(M4DRiskonPipeline):
             raise ValueError("M5B orchestration requires an M4D runtime")
         planned = self.run_planned_with_overlay(query_input, overlay)
         return self._m4d_runtime.run_orchestrated_with_planned(query_input, planned)
+
+
+def _m3_routing_reason_codes(reason_codes: list[ReasonCode]) -> list[ReasonCode]:
+    """Expose a closed-world M3 compatibility alias for absent source assets.
+
+    The Firewall keeps ``SOURCE_PACKAGE_ASSET_UNAVAILABLE`` as the released
+    reason.  M3's frozen support model predates that more precise code and
+    already governs unresolved required references through the same support
+    function, so the alias is added only to the internal routing request.
+    """
+
+    routed = list(reason_codes)
+    if (
+        ReasonCode.SOURCE_PACKAGE_ASSET_UNAVAILABLE in routed
+        and ReasonCode.UNRESOLVED_REQUIRED_REFERENCE not in routed
+    ):
+        routed.append(ReasonCode.UNRESOLVED_REQUIRED_REFERENCE)
+    return routed
 
 
 def _overlay_section(unit: OverlayEvidenceUnit) -> Section:

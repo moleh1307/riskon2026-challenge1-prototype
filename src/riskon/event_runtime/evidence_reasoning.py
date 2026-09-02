@@ -12,6 +12,7 @@ from typing import Any, Protocol, cast
 from riskon.context import ContextDetector
 from riskon.event_runtime.evidence_reasoning_models import (
     ContextAssessment,
+    ContextField,
     ContextInterpreterOutput,
     EvidenceAnalysisOutput,
     EvidenceClaim,
@@ -48,6 +49,13 @@ from riskon.event_runtime.semantic_models import SemanticFailureReason
 from riskon.event_runtime.semantic_retrieval import (
     SemanticEventRetriever,
     SemanticRetrievalOutcome,
+)
+from riskon.event_runtime.structural_matrix import (
+    SourceGapWorker,
+    StructuralEvidenceClaim,
+    StructuralMatrixResult,
+    StructuralMatrixWorker,
+    StructuralStatus,
 )
 from riskon.event_runtime.visual_scout import (
     VisualAnalysis,
@@ -243,12 +251,31 @@ class EventEvidenceReasoningRuntime:
         self.atlas_router = atlas_router
         self.skip_atlas_when_retrieval_strong = skip_atlas_when_retrieval_strong
         self._titles_by_source = {section.source_ref: section.title for section in corpus.sections}
+        self.structural_worker = StructuralMatrixWorker(corpus)
+        self.source_gap_worker = SourceGapWorker(corpus)
 
     def run(self, request: QueryInput) -> EventEvidenceReasoningResult:
         """Run context, bounded evidence analysis, skeptic, and final firewall."""
 
         started = time.perf_counter()
-        initial_base = self.semantic_retriever.retrieve_initial(request)
+        deterministic_base = self.semantic_retriever.retrieve_deterministic(request)
+        structural_result = self.structural_worker.evaluate(
+            request,
+            deterministic_base.plan,
+            deterministic_base.deterministic_result,
+            provenance=self.corpus.provenance,
+        )
+        if structural_result.handled:
+            return self._run_structural_fast_path(
+                request,
+                deterministic_base,
+                structural_result,
+                started,
+            )
+        initial_base = self.semantic_retriever.retrieve_initial(
+            request,
+            deterministic_base=deterministic_base,
+        )
         detected_context = ContextDetector().detect(request)
         context_output = self._interpret_context(request, initial_base.plan)
         context_assessment = self._sanitize_context(request, initial_base.plan, context_output)
@@ -516,26 +543,229 @@ class EventEvidenceReasoningRuntime:
             missing_context_fields=context.missing_context_fields,
         )
 
+    def _run_structural_fast_path(
+        self,
+        request: QueryInput,
+        deterministic_retrieval: SemanticRetrievalOutcome,
+        structural_result: StructuralMatrixResult,
+        started: float,
+    ) -> EventEvidenceReasoningResult:
+        """Release only locally validated structural claims, without LLM calls."""
+
+        context_output = self._deterministic_context_output(
+            request,
+            deterministic_retrieval.plan,
+            structural_result,
+        )
+        context_assessment = self._sanitize_context(
+            request,
+            deterministic_retrieval.plan,
+            context_output,
+        )
+        if structural_result.status is StructuralStatus.AMBIGUOUS_ACRONYM:
+            context_assessment = context_assessment.model_copy(
+                update={
+                    "answer_changing_context_fields": list(
+                        dict.fromkeys(
+                            [*context_assessment.answer_changing_context_fields, "acronym"]
+                        )
+                    ),
+                    "missing_context_fields": ["acronym"],
+                    "ambiguity_acronym_flags": list(
+                        dict.fromkeys(
+                            [
+                                *context_assessment.ambiguity_acronym_flags,
+                                *[
+                                    f"{key} has multiple verified meanings in the corpus"
+                                    for key in structural_result.acronym_ambiguities
+                                ],
+                            ]
+                        )
+                    ),
+                }
+            )
+        detected_context = self._detected_context(
+            request,
+            ContextDetector().detect(request),
+            context_assessment,
+        )
+
+        if structural_result.status is StructuralStatus.SUFFICIENT:
+            units = self._structural_evidence_units(structural_result)
+            claims = [
+                self._evidence_claim_from_structural(item) for item in structural_result.claims
+            ]
+            analysis = EvidenceAnalysisOutput(
+                evidence_sufficiency=EvidenceSufficiencyStatus.SUFFICIENT,
+                material_claims=claims,
+                unresolved_issues=[
+                    f"Unresolved source states: {', '.join(structural_result.unresolved_states)}"
+                ]
+                if structural_result.unresolved_states
+                else [],
+            )
+        elif structural_result.status is StructuralStatus.SOURCE_PACKAGE_ASSET_UNAVAILABLE:
+            units = self._evidence_units(request, deterministic_retrieval)
+            claims = []
+            analysis = EvidenceAnalysisOutput(
+                evidence_sufficiency=EvidenceSufficiencyStatus.VISUAL_REQUIRED,
+                material_claims=[],
+                unresolved_issues=[structural_result.reason],
+            )
+        else:
+            units = self._structural_evidence_units(structural_result)
+            claims = []
+            status = (
+                EvidenceSufficiencyStatus.WRONG_SCOPE
+                if structural_result.status is StructuralStatus.WRONG_SCOPE
+                else EvidenceSufficiencyStatus.NO_DIRECT_SUPPORT
+            )
+            analysis = EvidenceAnalysisOutput(
+                evidence_sufficiency=status,
+                material_claims=[],
+                unresolved_issues=[structural_result.reason],
+            )
+
+        validation = self._validate_claims(
+            request,
+            context_assessment,
+            analysis,
+            units,
+            claim_limit=max(len(claims), self.config.max_claims),
+        )
+        validated_claims = tuple(_validated_claim(claim) for claim in validation.valid_claims)
+        (
+            decision,
+            answer,
+            clarifying_question,
+            reason_codes,
+            route,
+            control_omissions,
+        ) = self._firewall(
+            request,
+            detected_context,
+            context_assessment,
+            deterministic_retrieval,
+            analysis,
+            units,
+            validation,
+            validated_claims,
+            None,
+        )
+        evidence = self._evidence_for_claims(units, validated_claims)
+        refs = tuple(
+            dict.fromkeys(ref for claim in validated_claims for ref in claim.evidence_refs)
+        )
+        result = self._pipeline_result(
+            request,
+            deterministic_retrieval.plan,
+            detected_context,
+            decision,
+            answer=answer,
+            clarifying_question=clarifying_question,
+            reason_codes=reason_codes,
+            route=route,
+            evidence=evidence,
+            retrieved_sections=deterministic_retrieval.selected_candidates,
+        )
+        return EventEvidenceReasoningResult(
+            request=request,
+            plan=deterministic_retrieval.plan,
+            detected_context=detected_context,
+            context_output=context_output,
+            context_assessment=context_assessment,
+            initial_retrieval=deterministic_retrieval,
+            final_retrieval=deterministic_retrieval,
+            initial_evidence_units=tuple(units),
+            final_evidence_units=tuple(units),
+            initial_analysis=analysis,
+            final_analysis=analysis,
+            support_validation=validation,
+            validated_claims=validated_claims,
+            skeptic=None,
+            decision=decision,
+            answer=answer,
+            clarifying_question=clarifying_question,
+            reason_codes=tuple(reason_codes),
+            route=route,
+            primary_source=(
+                structural_result.primary_source
+                or _primary_source(deterministic_retrieval.selected_candidates)
+            ),
+            evidence_refs=refs,
+            validation_errors=tuple(validation.errors),
+            scope_violation_count=validation.scope_violation_count,
+            critical_control_omission_count=control_omissions,
+            unsupported_released_claims=0,
+            latency_ms=_elapsed_ms(started),
+            result=result,
+            atlas_routing=AtlasRoutingResult(),
+            visual_analysis=None,
+        )
+
+    def _deterministic_context_output(
+        self,
+        request: QueryInput,
+        plan: QueryPlan,
+        structural_result: StructuralMatrixResult,
+    ) -> ContextInterpreterOutput:
+        """Represent explicit request context without asking a model to interpret it."""
+
+        flags = [
+            f"{key} has multiple verified meanings in the corpus"
+            for key in structural_result.acronym_ambiguities
+        ]
+        return ContextInterpreterOutput(
+            intent=plan.intent.value,
+            explicitly_supplied_context=[
+                ContextField(field=key, value=value)
+                for key, value in request.context.items()
+                if key.strip() and value.strip()
+            ],
+            answer_changing_context_fields=list(plan.required_context_fields),
+            missing_context_fields=list(plan.missing_context_fields),
+            ambiguity_acronym_flags=flags,
+        )
+
+    def _structural_evidence_units(
+        self,
+        structural_result: StructuralMatrixResult,
+    ) -> list[EvidenceUnit]:
+        """Materialize only provenance-resolved structural rows as evidence units."""
+
+        units: list[EvidenceUnit] = []
+        for reference in structural_result.evidence_refs:
+            unit = self.corpus.provenance.resolve(reference)
+            if unit is None or not unit.structured or unit.kind != "table_row":
+                continue
+            units.append(self._evidence_unit(unit, unit.text, False))
+        return units
+
+    @staticmethod
+    def _evidence_claim_from_structural(
+        claim: StructuralEvidenceClaim,
+    ) -> EvidenceClaim:
+        return EvidenceClaim(
+            claim_id=claim.claim_id,
+            claim_text=claim.claim_text,
+            evidence_refs=[claim.evidence_ref],
+            supporting_spans=[
+                SupportingSpan(evidence_ref=claim.evidence_ref, span=claim.supporting_span)
+            ],
+            critical_control=claim.critical_control,
+            applicable_scope=_scope_fields_from_dict(claim.applicable_scope),
+        )
+
     def _source_package_asset_unavailable(
         self,
         retrieval: SemanticRetrievalOutcome,
     ) -> bool:
         """Return whether selected event pages declare a missing binary dependency."""
 
-        structural = self.corpus.structural
-        if structural is None:
-            return False
-        selected_sources = {candidate.source_ref for candidate in retrieval.selected_candidates}
-        page_ids = {
-            section.filename.rsplit("/", 1)[-1].rsplit(".", 1)[0]
-            for section in self.corpus.sections
-            if section.source_ref in selected_sources
-        }
-        return any(
-            gap.kind == "missing_attachment"
-            for page_id in page_ids
-            for gap in structural.gaps_for_page(page_id)
+        selected_sources = tuple(
+            dict.fromkeys(candidate.source_ref for candidate in retrieval.selected_candidates)
         )
+        return self.source_gap_worker.evaluate(selected_sources).firewall_code is not None
 
     def _atlas_clarification_result(
         self,
@@ -624,6 +854,9 @@ class EventEvidenceReasoningRuntime:
                 "Extract only context explicitly present in them. Never infer a client, business, "
                 "jurisdiction, mandate, workflow stage, or acronym expansion. Mark a field missing "
                 "only when its value could change the answer and it is genuinely required. "
+                "When corpus_verified_acronyms is supplied, it is the authoritative glossary: "
+                "do not replace it with model prior knowledge; preserve ambiguity when multiple "
+                "verified expansions are listed. "
                 "Return only the requested structured schema."
             ),
             user_prompt=json.dumps(
@@ -636,6 +869,7 @@ class EventEvidenceReasoningRuntime:
                         "required_context_fields": plan.required_context_fields,
                         "missing_context_fields": plan.missing_context_fields,
                     },
+                    "corpus_verified_acronyms": _corpus_glossary_payload(self.corpus),
                 },
                 ensure_ascii=False,
                 separators=(",", ":"),
@@ -1124,6 +1358,7 @@ class EventEvidenceReasoningRuntime:
         units: Sequence[EvidenceUnit],
         *,
         visual_analysis: VisualAnalysis | None = None,
+        claim_limit: int | None = None,
     ) -> SupportValidation:
         if analysis is None:
             return SupportValidation()
@@ -1139,7 +1374,8 @@ class EventEvidenceReasoningRuntime:
         unsupported = 0
         broken_refs = 0
         seen_claim_ids: set[str] = set()
-        for claim in analysis.material_claims[: self.config.max_claims]:
+        limit = self.config.max_claims if claim_limit is None else claim_limit
+        for claim in analysis.material_claims[:limit]:
             if claim.claim_id in seen_claim_ids:
                 continue
             seen_claim_ids.add(claim.claim_id)
@@ -1668,6 +1904,28 @@ def _clarifying_question(context: ContextAssessment) -> str:
         return f"Please clarify the acronym or term {flags} before I answer."
     fields = ", ".join(context.missing_context_fields[:4])
     return f"Which {fields} applies to this case?"
+
+
+def _corpus_glossary_payload(corpus: LocalCorpus) -> dict[str, object]:
+    """Expose only verified corpus-local acronym meanings to context interpretation."""
+
+    if corpus.structural is None:
+        return {"unique": {}, "ambiguous": {}}
+    by_acronym: dict[str, dict[str, str]] = {}
+    for entry in corpus.structural.glossary.entries:
+        if not entry.verified:
+            continue
+        values = by_acronym.setdefault(entry.acronym.casefold(), {})
+        values.setdefault(entry.expansion.casefold(), entry.expansion)
+    unique: dict[str, str] = {}
+    ambiguous: dict[str, list[str]] = {}
+    for acronym, expansions in sorted(by_acronym.items()):
+        ordered = sorted(expansions.values(), key=str.casefold)
+        if len(ordered) == 1:
+            unique[acronym.upper()] = ordered[0]
+        else:
+            ambiguous[acronym.upper()] = ordered
+    return {"unique": unique, "ambiguous": ambiguous}
 
 
 def _is_event_ref(ref: str) -> bool:

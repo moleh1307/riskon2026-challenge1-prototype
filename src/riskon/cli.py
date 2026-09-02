@@ -40,6 +40,7 @@ from riskon.event_eval.policy_atlas_probe import run_policy_atlas_probe
 from riskon.event_eval.reporting import write_evaluation_reports
 from riskon.event_eval.retrieval_probe import run_retrieval_probe
 from riskon.event_eval.runner import EventEvaluationRunner
+from riskon.event_eval.structural_evidence_probe import run_structural_evidence_probe
 from riskon.event_intake import (
     CorpusIntakeReport,
     CorpusIntakeRequest,
@@ -1011,6 +1012,14 @@ def build_parser() -> argparse.ArgumentParser:
     event_final_parser.add_argument("--cases", type=Path, required=True)
     event_final_parser.add_argument("--output", type=Path, required=True)
 
+    event_structural_parser = subparsers.add_parser(
+        "event-structural-evaluate",
+        help="evaluate structural evidence and the final Firewall without OpenAI",
+    )
+    event_structural_parser.add_argument("--runtime-config", type=Path, required=True)
+    event_structural_parser.add_argument("--cases", type=Path, required=True)
+    event_structural_parser.add_argument("--output", type=Path, required=True)
+
     inspect_parser = subparsers.add_parser(
         "inspect-corpus",
         help="inspect an external event HTML corpus without mutating or fetching it",
@@ -1132,6 +1141,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         return run_policy_atlas_probe(args.runtime_config, args.cases, args.output)
     if args.command == "event-final-evaluate":
         return run_final_stabilization(args.runtime_config, args.cases, args.output)
+    if args.command == "event-structural-evaluate":
+        return run_structural_evidence_probe(args.runtime_config, args.cases, args.output)
     if args.command == "inspect-corpus":
         try:
             mapping = _event_column_mapping(args)
