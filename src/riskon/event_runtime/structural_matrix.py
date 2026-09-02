@@ -466,6 +466,8 @@ class StructuralMatrixWorker:
         if plan.intent.value in self._matrix_intents:
             return True
         terms = set(_tokens(" ".join((request.query, plan.normalised_query))))
+        if "dtm" in terms and bool(terms & {"state", "status"}):
+            return True
         return bool(terms & self._matrix_terms) and (
             "alert" in terms or "alerts" in terms or "configuration" in terms or "matrix" in terms
         )
@@ -628,6 +630,7 @@ class StructuralMatrixWorker:
                 len(_tokens(header)) >= 2
                 and set(_tokens(header)).issubset(set(_tokens(request.query)))
             )
+            or any(_contains_value(request.query, acronym) for acronym in _header_acronyms(header))
         }
         return specific or set(headers)
 
@@ -722,6 +725,16 @@ def _table_dimensions(table: StructuralTableData) -> tuple[str, ...]:
 
     return tuple(
         dict.fromkeys(key for record in table.records for key in record.dimensions if key.strip())
+    )
+
+
+def _header_acronyms(header: str) -> tuple[str, ...]:
+    """Return explicit parenthesized abbreviations from a table heading."""
+
+    return tuple(
+        match
+        for match in re.findall(r"\(([A-Za-z][A-Za-z0-9&/.-]{1,15})\)", header)
+        if len(match) >= 2
     )
 
 

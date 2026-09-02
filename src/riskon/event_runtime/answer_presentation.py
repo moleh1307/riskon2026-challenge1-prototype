@@ -43,8 +43,6 @@ def format_structural_answer(
     if scope:
         lines.append(f"Scope: {scope}")
         lines.append("")
-    lines.append("Source-declared alert configuration")
-
     grouped: dict[tuple[str, str], list[StructuralEvidenceClaim]] = {}
     first_seen: dict[tuple[str, str], int] = {}
     unresolved: list[StructuralEvidenceClaim] = []
@@ -64,17 +62,24 @@ def format_structural_answer(
             first_seen[item[0]],
         ),
     )
+    if grouped:
+        lines.append("Source-declared alert configuration")
     for index, ((meaning, state), group) in enumerate(ordered_groups):
         if index or lines[-1] != "Source-declared alert configuration":
             lines.append("")
         lines.append(f"{_display_meaning(meaning)} ({state})")
-        lines.extend(f"- {claim.column}" for claim in group)
+        lines.extend(f"- {_display_column(claim.column)}" for claim in group)
 
     if unresolved:
-        lines.append("")
-        lines.append("Unresolved source state")
+        if grouped:
+            lines.append("")
+            lines.append("Unresolved source state")
+        elif lines and lines[-1] != "":
+            lines.append("")
         lines.extend(
-            f"- {claim.column} — state: {claim.state}; the source declares no meaning."
+            f"- {_display_column(claim.column)} is marked `{claim.state}`. "
+            "The page does not declare what "
+            "this icon means, so its meaning cannot be determined from this page."
             for claim in unresolved
         )
 
@@ -87,6 +92,12 @@ def _normalise(value: str | None) -> str:
 
 def _display_meaning(value: str) -> str:
     return value[:1].upper() + value[1:]
+
+
+def _display_column(value: str) -> str:
+    prefix = "suitability / monitoring alerts "
+    lowered = value.casefold()
+    return value[len(prefix) :] if lowered.startswith(prefix) else value
 
 
 def _scope_line(scope: dict[str, str], table_heading: str) -> str:

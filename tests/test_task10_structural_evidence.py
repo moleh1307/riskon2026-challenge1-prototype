@@ -15,6 +15,7 @@ from riskon.event_runtime.semantic_retrieval import SemanticEventRetriever
 from riskon.event_runtime.structural_matrix import (
     SourceGapResult,
     SourceGapWorker,
+    StructuralEvidenceClaim,
     StructuralMatrixWorker,
     StructuralStatus,
 )
@@ -126,7 +127,8 @@ def test_structural_worker_filters_explicit_solicitation_dimension(tmp_path: Pat
            <ac:emoticon ac:name="warning"/> only session</p>
         <h2>Advisory Location CH</h2>
         <table>
-          <tr><th>Service Model</th><th>Solicitation Type</th><th>Alert A</th><th>Alert B</th></tr>
+          <tr><th>Service Model</th><th>Solicitation Type</th>
+              <th>Distributor Target Market (DTM)</th><th>Other Alert</th></tr>
           <tr><td>Advice Premium</td><td>Active Solicitation</td>
               <td><ac:emoticon ac:name="tick"/></td><td><ac:emoticon ac:name="warning"/></td></tr>
           <tr><td>Advice Premium</td><td>Reverse Solicitation</td>
@@ -145,8 +147,8 @@ def test_structural_worker_filters_explicit_solicitation_dimension(tmp_path: Pat
     plan = _plan()
     request = QueryInput(
         query=(
-            "Which session alerts are triggered for Advice Premium with Active Solicitation "
-            "in Advisory Location CH?"
+            "What is the DTM state for Advice Premium with Active Solicitation in Advisory "
+            "Location CH?"
         ),
         context={"region": "CH", "service_model": "Advice Premium"},
     )
@@ -155,10 +157,26 @@ def test_structural_worker_filters_explicit_solicitation_dimension(tmp_path: Pat
     result = StructuralMatrixWorker(corpus).evaluate(request, plan, retrieval)
 
     assert result.status is StructuralStatus.SUFFICIENT
-    assert result.matched_record_count == 2
+    assert result.matched_record_count == 1
     assert all(
         claim.dimensions["Solicitation Type"] == "Active Solicitation" for claim in result.claims
     )
+    assert all(claim.column == "Distributor Target Market (DTM)" for claim in result.claims)
+
+
+def test_dtm_state_question_uses_structural_path_even_with_definition_intent(
+    tmp_path: Path,
+) -> None:
+    worker = StructuralMatrixWorker(_corpus(tmp_path))
+    request = QueryInput(query="What is the DTM state and does the error icon have a meaning?")
+    plan = _plan().model_copy(
+        update={
+            "intent": QueryIntent.DEFINITION,
+            "normalised_query": "what is the dtm state and does the error icon have a meaning",
+        }
+    )
+
+    assert worker._is_matrix_question(request, plan)
 
 
 def test_equivalent_k_and_e_expansions_are_not_ambiguous(tmp_path: Path) -> None:
@@ -332,6 +350,31 @@ def test_structural_answer_groups_declared_states_and_keeps_unresolved_visible(
     assert "Only session (warning)" in answer
     assert "Only overnight (information)" in answer
     assert "Unresolved source state" in answer
-    assert "state: error; the source declares no meaning" in answer
+    assert "marked `error`" in answer
+    assert "meaning cannot be determined from this page" in answer
     assert "heading:" not in answer
     assert "icon encoding:" not in answer
+
+
+def test_structural_answer_explains_unresolved_icon_naturally() -> None:
+    claim = StructuralEvidenceClaim(
+        claim_id="structured:error",
+        claim_text="state: error",
+        evidence_ref="local://event-wiki/matrix.html#row-1",
+        supporting_span="state: error",
+        state="error",
+        state_meaning=None,
+        table_heading="Advisory Location CH",
+        column="Distributor Target Market (DTM)",
+        dimensions={"Service Model": "Trade Basic", "Solicitation Type": "Client Instruction"},
+        applicable_scope={
+            "Service Model": "Trade Basic",
+            "Solicitation Type": "Client Instruction",
+        },
+        unresolved_state=True,
+    )
+
+    answer = format_structural_answer([claim])
+
+    assert "Distributor Target Market (DTM) is marked `error`." in answer
+    assert "meaning cannot be determined from this page" in answer
