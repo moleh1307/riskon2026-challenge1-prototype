@@ -784,6 +784,7 @@ INDEX_HTML = r"""<!doctype html>
           </div>
         </details>
         <a class="memory-link" href="/memory">Memory summary ↗</a>
+        <a class="memory-link" href="/add-html">Add HTML ↗</a>
         <button class="new-chat" id="newChat" type="button">New question</button>
       </div>
     </header>

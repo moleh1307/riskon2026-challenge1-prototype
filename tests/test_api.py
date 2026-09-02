@@ -41,6 +41,20 @@ def test_ui_is_served_with_canonical_contract_labels() -> None:
     assert "Running safety checks" in page
 
 
+def test_html_intake_page_is_local_only_and_exposes_page_card_metadata() -> None:
+    page = api.add_html_page()
+
+    assert "Add an HTML source." in page
+    assert 'accept=".html,.htm,text/html"' in page
+    assert "riskon.page_card.v1" in page
+    assert "source_hash" in page
+    assert "contains_table" in page
+    assert "contains_visual" in page
+    assert "file.text()" in page
+    assert "fetch(" not in page
+    assert "not uploaded, saved, or used as answer evidence" in page
+
+
 def test_memory_page_and_view_are_read_only_and_redacted(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,

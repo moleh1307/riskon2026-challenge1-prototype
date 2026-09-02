@@ -27,6 +27,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from riskon.api.html_ingest_ui import HTML_INGEST_HTML
 from riskon.api.memory_ui import MEMORY_HTML
 from riskon.api.ui import INDEX_HTML
 from riskon.event_runtime.config import load_event_runtime_config
@@ -373,6 +374,13 @@ def index() -> str:
     """Serve Gabriel's adapted chat UI from the same origin as the API."""
 
     return INDEX_HTML
+
+
+@app.get("/add-html", response_class=HTMLResponse, include_in_schema=False)
+def add_html_page() -> str:
+    """Serve the local-only HTML metadata intake page."""
+
+    return HTML_INGEST_HTML
 
 
 @app.get("/memory", response_class=HTMLResponse, include_in_schema=False)
